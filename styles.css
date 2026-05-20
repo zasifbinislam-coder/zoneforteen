@@ -3212,7 +3212,8 @@ h1, h2, h3, .display { font-family: 'Bebas Neue', 'Oswald', sans-serif; letter-s
 }
 .qv-detail-list strong { color: var(--text-dim); font-weight: 500; line-height: 1.4; }
 
-/* Jersey card real-photo support — sits on top of the SVG fallback */
+/* Jersey card real-photo overlay — sits ABOVE the always-present SVG.
+   If the image 404s, onerror sets display:none and the SVG shows through. */
 .jersey-photo {
   position: absolute;
   inset: 0;
@@ -3220,15 +3221,8 @@ h1, h2, h3, .display { font-family: 'Bebas Neue', 'Oswald', sans-serif; letter-s
   height: 100%;
   object-fit: cover;
   display: block;
-  z-index: 0;
+  z-index: 1;
 }
-.jersey-svg-fallback {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-}
-.jersey-svg-fallback svg { width: 80%; height: 80%; }
 .qv-info {
   padding: 32px 36px;
   display: flex;

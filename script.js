@@ -15,11 +15,12 @@ function renderJerseys() {
           ? `<span class="stock-badge low">Only ${j.stockLeft} left</span>`
           : `<span class="stock-badge ok">In Stock</span>`);
     const primaryPhoto = (j.images && j.images[0]) || '';
-    const photoMarkup = primaryPhoto
-      ? `<img class="jersey-photo" src="${primaryPhoto}" alt="${j.country} ${j.edition}" loading="lazy"
-              onerror="this.remove(); this.parentNode.querySelector('.jersey-svg-fallback').style.display='grid'" />
-         <div class="jersey-svg-fallback" style="display:none">${jerseySVG(j)}</div>`
-      : jerseySVG(j);
+    // Always render the SVG as the base layer. If a real photo path is set,
+    // overlay it on top — and if that photo 404s, simply hide it so the SVG
+    // underneath stays visible. No fragile parentNode lookups.
+    const photoOverlay = primaryPhoto
+      ? `<img class="jersey-photo" src="${primaryPhoto}" alt="${j.country} ${j.edition}" loading="lazy" onerror="this.style.display='none'" />`
+      : '';
 
     return `
     <article class="jersey-card reveal${oos ? ' out-of-stock' : ''}" data-tag="${j.tag}" data-id="${j.id}">
@@ -34,7 +35,8 @@ function renderJerseys() {
           Quick View
         </button>
         <span class="jersey-shine"></span>
-        ${photoMarkup}
+        ${jerseySVG(j)}
+        ${photoOverlay}
         ${oos ? '<span class="oos-stamp">Out of Stock</span>' : ''}
       </div>
       <div class="jersey-body">
