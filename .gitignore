@@ -1,0 +1,21 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors / IDEs
+.vscode/
+.idea/
+*.swp
+*~
+.history/
+
+# Logs
+*.log
+
+# Dependencies (none currently — future-proofing)
+node_modules/
+package-lock.json
+
+# Project-local AI conventions (not needed for the deployed site)
+CLAUDE*.md

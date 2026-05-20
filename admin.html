@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <title>Admin · Zone14</title>
+  <meta name="robots" content="noindex,nofollow" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" type="image/svg+xml" href="logo/favicon.svg" />
+</head>
+<body class="page-admin">
+
+  <!-- Soft password gate -->
+  <div id="adminGate" class="admin-gate">
+    <form id="adminGateForm" class="admin-gate-card">
+      <img src="logo/main.png" alt="Zone14" class="gate-logo" />
+      <h1>Admin Login</h1>
+      <p>Enter the admin passcode to view orders.</p>
+      <input type="password" id="adminPass" placeholder="Passcode" autocomplete="off" autofocus />
+      <button type="submit" class="btn btn-primary btn-lg">Sign In</button>
+      <p class="gate-hint">Default passcode: <code>zone14admin</code></p>
+    </form>
+  </div>
+
+  <!-- Main dashboard (revealed after auth) -->
+  <div id="adminApp" class="admin-app" hidden>
+
+    <header class="admin-topbar">
+      <a href="index.html" class="admin-brand">
+        <img src="logo/main.png" alt="Zone14" />
+        <span>Admin <em>Dashboard</em></span>
+      </a>
+      <nav class="admin-nav">
+        <a href="index.html">View Site →</a>
+        <button id="exportOrders" class="btn btn-ghost">Export JSON</button>
+        <button id="logoutBtn" class="btn btn-ghost">Logout</button>
+      </nav>
+    </header>
+
+    <main class="admin-main">
+
+      <!-- KPI cards -->
+      <section class="admin-kpis">
+        <div class="kpi-card">
+          <span class="kpi-lbl">Total Orders</span>
+          <span class="kpi-val" id="kpiTotal">0</span>
+          <span class="kpi-sub" id="kpiTotalSub">all time</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-lbl">Pending</span>
+          <span class="kpi-val" id="kpiPending" style="color:#ffb547">0</span>
+          <span class="kpi-sub">awaiting confirmation</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-lbl">Revenue</span>
+          <span class="kpi-val" id="kpiRevenue">৳0</span>
+          <span class="kpi-sub">gross · all orders</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-lbl">Top Jersey</span>
+          <span class="kpi-val" id="kpiTopJersey" style="font-size:24px">—</span>
+          <span class="kpi-sub" id="kpiTopJerseySub">no data yet</span>
+        </div>
+      </section>
+
+      <!-- Filters -->
+      <section class="admin-filters">
+        <div class="filter-row">
+          <input type="search" id="orderSearch" placeholder="Search by ref, name, phone, district..." />
+          <select id="statusFilter">
+            <option value="">All statuses</option>
+            <option value="pending">Pending</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="packed">Packed</option>
+            <option value="shipped">Shipped</option>
+            <option value="delivered">Delivered</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+          <button id="seedDemo" class="btn btn-ghost" title="Insert sample orders to demo the dashboard">+ Seed Demo Data</button>
+          <button id="clearAll"  class="btn btn-ghost" style="color:#ff6b6b">Clear All</button>
+        </div>
+      </section>
+
+      <!-- Orders list -->
+      <section class="admin-orders" id="ordersWrap">
+        <!-- populated by admin.js -->
+      </section>
+    </main>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
