@@ -3844,6 +3844,241 @@ h1, h2, h3, .display { font-family: 'Bebas Neue', 'Oswald', sans-serif; letter-s
   .static-page { padding: 100px 0 60px; }
 }
 
+/* ============================================================
+   MOBILE POLISH — overrides + touch-device adjustments
+   Loaded after every other rule so it wins on conflicts.
+   ============================================================ */
+
+/* Honor iPhone notch & home-indicator safe areas */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .navbar           { padding-top: env(safe-area-inset-top); height: calc(var(--nav-h) + env(safe-area-inset-top)); }
+  .float-whatsapp,
+  .float-messenger,
+  .back-to-top,
+  .cart-pill,
+  .wishlist-pill    { margin-bottom: env(safe-area-inset-bottom); }
+  .social-toast     { margin-bottom: env(safe-area-inset-bottom); }
+}
+
+/* Touch devices: Quick View shouldn't hide behind :hover */
+@media (hover: none), (pointer: coarse) {
+  .jersey-card .jersey-quickview {
+    opacity: 1;
+    transform: none;
+  }
+  /* Hover-only "shine" sweep doesn't make sense on touch — disable */
+  .jersey-card:hover .jersey-shine { transform: translateX(-100%); }
+  /* Make the order action button always visible / properly sized */
+  .jersey-card .jersey-order { padding: 14px; font-size: 14px; }
+}
+
+/* ============ Phone-sized tweaks (≤ 768px) ============ */
+@media (max-width: 768px) {
+  /* Tighter container padding */
+  .container { padding: 0 16px; }
+
+  /* Sections breathe less */
+  .section { padding: 64px 0; }
+  .section-head { margin-bottom: 32px; }
+
+  /* Hero — keep it tall but contents fit */
+  .hero { padding: 96px 0 64px; min-height: auto; }
+  .hero-title { font-size: clamp(36px, 11vw, 72px); margin-bottom: 18px; }
+  .hero-sub { font-size: 14px; margin-bottom: 28px; padding: 0 8px; }
+  .hero-badge { font-size: 10px; padding: 7px 14px; }
+
+  /* Countdown — compact box layout, no overflow */
+  .countdown { padding: 12px 14px; gap: 2px; flex-wrap: nowrap; }
+  .cd-box { min-width: 44px; }
+  .cd-num { font-size: 24px; }
+  .cd-lbl { font-size: 9px; }
+  .cd-sep { font-size: 18px; margin-top: -8px; }
+  .cd-caption { font-size: 11px; padding: 0 16px; margin-bottom: 26px; }
+
+  .hero-cta { gap: 10px; margin-bottom: 40px; }
+  .hero-stats { gap: 28px; }
+  .hero-stats strong { font-size: 26px; }
+  .hero-stats span { font-size: 10px; }
+
+  /* Aurora — reduce blur for cheaper GPU compositing on mobile */
+  .aurora-blob { filter: blur(60px); }
+
+  /* Jerseys grid — single big card per row on phone, taller for tap */
+  .jersey-grid { grid-template-columns: 1fr; gap: 18px; }
+  .jersey-card .jersey-img-wrap { aspect-ratio: 1/1; }
+
+  /* Stock badge moves under heart properly */
+  .jersey-card .stock-badge { top: 60px; right: 14px; }
+
+  /* Bigger tap targets for sizes */
+  .size-btn { height: 40px; font-size: 12px; }
+
+  /* Featured match — flag stacks above center, vs label hidden, full-width */
+  .match-featured {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 50px 22px 26px;
+    text-align: center;
+  }
+  .match-featured::before { top: 12px; }
+  .mf-team { flex-direction: row; gap: 12px; justify-content: center; align-items: center; }
+  .mf-flag { width: 64px; height: 44px; }
+  .mf-name { font-size: 20px; margin: 0; }
+  .mf-center { order: 99; padding: 0; }
+  .mf-vs { display: none; }
+  .mf-countdown { padding: 10px 12px; gap: 3px; }
+  .mf-cd-num { font-size: 20px; }
+  .mf-cd-box { min-width: 32px; }
+  .mf-cd-sep { font-size: 14px; }
+  .mf-meta { font-size: 10px; }
+  .mf-actions { justify-content: center; flex-wrap: wrap; }
+
+  /* Match fixture cards */
+  .match-grid { grid-template-columns: 1fr; gap: 14px; }
+  .mc-flag { width: 56px; height: 38px; }
+  .mc-team-name { font-size: 13px; }
+  .mc-stage { font-size: 10px; }
+
+  /* Group standings */
+  .group-card { padding: 18px; }
+  .group-card h3 { font-size: 20px; }
+  .group-table th { font-size: 9px; padding: 6px 4px; }
+  .group-table td { padding: 8px 4px; font-size: 12px; }
+
+  /* Venues */
+  .venues-grid { grid-template-columns: 1fr; }
+
+  /* Star players grid */
+  .players-grid { grid-template-columns: 1fr 1fr; gap: 14px; }
+  .player-num { font-size: 110px; }
+  .player-name { font-size: 22px; }
+  .player-blurb { font-size: 12px; }
+  .player-info { padding: 16px; }
+
+  /* Reviews — single card visible */
+  .review-card { padding: 22px; }
+
+  /* Trust grid */
+  .trust-grid { grid-template-columns: 1fr; gap: 14px; }
+  .trust-card { padding: 24px 22px; }
+
+  /* Offers stack */
+  .offers-grid { gap: 18px; }
+
+  /* Steps stack */
+  .steps-grid { gap: 18px; }
+  .step-card { padding: 28px 22px; }
+
+  /* FAQ — tighter on phone */
+  .faq-item summary { padding: 16px 18px; font-size: 15px; gap: 12px; }
+  .faq-icon { width: 24px; height: 24px; font-size: 16px; }
+  .faq-body { padding: 0 18px 18px; }
+
+  /* Section title scales */
+  .section-title { font-size: clamp(32px, 8vw, 52px); }
+
+  /* Floating buttons — repositioned + compacted to fit on a phone */
+  .float-whatsapp { width: 50px; height: 50px; bottom: 18px; right: 16px; }
+  .float-whatsapp svg { width: 22px; height: 22px; }
+  .float-messenger { display: none; } /* one tap path is enough on mobile */
+  .cart-pill { bottom: 80px; right: 16px; height: 42px; padding: 0 12px 0 10px; }
+  .cart-pill svg { width: 18px; height: 18px; }
+  .cart-count { font-size: 16px; }
+  .wishlist-pill { bottom: 132px; right: 16px; height: 42px; padding: 0 12px 0 10px; }
+  .wishlist-pill svg { width: 18px; height: 18px; }
+  .wishlist-count { font-size: 16px; }
+  .back-to-top { bottom: 184px; right: 16px; width: 42px; height: 42px; }
+
+  /* Social toast — full width, smaller */
+  .social-toast { left: 12px; right: 12px; bottom: 12px; padding: 10px 12px; max-width: none; }
+  .st-avatar { width: 32px; height: 32px; font-size: 16px; }
+  .st-line { font-size: 11px; }
+  .st-time { font-size: 9px; }
+
+  /* Match day strip */
+  .matchday-strip { font-size: 12px; padding: 8px 12px; gap: 6px; }
+  .matchday-strip a { padding: 3px 10px; font-size: 11px; }
+
+  /* Order page */
+  .checkout { padding: 100px 0 50px; }
+  .checkout-grid { gap: 20px; }
+  .form-block { padding: 22px; }
+  .block-title { font-size: 18px; }
+  .step-pill { width: 28px; height: 28px; font-size: 12px; }
+  .form-row { gap: 12px; margin-bottom: 12px; }
+  .delivery-options, .payment-options { grid-template-columns: 1fr; }
+  .opt-card { padding: 12px 14px; }
+  .order-summary { padding: 20px; }
+  .cart-item { grid-template-columns: 56px 1fr auto; gap: 10px; padding: 10px; }
+  .cart-item-img { width: 56px; height: 56px; }
+  .cart-item-name { font-size: 12px; }
+  .place-order-btn { padding: 16px; font-size: 15px; }
+  .totals-row { font-size: 12px; }
+  .totals-row.grand { font-size: 24px; }
+
+  /* Admin */
+  .admin-main { padding: 22px 14px 50px; }
+  .admin-kpis { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .kpi-card { padding: 16px; }
+  .kpi-val { font-size: 26px; }
+  .filter-row { gap: 8px; }
+  .filter-row input[type=search] { min-width: 100%; }
+  .order-card-head { padding: 12px; gap: 10px; }
+  .oc-total { font-size: 18px; }
+  .ocb-actions { flex-wrap: wrap; }
+  .ocb-actions .btn { width: 100%; justify-content: center; }
+
+  /* Newsletter */
+  .newsletter-wrap { padding: 32px 20px; }
+  .nl-text .section-title { font-size: clamp(28px, 7vw, 40px); }
+}
+
+/* ============ Small phones (≤ 480px) ============ */
+@media (max-width: 480px) {
+  .hero-title { font-size: clamp(32px, 13vw, 56px); }
+  .countdown { transform: scale(0.95); transform-origin: center; }
+  .hero-stats { gap: 20px; }
+  .hero-stats strong { font-size: 22px; }
+
+  .section-title { font-size: clamp(28px, 9vw, 44px); }
+
+  /* Single-col star players on tiny screens */
+  .players-grid { grid-template-columns: 1fr; }
+
+  /* Tighter buttons */
+  .btn { padding: 11px 18px; font-size: 13px; }
+  .btn-lg { padding: 14px 24px; font-size: 14px; }
+
+  /* Match countdown ultra-compact */
+  .mf-countdown { gap: 2px; padding: 8px 10px; }
+  .mf-cd-num { font-size: 18px; }
+  .mf-cd-box { min-width: 28px; }
+  .mf-cd-lbl { font-size: 7px; letter-spacing: 0.1em; }
+
+  /* Quick view modal full-bleed on tiny screens */
+  .qv-modal { padding: 0; align-items: flex-end; }
+  .qv-card { border-radius: 18px 18px 0 0; max-height: 96vh; }
+  .qv-country { font-size: 30px; }
+
+  /* Stop heart + stock-badge sitting on top of each other */
+  .jersey-card .wish-heart { width: 32px; height: 32px; top: 12px; right: 12px; }
+  .jersey-card .wish-heart svg { width: 16px; height: 16px; }
+  .jersey-card .stock-badge { top: 52px; right: 12px; padding: 4px 8px; font-size: 9px; }
+
+  /* Floating buttons one row tighter */
+  .cart-pill, .wishlist-pill, .back-to-top { right: 12px; }
+}
+
+/* ============ Landscape phone — keep hero usable ============ */
+@media (max-height: 480px) and (orientation: landscape) {
+  .hero { min-height: auto; padding: 90px 0 40px; }
+  .hero-title { font-size: clamp(28px, 6vh, 48px); margin-bottom: 12px; }
+  .countdown { padding: 8px 12px; }
+  .cd-num { font-size: 20px; }
+  .hero-watermark { width: 80vw; opacity: 0.05; }
+  .hero-cta { margin-bottom: 20px; }
+}
+
 /* ============ MOTION PREFS ============ */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
