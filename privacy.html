@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy · Zone14</title>
+  <meta name="description" content="Zone14's privacy policy — what data we collect, how we use it, your rights." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" type="image/svg+xml" href="logo/favicon.svg" />
+</head>
+<body class="page-static">
+
+  <header id="navbar" class="navbar order-nav scrolled">
+    <div class="container nav-inner">
+      <a href="index.html" class="logo"><img class="logo-mark" src="logo/main.png" alt="Zone14" /></a>
+      <a href="index.html" class="back-link">← Back to Shop</a>
+    </div>
+  </header>
+
+  <main class="static-page">
+    <div class="container narrow">
+      <header class="static-head">
+        <p class="eyebrow">Legal</p>
+        <h1 class="section-title">Privacy <span class="accent">Policy</span></h1>
+        <p class="section-sub">Last updated: <span id="legalDate"></span></p>
+      </header>
+
+      <section class="legal-text">
+        <h2>1. Who we are</h2>
+        <p>Zone14 ("we", "us") is a Bangladesh-based football jersey retailer operating from Dhanmondi, Dhaka. You can reach us on WhatsApp at +880 1723-360078 or email hello@zone14.bd.</p>
+
+        <h2>2. What we collect</h2>
+        <p>When you place an order or contact us, we collect:</p>
+        <ul>
+          <li><strong>Identity &amp; contact:</strong> name, phone number, email (optional)</li>
+          <li><strong>Delivery details:</strong> address, division, district, thana, postcode</li>
+          <li><strong>Order details:</strong> jerseys, sizes, quantity, customization, payment method, notes</li>
+          <li><strong>Technical:</strong> browser type, device info, IP (via standard server logs)</li>
+        </ul>
+
+        <h2>3. How we use it</h2>
+        <ul>
+          <li>To process and deliver your order</li>
+          <li>To send order updates via WhatsApp / phone</li>
+          <li>To respond to your questions and provide support</li>
+          <li>To improve our products, service, and website</li>
+          <li>With your consent, to send promotional offers</li>
+        </ul>
+
+        <h2>4. Who we share with</h2>
+        <p>We share data only with the parties needed to fulfil your order:</p>
+        <ul>
+          <li>Courier partners (Sundarban, Steadfast, etc.) for delivery</li>
+          <li>Mobile financial services (bKash, Nagad, Rocket) if you pay through them</li>
+          <li>Authorities, only if legally required</li>
+        </ul>
+        <p>We <strong>never</strong> sell your data to advertisers or third parties.</p>
+
+        <h2>5. Cookies &amp; local storage</h2>
+        <p>We use browser localStorage to keep your cart and wishlist between visits. We may use cookies for analytics (Google Analytics) — these can be blocked through your browser settings without affecting your ability to shop.</p>
+
+        <h2>6. Your rights</h2>
+        <ul>
+          <li>Request a copy of the data we hold about you</li>
+          <li>Ask us to correct or delete your data</li>
+          <li>Opt out of marketing messages at any time</li>
+        </ul>
+        <p>To exercise any of these, WhatsApp us or email hello@zone14.bd. We'll respond within 7 working days.</p>
+
+        <h2>7. Data retention</h2>
+        <p>Order records are kept for 5 years for tax and audit purposes. Marketing-only contacts are kept until you unsubscribe.</p>
+
+        <h2>8. Changes</h2>
+        <p>If we update this policy, we'll post the new version on this page and update the "Last updated" date above.</p>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-bottom">
+      <div class="container">
+        <p>© <span id="year"></span> Zone14 · <a href="about.html">About</a> · <a href="terms.html">Terms</a> · <a href="shipping.html">Shipping</a> · <a href="refund.html">Refund</a> · <a href="contact.html">Contact</a></p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+    document.getElementById('legalDate').textContent = new Date().toLocaleDateString('en-GB', {year:'numeric', month:'long', day:'numeric'});
+  </script>
+</body>
+</html>

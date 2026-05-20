@@ -10,10 +10,77 @@
   <meta name="author" content="Zone14" />
 
   <!-- Open Graph -->
+  <meta property="og:site_name" content="Zone14" />
   <meta property="og:title" content="Zone14 — World Cup 2026 Jerseys" />
-  <meta property="og:description" content="Premium football jerseys for World Cup 2026. Order now via WhatsApp." />
+  <meta property="og:description" content="Premium football jerseys for World Cup 2026. Brazil, Argentina, France, Spain kits — delivered nationwide. Order via WhatsApp." />
   <meta property="og:type" content="website" />
   <meta property="og:locale" content="en_GB" />
+  <meta property="og:url" content="https://zone14.bd/" />
+  <meta property="og:image" content="https://zone14.bd/logo/main.png" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Zone14 — World Cup 2026 Jerseys" />
+  <meta name="twitter:description" content="Premium World Cup 2026 jerseys. Delivered across Bangladesh." />
+  <meta name="twitter:image" content="https://zone14.bd/logo/main.png" />
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+
+  <!-- Structured data — search engines render this as rich snippets -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Store",
+    "name": "Zone14",
+    "description": "Premium FIFA World Cup 2026 football jerseys in Bangladesh.",
+    "url": "https://zone14.bd/",
+    "logo": "https://zone14.bd/logo/main.png",
+    "image": "https://zone14.bd/logo/main.png",
+    "telephone": "+8801723360078",
+    "priceRange": "৳1,200 – ৳1,700",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Dhanmondi",
+      "addressLocality": "Dhaka",
+      "addressCountry": "BD"
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.9",
+      "reviewCount": "10000"
+    },
+    "sameAs": [
+      "https://facebook.com/zone14bd",
+      "https://instagram.com/zone14bd"
+    ]
+  }
+  </script>
+
+  <!-- ============================================
+       ANALYTICS — uncomment when you have IDs
+       ============================================
+  Google Analytics (GA4):
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX');
+    </script>
+
+  Meta (Facebook) Pixel:
+    <script>
+      !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+      n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+      document,'script','https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', 'YOUR_PIXEL_ID');
+      fbq('track', 'PageView');
+    </script>
+  -->
+
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -586,7 +653,17 @@
         <a href="#size">Size Guide</a>
         <a href="#how">How To Order</a>
         <a href="#faq">FAQ</a>
+        <a href="contact.html">Contact</a>
         <a href="https://wa.me/8801723360078" target="_blank" rel="noopener">WhatsApp Us</a>
+      </div>
+
+      <div class="footer-col">
+        <h4>Company</h4>
+        <a href="about.html">About Us</a>
+        <a href="shipping.html">Shipping Policy</a>
+        <a href="refund.html">Refund &amp; Exchange</a>
+        <a href="terms.html">Terms &amp; Conditions</a>
+        <a href="privacy.html">Privacy Policy</a>
       </div>
 
       <div class="footer-col">
@@ -644,7 +721,10 @@
     <div class="qv-card">
       <button class="qv-close" data-qv-close aria-label="Close quick view">×</button>
       <div class="qv-grid">
-        <div class="qv-img" id="qvImg"></div>
+        <div class="qv-media">
+          <div class="qv-media-main" id="qvMediaMain"></div>
+          <div class="qv-thumbs" id="qvThumbs"></div>
+        </div>
         <div class="qv-info">
           <span class="qv-tag" id="qvTag"></span>
           <h3 class="qv-country" id="qvTitle"></h3>
@@ -668,6 +748,8 @@
               <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
             </button>
           </div>
+
+          <div class="qv-details" id="qvDetails"></div>
 
           <ul class="qv-perks">
             <li>✓ Premium match-grade fabric</li>

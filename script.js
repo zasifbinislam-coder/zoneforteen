@@ -14,6 +14,13 @@ function renderJerseys() {
       : (j.stockLeft <= 6
           ? `<span class="stock-badge low">Only ${j.stockLeft} left</span>`
           : `<span class="stock-badge ok">In Stock</span>`);
+    const primaryPhoto = (j.images && j.images[0]) || '';
+    const photoMarkup = primaryPhoto
+      ? `<img class="jersey-photo" src="${primaryPhoto}" alt="${j.country} ${j.edition}" loading="lazy"
+              onerror="this.remove(); this.parentNode.querySelector('.jersey-svg-fallback').style.display='grid'" />
+         <div class="jersey-svg-fallback" style="display:none">${jerseySVG(j)}</div>`
+      : jerseySVG(j);
+
     return `
     <article class="jersey-card reveal${oos ? ' out-of-stock' : ''}" data-tag="${j.tag}" data-id="${j.id}">
       <div class="jersey-img-wrap">
@@ -27,7 +34,7 @@ function renderJerseys() {
           Quick View
         </button>
         <span class="jersey-shine"></span>
-        ${jerseySVG(j)}
+        ${photoMarkup}
         ${oos ? '<span class="oos-stamp">Out of Stock</span>' : ''}
       </div>
       <div class="jersey-body">
@@ -539,7 +546,8 @@ function initQuickView() {
   if (!modal) return;
   let state = { jersey: null, size: 'M', qty: 1 };
 
-  const qvImg     = document.getElementById('qvImg');
+  const qvMain    = document.getElementById('qvMediaMain');
+  const qvThumbs  = document.getElementById('qvThumbs');
   const qvTag     = document.getElementById('qvTag');
   const qvTitle   = document.getElementById('qvTitle');
   const qvEdition = document.getElementById('qvEdition');
@@ -549,12 +557,107 @@ function initQuickView() {
   const qvQty     = document.getElementById('qvQty');
   const qvAdd     = document.getElementById('qvAdd');
   const qvWish    = document.getElementById('qvWishlist');
+  const qvDetails = document.getElementById('qvDetails');
+
+  /* Build gallery — try each declared image; only show ones that successfully load.
+     Falls back gracefully to the SVG if no real photos are available. */
+  function loadGallery(jersey, onReady) {
+    const candidates = jersey.images || [];
+    if (candidates.length === 0) { onReady([], null); return; }
+
+    let pending = candidates.length;
+    const results = new Array(candidates.length).fill(null);
+    candidates.forEach((src, i) => {
+      const img = new Image();
+      img.onload  = () => { results[i] = src; if (--pending === 0) finish(); };
+      img.onerror = () => { if (--pending === 0) finish(); };
+      img.src = src;
+    });
+
+    function finish() {
+      const validImages = results.filter(Boolean);
+      // Check if a video exists too — single HEAD-equivalent via element load
+      if (!jersey.video) { onReady(validImages, null); return; }
+      const probe = document.createElement('video');
+      probe.preload = 'metadata';
+      probe.onloadedmetadata = () => onReady(validImages, jersey.video);
+      probe.onerror          = () => onReady(validImages, null);
+      probe.src = jersey.video;
+    }
+  }
+
+  function renderMedia(jersey, images, video) {
+    /* Build the list of media items: photos first, video last (if present),
+       SVG fallback if no real photos exist. */
+    const items = [];
+    images.forEach(src => items.push({ type: 'img', src }));
+    if (video) items.push({ type: 'video', src: video });
+    if (items.length === 0) items.push({ type: 'svg', html: jerseySVG(jersey) });
+
+    let active = 0;
+    const setActive = (i) => {
+      active = i;
+      const it = items[i];
+      qvMain.innerHTML = it.type === 'img'
+        ? `<img src="${it.src}" alt="${jersey.country} ${jersey.edition}" />`
+        : it.type === 'video'
+          ? `<video src="${it.src}" controls muted autoplay loop playsinline></video>`
+          : it.html;
+      qvThumbs.querySelectorAll('.qv-thumb').forEach((t, idx) =>
+        t.classList.toggle('active', idx === i)
+      );
+    };
+
+    qvThumbs.innerHTML = items.map((it, i) => {
+      if (it.type === 'img') {
+        return `<button type="button" class="qv-thumb" data-i="${i}"><img src="${it.src}" alt="" /></button>`;
+      }
+      if (it.type === 'video') {
+        return `<button type="button" class="qv-thumb qv-thumb-video" data-i="${i}" aria-label="Play video"></button>`;
+      }
+      return `<button type="button" class="qv-thumb" data-i="${i}">${it.html}</button>`;
+    }).join('');
+
+    // Hide the thumb strip entirely if there's only one item
+    qvThumbs.style.display = items.length > 1 ? '' : 'none';
+
+    qvThumbs.querySelectorAll('.qv-thumb').forEach(btn => {
+      btn.addEventListener('click', () => setActive(parseInt(btn.dataset.i, 10)));
+    });
+
+    setActive(0);
+  }
+
+  function renderDetails(jersey) {
+    const d = jersey.details || {};
+    const rows = [
+      { lbl: 'Fabric', val: d.fabric },
+      { lbl: 'Fit',    val: d.fit    },
+      { lbl: 'Care',   val: d.care   },
+      { lbl: 'Origin', val: d.origin },
+    ].filter(r => r.val);
+    if (rows.length === 0) { qvDetails.innerHTML = ''; return; }
+    qvDetails.innerHTML = `
+      <p class="qv-label">Product Details</p>
+      <ul class="qv-detail-list">
+        ${rows.map(r => `<li><span>${r.lbl}</span><strong>${r.val}</strong></li>`).join('')}
+      </ul>
+    `;
+  }
 
   function open(jerseyId) {
     const j = getJersey(jerseyId);
     if (!j) return;
     state = { jersey: j, size: 'M', qty: 1 };
-    qvImg.innerHTML = jerseySVG(j);
+
+    // Show SVG immediately as a fast first paint, then upgrade to real photos when they load
+    qvMain.innerHTML = jerseySVG(j);
+    qvThumbs.innerHTML = '';
+    qvThumbs.style.display = 'none';
+    loadGallery(j, (images, video) => {
+      if (state.jersey?.id === j.id) renderMedia(j, images, video);
+    });
+
     qvTag.textContent = j.edition;
     qvTag.className = 'qv-tag ' + j.tag;
     qvTitle.textContent = j.country;
@@ -573,6 +676,8 @@ function initQuickView() {
     qvAdd.textContent = j.inStock ? 'Add to Cart' : 'Notify Me on WhatsApp';
     qvWish.dataset.id = j.id;
     qvWish.classList.toggle('active', inWishlist(j.id));
+
+    renderDetails(j);
 
     modal.hidden = false;
     requestAnimationFrame(() => modal.classList.add('show'));

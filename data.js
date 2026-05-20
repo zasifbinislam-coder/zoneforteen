@@ -300,32 +300,55 @@ function deleteOrder(ref) {
 
 const ORDER_STATUSES = ['pending', 'confirmed', 'packed', 'shipped', 'delivered', 'cancelled'];
 
-/* ---------- JERSEY DATA ---------- */
+/* ---------- JERSEY DATA ----------
+   Each jersey supports up to 4 real photos and an optional video.
+   Drop files matching the naming convention in /images/jerseys/<id>/N.jpg
+   and /videos/jerseys/<id>.mp4 — they auto-appear in the Quick View modal.
+   The site falls back to the SVG illustration if no files exist yet.
+   See /images/README.md and /videos/README.md for details.
+*/
+const DEFAULT_DETAILS = {
+  fabric: 'Premium polyester · 100% breathable mesh',
+  fit:    'Slim athletic cut · True to Nike/Adidas international sizing',
+  care:   'Machine wash cold · Do not bleach · Hang dry · No iron on print',
+  origin: 'Manufactured for Zone14, Bangladesh',
+};
+function _jImgs(id, n)  { return Array.from({length: n}, (_, i) => `images/jerseys/${id}/${i+1}.jpg`); }
+function _jVideo(id)    { return `videos/jerseys/${id}.mp4`; }
+
 const JERSEYS = [
   /* ----- HOME KITS (in stock) ----- */
   {
     id: 'bra-home', country: 'Brazil', edition: 'Home Kit', tag: 'home',
     price: 1500, inStock: true, stockLeft: 8,
     palette: { primary: '#fbe10d', secondary: '#009c3b', accent: '#002776', stripes: false },
-    crest: 'CBF', number: '10'
+    crest: 'CBF', number: '10',
+    images: _jImgs('bra-home', 4), video: _jVideo('bra-home'),
+    details: { ...DEFAULT_DETAILS },
   },
   {
     id: 'arg-home', country: 'Argentina', edition: 'Home Kit', tag: 'home',
     price: 1500, inStock: true, stockLeft: 5,
     palette: { primary: '#75aadb', secondary: '#ffffff', accent: '#f6b40e', stripes: true },
-    crest: 'AFA', number: '10'
+    crest: 'AFA', number: '10',
+    images: _jImgs('arg-home', 4), video: _jVideo('arg-home'),
+    details: { ...DEFAULT_DETAILS },
   },
   {
     id: 'fra-home', country: 'France', edition: 'Home Kit', tag: 'home',
     price: 1500, inStock: true, stockLeft: 11,
     palette: { primary: '#1e3a8a', secondary: '#ffffff', accent: '#ef4135', stripes: false },
-    crest: 'FFF', number: '10'
+    crest: 'FFF', number: '10',
+    images: _jImgs('fra-home', 4), video: _jVideo('fra-home'),
+    details: { ...DEFAULT_DETAILS },
   },
   {
     id: 'esp-home', country: 'Spain', edition: 'Home Kit', tag: 'home',
     price: 1500, inStock: true, stockLeft: 7,
     palette: { primary: '#c60b1e', secondary: '#ffc400', accent: '#1a3a5e', stripes: false },
-    crest: 'RFEF', number: '9'
+    crest: 'RFEF', number: '9',
+    images: _jImgs('esp-home', 4), video: _jVideo('esp-home'),
+    details: { ...DEFAULT_DETAILS },
   },
 
   /* ----- AWAY KITS (out of stock — restock soon) ----- */
@@ -333,25 +356,33 @@ const JERSEYS = [
     id: 'bra-away', country: 'Brazil', edition: 'Away Kit', tag: 'away',
     price: 1500, inStock: false, stockLeft: 0,
     palette: { primary: '#002776', secondary: '#fbe10d', accent: '#009c3b', stripes: false },
-    crest: 'CBF', number: '11'
+    crest: 'CBF', number: '11',
+    images: _jImgs('bra-away', 4), video: _jVideo('bra-away'),
+    details: { ...DEFAULT_DETAILS },
   },
   {
     id: 'arg-away', country: 'Argentina', edition: 'Away Kit', tag: 'away',
     price: 1500, inStock: false, stockLeft: 0,
     palette: { primary: '#1a1a3e', secondary: '#75aadb', accent: '#f6b40e', stripes: false },
-    crest: 'AFA', number: '10'
+    crest: 'AFA', number: '10',
+    images: _jImgs('arg-away', 4), video: _jVideo('arg-away'),
+    details: { ...DEFAULT_DETAILS },
   },
   {
     id: 'fra-away', country: 'France', edition: 'Away Kit', tag: 'away',
     price: 1500, inStock: false, stockLeft: 0,
     palette: { primary: '#f4eedb', secondary: '#1e3a8a', accent: '#ef4135', stripes: false },
-    crest: 'FFF', number: '7'
+    crest: 'FFF', number: '7',
+    images: _jImgs('fra-away', 4), video: _jVideo('fra-away'),
+    details: { ...DEFAULT_DETAILS },
   },
   {
     id: 'esp-away', country: 'Spain', edition: 'Away Kit', tag: 'away',
     price: 1500, inStock: false, stockLeft: 0,
     palette: { primary: '#0a1f44', secondary: '#c60b1e', accent: '#ffc400', stripes: false },
-    crest: 'RFEF', number: '6'
+    crest: 'RFEF', number: '6',
+    images: _jImgs('esp-away', 4), video: _jVideo('esp-away'),
+    details: { ...DEFAULT_DETAILS },
   },
 ];
 

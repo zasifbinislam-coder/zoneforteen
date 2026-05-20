@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <title>Contact · Zone14</title>
+  <meta name="description" content="Contact Zone14 — WhatsApp, phone, email, store address. We reply within minutes." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" type="image/svg+xml" href="logo/favicon.svg" />
+</head>
+<body class="page-static">
+
+  <header id="navbar" class="navbar order-nav scrolled">
+    <div class="container nav-inner">
+      <a href="index.html" class="logo"><img class="logo-mark" src="logo/main.png" alt="Zone14" /></a>
+      <a href="index.html" class="back-link">← Back to Shop</a>
+    </div>
+  </header>
+
+  <main class="static-page">
+    <div class="container">
+      <header class="static-head">
+        <p class="eyebrow">We're here to help</p>
+        <h1 class="section-title">Contact <span class="accent">Us</span></h1>
+        <p class="section-sub">Fastest reply on WhatsApp · Usually under 5 minutes between 10am–10pm.</p>
+      </header>
+
+      <div class="contact-grid">
+        <div class="contact-info">
+          <div class="contact-item">
+            <div class="contact-ico">💬</div>
+            <h3>WhatsApp</h3>
+            <p><a href="https://wa.me/8801723360078">+880 1723-360078</a></p>
+            <p class="muted">Tap to start chat</p>
+          </div>
+          <div class="contact-item">
+            <div class="contact-ico">📞</div>
+            <h3>Phone</h3>
+            <p><a href="tel:+8801723360078">+880 1723-360078</a></p>
+            <p class="muted">10am – 10pm · Every day</p>
+          </div>
+          <div class="contact-item">
+            <div class="contact-ico">✉️</div>
+            <h3>Email</h3>
+            <p><a href="mailto:hello@zone14.bd">hello@zone14.bd</a></p>
+            <p class="muted">For wholesale &amp; team orders</p>
+          </div>
+          <div class="contact-item">
+            <div class="contact-ico">📍</div>
+            <h3>Location</h3>
+            <p>Dhanmondi, Dhaka<br/>Bangladesh</p>
+            <p class="muted">Pickup available — message first</p>
+          </div>
+          <div class="contact-item">
+            <div class="contact-ico">📱</div>
+            <h3>Social</h3>
+            <p><a href="https://facebook.com">Facebook</a> · <a href="https://instagram.com">Instagram</a></p>
+            <p class="muted">@zone14bd</p>
+          </div>
+        </div>
+
+        <form id="contactForm" class="contact-form" novalidate>
+          <h3>Send us a message</h3>
+          <div class="form-row full">
+            <label>Your Name<input type="text" name="name" required placeholder="Your name" /></label>
+          </div>
+          <div class="form-row full">
+            <label>WhatsApp / Phone<input type="tel" name="phone" required placeholder="01XXXXXXXXX" /></label>
+          </div>
+          <div class="form-row full">
+            <label>Subject<input type="text" name="subject" required placeholder="What's this about?" /></label>
+          </div>
+          <div class="form-row full">
+            <label>Message<textarea name="message" required placeholder="Tell us how we can help..." rows="5"></textarea></label>
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg" style="width:100%">Send via WhatsApp</button>
+          <p class="muted" style="text-align:center;margin-top:14px;font-size:12px">Opens WhatsApp with your message pre-filled</p>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-bottom">
+      <div class="container">
+        <p>© <span id="year"></span> Zone14 · All rights reserved · <a href="about.html">About</a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · <a href="shipping.html">Shipping</a> · <a href="refund.html">Refund</a></p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+    document.getElementById('contactForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const f = e.target;
+      if (!f.checkValidity()) { f.reportValidity(); return; }
+      const fd = new FormData(f);
+      const msg = encodeURIComponent(
+        `Hi Zone14! I'd like to get in touch.\n\n` +
+        `Name: ${fd.get('name')}\n` +
+        `Phone: ${fd.get('phone')}\n` +
+        `Subject: ${fd.get('subject')}\n\n` +
+        `${fd.get('message')}`
+      );
+      window.open(`https://wa.me/8801723360078?text=${msg}`, '_blank');
+    });
+  </script>
+</body>
+</html>
