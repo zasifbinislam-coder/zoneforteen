@@ -1409,8 +1409,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initCartPill();
   initNewsletter();
 
-  // Star players + conversion features
-  renderPlayers();
+  // Conversion features
   initWishlist();
   initSocialProof();
   initQuickView();
