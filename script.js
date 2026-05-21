@@ -1407,11 +1407,9 @@ document.addEventListener('DOMContentLoaded', () => {
   initReviews();
   initYear();
   initCartPill();
-  initNewsletter();
 
   // Conversion features
   initWishlist();
-  initSocialProof();
   initQuickView();
 
   // Video showcase
