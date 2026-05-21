@@ -412,6 +412,135 @@ const PREDICTION_CHOICES = [
   { value: 'away', label: 'WIN' },
 ];
 
+/* ============================================================
+   MEDIA LIBRARY — admin-uploaded photos & videos per jersey
+   ============================================================
+   Two modes:
+     1. LOCAL  — files stored as Base64 in localStorage.
+                 Works immediately, no setup. Visible only on the
+                 admin's own browser (localStorage is per-device).
+                 Cap: ~3 MB per file, ~5 MB total.
+     2. CLOUD  — uploads pushed to Cloudinary via an unsigned preset.
+                 Cross-device, CDN-served, video support, no size cap.
+                 Setup (2 min):
+                   • Create free account at cloudinary.com
+                   • Settings → Upload → "Add upload preset"
+                     – Signing Mode: Unsigned
+                     – Folder: zone14
+                   • Paste your cloud name + preset name below
+*/
+const CLOUDINARY = {
+  cloudName: '',          // e.g. 'zone14bd' — leave '' for local-only mode
+  uploadPreset: '',       // e.g. 'zone14_unsigned'
+};
+function isCloudConfigured() {
+  return !!(CLOUDINARY.cloudName && CLOUDINARY.uploadPreset);
+}
+async function cloudUpload(file) {
+  if (!isCloudConfigured()) throw new Error('Cloudinary not configured');
+  const isVideo = file.type.startsWith('video/');
+  const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY.cloudName}/${isVideo ? 'video' : 'image'}/upload`;
+  const fd  = new FormData();
+  fd.append('file', file);
+  fd.append('upload_preset', CLOUDINARY.uploadPreset);
+  fd.append('folder', 'zone14');
+  const res = await fetch(url, { method: 'POST', body: fd });
+  if (!res.ok) throw new Error('Upload failed: ' + res.status);
+  const json = await res.json();
+  return json.secure_url;
+}
+
+const MEDIA_KEY = 'zone14_media_v1';
+function readMedia() {
+  try { return JSON.parse(localStorage.getItem(MEDIA_KEY)) || {}; }
+  catch (_) { return {}; }
+}
+function writeMedia(obj) {
+  try {
+    localStorage.setItem(MEDIA_KEY, JSON.stringify(obj));
+    window.dispatchEvent(new CustomEvent('media:change'));
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+/* Asset shape: { id, jerseyId, type: 'image'|'video', url, name, size, uploadedAt }
+   Storage shape: { [jerseyId]: { images: Asset[], videos: Asset[] } }      */
+function getJerseyMedia(jerseyId) {
+  const m = readMedia();
+  return m[jerseyId] || { images: [], videos: [] };
+}
+function listAllAssets() {
+  const m = readMedia();
+  const out = [];
+  Object.entries(m).forEach(([jid, bucket]) => {
+    (bucket.images || []).forEach(a => out.push({ ...a, jerseyId: jid, type: 'image' }));
+    (bucket.videos || []).forEach(a => out.push({ ...a, jerseyId: jid, type: 'video' }));
+  });
+  return out;
+}
+function addAsset(jerseyId, asset) {
+  const m = readMedia();
+  if (!m[jerseyId]) m[jerseyId] = { images: [], videos: [] };
+  const bucket = asset.type === 'video' ? 'videos' : 'images';
+  m[jerseyId][bucket].push(asset);
+  return writeMedia(m);
+}
+function removeAsset(jerseyId, assetId) {
+  const m = readMedia();
+  if (!m[jerseyId]) return;
+  m[jerseyId].images = (m[jerseyId].images || []).filter(a => a.id !== assetId);
+  m[jerseyId].videos = (m[jerseyId].videos || []).filter(a => a.id !== assetId);
+  writeMedia(m);
+}
+function clearAllMedia() {
+  localStorage.removeItem(MEDIA_KEY);
+  window.dispatchEvent(new CustomEvent('media:change'));
+}
+
+/* Read a File into a Base64 data URL — used for local-mode uploads */
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload  = () => resolve(r.result);
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(file);
+  });
+}
+
+/* Estimate current localStorage media-bucket size in bytes (rough) */
+function mediaStorageBytes() {
+  try { return new Blob([localStorage.getItem(MEDIA_KEY) || '']).size; }
+  catch (_) { return 0; }
+}
+
+/* ============================================================
+   VIDEO SHOWCASE — landing-page video grid (above Reviews)
+   ============================================================ */
+const VIDEO_SHOWCASE = [
+  {
+    id: 'arg-unbox',  jerseyId: 'arg-home', title: 'Argentina Home · Unboxing',
+    subtitle: 'Hand-stitched crest, premium mesh — close-up review',
+    duration: '0:42',
+  },
+  {
+    id: 'bra-fit',    jerseyId: 'bra-home', title: 'Brazil Home · Fit & Drape',
+    subtitle: 'How the slim athletic cut sits on size L',
+    duration: '0:58',
+  },
+  {
+    id: 'fra-360',    jerseyId: 'fra-home', title: 'France Home · 360° Spin',
+    subtitle: 'Every angle — front, back, sleeves, hem stripe',
+    duration: '0:35',
+  },
+  {
+    id: 'esp-print',  jerseyId: 'esp-home', title: 'Spain Home · Custom Print',
+    subtitle: 'PEDRI 8 heat-pressed — durability test',
+    duration: '1:12',
+  },
+];
+
 /* ---------- JERSEY DATA ----------
    Each jersey supports up to 4 real photos and an optional video.
    Drop files matching the naming convention in /images/jerseys/<id>/N.jpg

@@ -110,9 +110,9 @@
         <a href="#home">Home</a>
         <a href="#jerseys">Jerseys</a>
         <a href="#matches">Matches</a>
+        <a href="#videos">Videos</a>
         <a href="#offers">Offers</a>
         <a href="#reviews">Reviews</a>
-        <a href="#faq">FAQ</a>
       </nav>
 
       <div class="nav-cta">
@@ -416,6 +416,31 @@
         <p>Good luck. Check the <strong>Predictions</strong> tab to see where you rank after the match.</p>
         <button type="button" class="btn btn-ghost" data-predict-close>Close</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ============ VIDEO SHOWCASE ============ -->
+  <section id="videos" class="section section-videos">
+    <div class="container">
+      <header class="section-head reveal">
+        <p class="eyebrow">Watch The Kits</p>
+        <h2 class="section-title">Jersey <span class="accent">Videos</span></h2>
+        <p class="section-sub">See the fit, the fabric, the print quality — before you order.</p>
+      </header>
+
+      <div class="video-grid" id="videoGrid">
+        <!-- populated by JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ VIDEO PLAYER MODAL ============ -->
+  <div id="videoModal" class="video-modal" role="dialog" aria-modal="true" hidden>
+    <div class="qv-backdrop" data-vid-close></div>
+    <div class="video-modal-card">
+      <button class="qv-close" data-vid-close aria-label="Close">×</button>
+      <div class="video-modal-player" id="videoModalPlayer"></div>
+      <div class="video-modal-meta" id="videoModalMeta"></div>
     </div>
   </div>
 

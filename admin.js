@@ -77,9 +77,192 @@ function bootDashboard() {
 
   render();
   renderResults();
-  window.addEventListener('storage', () => { render(); renderResults(); });
+  initMediaLibrary();
+  window.addEventListener('storage', () => { render(); renderResults(); renderMediaGallery(); });
   window.addEventListener('predictions:change', renderResults);
   window.addEventListener('results:change',     renderResults);
+  window.addEventListener('media:change',       renderMediaGallery);
+}
+
+/* ============================================================
+   MEDIA LIBRARY — admin uploads
+   ============================================================ */
+const MAX_LOCAL_FILE_BYTES = 3 * 1024 * 1024;        // 3 MB per file in local mode
+const MAX_LOCAL_TOTAL_BYTES = 4.5 * 1024 * 1024;     // ~5 MB localStorage budget
+
+function initMediaLibrary() {
+  // Mode banner
+  const banner = document.getElementById('mediaModeBanner');
+  if (banner) {
+    if (isCloudConfigured()) {
+      banner.innerHTML = `☁️ <strong style="color:var(--neon)">Cloud mode</strong> · Uploads go to Cloudinary, visible to every visitor`;
+    }
+  }
+  document.getElementById('mediaCloudHint').addEventListener('click', e => {
+    e.preventDefault();
+    alert(
+      'To enable cloud uploads (visible to every visitor):\n\n' +
+      '1. Sign up at cloudinary.com (free)\n' +
+      '2. Settings → Upload → "Add upload preset"\n' +
+      '   – Signing Mode: Unsigned\n' +
+      '   – Folder: zone14\n' +
+      '3. Open data.js in your repo\n' +
+      '4. Set CLOUDINARY.cloudName + CLOUDINARY.uploadPreset\n' +
+      '5. git commit + push — Vercel redeploys with cloud mode on'
+    );
+  });
+
+  // Populate jersey selector
+  const sel = document.getElementById('mediaJerseySelect');
+  sel.innerHTML = JERSEYS.map(j =>
+    `<option value="${j.id}">${j.country} — ${j.edition}</option>`
+  ).join('');
+
+  // Drop zone + file picker
+  const drop  = document.getElementById('mediaDrop');
+  const input = document.getElementById('mediaFileInput');
+  drop.addEventListener('click', () => input.click());
+  drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag-over'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('drag-over'));
+  drop.addEventListener('drop', e => {
+    e.preventDefault();
+    drop.classList.remove('drag-over');
+    handleFiles(e.dataTransfer.files);
+  });
+  input.addEventListener('change', () => handleFiles(input.files));
+
+  renderMediaGallery();
+}
+
+async function handleFiles(fileList) {
+  const sel = document.getElementById('mediaJerseySelect');
+  const jerseyId = sel.value;
+  if (!jerseyId) return;
+
+  const warn = document.getElementById('mediaSizeWarn');
+  warn.hidden = true;
+
+  const files = Array.from(fileList);
+  for (const file of files) {
+    try {
+      await uploadOne(jerseyId, file, warn);
+    } catch (err) {
+      warn.hidden = false;
+      warn.textContent = `✗ ${file.name}: ${err.message}`;
+      console.warn(err);
+    }
+  }
+  renderMediaGallery();
+}
+
+async function uploadOne(jerseyId, file, warnEl) {
+  const isVideo = file.type.startsWith('video/');
+  const cloudOn = isCloudConfigured();
+
+  // Size guard for local mode
+  if (!cloudOn) {
+    if (file.size > MAX_LOCAL_FILE_BYTES) {
+      throw new Error(`File too large for local mode (${formatBytes(file.size)} / ${formatBytes(MAX_LOCAL_FILE_BYTES)} max). Enable cloud mode for unlimited uploads.`);
+    }
+    if (mediaStorageBytes() + file.size * 1.4 > MAX_LOCAL_TOTAL_BYTES) {
+      throw new Error('Local storage almost full. Remove some files or enable cloud mode.');
+    }
+    if (isVideo) {
+      warnEl.hidden = false;
+      warnEl.textContent = '⚠️ Videos in local mode are size-limited — Cloudinary recommended for video.';
+    }
+  }
+
+  // Upload + persist
+  let url;
+  if (cloudOn) {
+    url = await cloudUpload(file);
+  } else {
+    url = await fileToDataUrl(file);
+  }
+
+  const ok = addAsset(jerseyId, {
+    id:    'a_' + Math.random().toString(36).slice(2, 10),
+    type:  isVideo ? 'video' : 'image',
+    url,
+    name:  file.name,
+    size:  file.size,
+    uploadedAt: Date.now(),
+  });
+  if (!ok) throw new Error('Could not save — localStorage rejected the write (likely full).');
+}
+
+function renderMediaGallery() {
+  const wrap = document.getElementById('mediaGallery');
+  if (!wrap) return;
+  const stats = document.getElementById('mediaStats');
+
+  const all = listAllAssets();
+  const usedBytes = mediaStorageBytes();
+  const pct = Math.round((usedBytes / MAX_LOCAL_TOTAL_BYTES) * 100);
+
+  if (stats) {
+    stats.innerHTML = isCloudConfigured()
+      ? `${all.length} file${all.length === 1 ? '' : 's'} uploaded · ☁️ Cloudinary`
+      : `${all.length} file${all.length === 1 ? '' : 's'} · ${formatBytes(usedBytes)} used (${pct}% of local cap)`;
+  }
+
+  if (all.length === 0) {
+    wrap.innerHTML = `
+      <div class="media-empty">
+        <div class="media-empty-ico">🖼️</div>
+        <p>No uploads yet. Pick a jersey above and drop in some photos.</p>
+      </div>`;
+    return;
+  }
+
+  // Group by jersey for display
+  const byJersey = {};
+  all.forEach(a => {
+    if (!byJersey[a.jerseyId]) byJersey[a.jerseyId] = [];
+    byJersey[a.jerseyId].push(a);
+  });
+
+  wrap.innerHTML = Object.entries(byJersey).map(([jid, assets]) => {
+    const j = getJersey(jid);
+    return `
+      <div class="media-group">
+        <h4>${j ? `${j.country} · ${j.edition}` : jid} <span>${assets.length} file${assets.length === 1 ? '' : 's'}</span></h4>
+        <div class="media-tiles">
+          ${assets.map(a => `
+            <div class="media-tile" data-jid="${jid}" data-aid="${a.id}">
+              ${a.type === 'image'
+                ? `<img src="${a.url}" alt="${a.name}" />`
+                : `<video src="${a.url}" muted preload="metadata"></video><span class="media-tile-play">▶</span>`}
+              <button type="button" class="media-tile-del" title="Delete">×</button>
+              <span class="media-tile-name">${a.name}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>`;
+  }).join('');
+
+  wrap.querySelectorAll('.media-tile-del').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const tile = btn.closest('.media-tile');
+      if (!confirm('Delete this file?')) return;
+      removeAsset(tile.dataset.jid, tile.dataset.aid);
+      renderMediaGallery();
+    });
+  });
+
+  // Click image/video to open in new tab
+  wrap.querySelectorAll('.media-tile').forEach(tile => {
+    const media = tile.querySelector('img, video');
+    if (media) tile.addEventListener('click', () => window.open(media.src, '_blank'));
+  });
+}
+
+function formatBytes(n) {
+  if (n < 1024) return n + ' B';
+  if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+  return (n / 1024 / 1024).toFixed(2) + ' MB';
 }
 
 /* ---------- Match results entry ---------- */

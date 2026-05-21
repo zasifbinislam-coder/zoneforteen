@@ -87,6 +87,33 @@
         </div>
       </section>
 
+      <!-- Media Library — admin uploads jersey photos & videos -->
+      <section class="admin-media">
+        <header class="admin-section-head">
+          <h2>📸 Media Library</h2>
+          <p id="mediaModeBanner">Local-only mode · Uploads visible on this browser. <a href="#" id="mediaCloudHint">How to enable cloud uploads →</a></p>
+        </header>
+
+        <div class="media-controls">
+          <label class="media-jersey-pick">
+            <span>Upload for jersey</span>
+            <select id="mediaJerseySelect"></select>
+          </label>
+          <div class="media-drop" id="mediaDrop">
+            <input type="file" id="mediaFileInput" accept="image/*,video/*" multiple hidden />
+            <div class="media-drop-inner">
+              <svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"><path d="M19 13v6H5v-6H3v8h18v-8h-2zm-7-9L6 10h4v6h4v-6h4l-6-6z"/></svg>
+              <p><strong>Click or drop files here</strong></p>
+              <p class="media-drop-hint">Photos (JPG/PNG/WebP) and videos (MP4). Multiple files OK.</p>
+              <p class="media-drop-warn" id="mediaSizeWarn" hidden></p>
+            </div>
+          </div>
+          <div class="media-stats" id="mediaStats"></div>
+        </div>
+
+        <div class="media-gallery" id="mediaGallery"><!-- populated --></div>
+      </section>
+
       <!-- Match Results entry (drives the prediction leaderboard) -->
       <section class="admin-results">
         <header class="admin-section-head">

@@ -14,8 +14,12 @@ function renderJerseys() {
       : (j.stockLeft <= 6
           ? `<span class="stock-badge low">Only ${j.stockLeft} left</span>`
           : `<span class="stock-badge ok">In Stock</span>`);
-    const primaryPhoto = (j.images && j.images[0]) || '';
-    // Always render the SVG as the base layer. If a real photo path is set,
+    // Prefer admin-uploaded photo first, then declared data.js path, else SVG.
+    const adminMedia   = getJerseyMedia(j.id);
+    const adminPhoto   = (adminMedia.images[0] && adminMedia.images[0].url) || '';
+    const declaredPath = (j.images && j.images[0]) || '';
+    const primaryPhoto = adminPhoto || declaredPath;
+    // Always render the SVG as the base layer. If a photo source exists,
     // overlay it on top — and if that photo 404s, simply hide it so the SVG
     // underneath stays visible. No fragile parentNode lookups.
     const photoOverlay = primaryPhoto
@@ -404,6 +408,131 @@ function initCartPill() {
 }
 
 /* ============================================================
+   VIDEO SHOWCASE — landing-page grid + modal player
+   ============================================================ */
+function renderVideoShowcase() {
+  const grid = document.getElementById('videoGrid');
+  if (!grid) return;
+
+  // Build a list combining admin-uploaded videos (per jersey) with the
+  // declarative VIDEO_SHOWCASE cards. Admin uploads come first if present.
+  const adminVideos = [];
+  JERSEYS.forEach(j => {
+    const media = getJerseyMedia(j.id);
+    (media.videos || []).forEach(v => {
+      adminVideos.push({
+        id: 'admin-' + v.id,
+        jerseyId: j.id,
+        title: `${j.country} ${j.edition}`,
+        subtitle: v.name,
+        duration: '',
+        url: v.url,
+        poster: (media.images[0] && media.images[0].url) || '',
+      });
+    });
+  });
+
+  const declared = VIDEO_SHOWCASE.map(v => {
+    const jersey = getJersey(v.jerseyId);
+    const media = jersey ? getJerseyMedia(jersey.id) : null;
+    const jerseyVid = media && media.videos[0];
+    return {
+      ...v,
+      url: jerseyVid ? jerseyVid.url : '',
+      poster: (media && media.images[0] && media.images[0].url) || '',
+      jersey,
+    };
+  });
+
+  const list = [...adminVideos, ...declared].slice(0, 8);
+
+  if (list.length === 0) {
+    grid.innerHTML = `
+      <div class="video-empty">
+        <div class="video-empty-ico">🎬</div>
+        <p>Videos coming soon — we're shooting product walkthroughs for every kit.</p>
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = list.map(v => {
+    const hasVideo = !!v.url;
+    const j = v.jersey || (v.jerseyId ? getJersey(v.jerseyId) : null);
+    const posterHtml = v.poster
+      ? `<img class="vc-poster" src="${v.poster}" alt="${v.title}" loading="lazy" />`
+      : (j ? `<div class="vc-svg">${jerseySVG(j)}</div>` : '');
+    return `
+      <article class="video-card reveal${hasVideo ? '' : ' coming-soon'}" data-vid="${v.id}">
+        <div class="vc-media">
+          ${posterHtml}
+          <div class="vc-overlay">
+            ${hasVideo
+              ? `<span class="vc-play"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>`
+              : `<span class="vc-soon">Coming Soon</span>`}
+            ${v.duration ? `<span class="vc-duration">${v.duration}</span>` : ''}
+          </div>
+        </div>
+        <div class="vc-body">
+          <h3 class="vc-title">${v.title}</h3>
+          <p class="vc-sub">${v.subtitle || ''}</p>
+        </div>
+      </article>
+    `;
+  }).join('');
+
+  // Wire clicks
+  grid.querySelectorAll('.video-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const v = list.find(x => x.id === card.dataset.vid);
+      if (!v || !v.url) return;
+      openVideoModal(v);
+    });
+  });
+
+  if (typeof revealObserver !== 'undefined') {
+    grid.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+  }
+}
+
+function openVideoModal(video) {
+  const modal = document.getElementById('videoModal');
+  const player = document.getElementById('videoModalPlayer');
+  const meta   = document.getElementById('videoModalMeta');
+  if (!modal) return;
+
+  player.innerHTML = `
+    <video src="${video.url}" controls autoplay playsinline ${video.poster ? `poster="${video.poster}"` : ''}></video>
+  `;
+  meta.innerHTML = `
+    <h3>${video.title}</h3>
+    ${video.subtitle ? `<p>${video.subtitle}</p>` : ''}
+    ${video.jerseyId ? `<a class="btn btn-primary btn-sm" href="#jerseys">Shop this kit →</a>` : ''}
+  `;
+
+  modal.hidden = false;
+  requestAnimationFrame(() => modal.classList.add('show'));
+  document.body.style.overflow = 'hidden';
+}
+
+function initVideoModal() {
+  const modal = document.getElementById('videoModal');
+  if (!modal) return;
+  const close = () => {
+    modal.classList.remove('show');
+    // stop the video on close
+    const v = modal.querySelector('video');
+    if (v) v.pause();
+    setTimeout(() => {
+      modal.hidden = true;
+      document.body.style.overflow = '';
+      document.getElementById('videoModalPlayer').innerHTML = '';
+    }, 250);
+  };
+  modal.querySelectorAll('[data-vid-close]').forEach(el => el.addEventListener('click', close));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !modal.hidden) close(); });
+}
+
+/* ============================================================
    STAR PLAYERS — customization upsell
    ============================================================ */
 function renderPlayers() {
@@ -561,9 +690,21 @@ function initQuickView() {
   const qvWish    = document.getElementById('qvWishlist');
   const qvDetails = document.getElementById('qvDetails');
 
-  /* Build gallery — try each declared image; only show ones that successfully load.
-     Falls back gracefully to the SVG if no real photos are available. */
+  /* Build gallery — admin-uploaded media first, then declared paths, then SVG.
+     Only shows images that successfully load. */
   function loadGallery(jersey, onReady) {
+    // Admin uploads win
+    const adminMedia = getJerseyMedia(jersey.id);
+    const adminImgs  = adminMedia.images.map(a => a.url);
+    const adminVid   = adminMedia.videos[0] && adminMedia.videos[0].url;
+
+    if (adminImgs.length > 0 || adminVid) {
+      // Skip the probe — admin uploads are trusted to be valid
+      onReady(adminImgs, adminVid || null);
+      return;
+    }
+
+    // Fallback: probe declared paths in data.js
     const candidates = jersey.images || [];
     if (candidates.length === 0) { onReady([], null); return; }
 
@@ -578,7 +719,6 @@ function initQuickView() {
 
     function finish() {
       const validImages = results.filter(Boolean);
-      // Check if a video exists too — single HEAD-equivalent via element load
       if (!jersey.video) { onReady(validImages, null); return; }
       const probe = document.createElement('video');
       probe.preload = 'metadata';
@@ -1274,6 +1414,16 @@ document.addEventListener('DOMContentLoaded', () => {
   initWishlist();
   initSocialProof();
   initQuickView();
+
+  // Video showcase
+  renderVideoShowcase();
+  initVideoModal();
+
+  // Re-render gallery + cards when admin uploads media (cross-tab sync)
+  window.addEventListener('media:change', () => { renderJerseys(); renderVideoShowcase(); });
+  window.addEventListener('storage', e => {
+    if (e.key === MEDIA_KEY) { renderJerseys(); renderVideoShowcase(); }
+  });
 
   // Match Hub
   renderFeatured();
