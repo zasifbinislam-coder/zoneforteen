@@ -491,6 +491,7 @@ function hookPlaceOrder() {
 
     // Show success modal
     document.getElementById('orderRef').textContent = ref;
+    document.getElementById('successTrackLink').href = `track.html?ref=${ref}`;
     document.getElementById('orderSuccess').classList.add('show');
     clearCart();
     rerender();

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <title>Track Your Order · Zone14</title>
+  <meta name="description" content="Track your Zone14 jersey order in real time — status, items, and delivery details." />
+  <meta name="robots" content="noindex,nofollow" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" type="image/svg+xml" href="logo/favicon.svg" />
+</head>
+<body class="page-track">
+
+  <header id="navbar" class="navbar order-nav scrolled">
+    <div class="container nav-inner">
+      <a href="index.html" class="logo"><img class="logo-mark" src="logo/main.png" alt="Zone14" /></a>
+      <a href="index.html" class="back-link">← Back to Shop</a>
+    </div>
+  </header>
+
+  <main class="track-page">
+    <div class="container narrow">
+      <header class="track-head">
+        <p class="eyebrow">Order Tracking</p>
+        <h1 class="section-title">Track Your <span class="accent">Order</span></h1>
+      </header>
+
+      <!-- Lookup form (shown when no ref in URL or ref not found) -->
+      <div id="trackLookup" class="track-lookup" hidden>
+        <p class="track-lookup-msg" id="trackLookupMsg">
+          Enter your order reference to see its status.
+        </p>
+        <form id="trackLookupForm" class="track-lookup-form">
+          <input type="text" id="trackInput" placeholder="Z14-XXXXXX" autocomplete="off"
+                 pattern="Z14-[A-Z0-9]{6}" required />
+          <button type="submit" class="btn btn-primary btn-lg">Track</button>
+        </form>
+        <p class="track-help">
+          Your order reference was sent to you via WhatsApp when you placed your order.
+          Can't find it? <a href="https://wa.me/8801723360078" target="_blank" rel="noopener">WhatsApp us</a>.
+        </p>
+      </div>
+
+      <!-- Order detail (shown when a valid order is loaded) -->
+      <article id="trackDetail" class="track-detail" hidden>
+        <header class="td-head">
+          <div>
+            <p class="td-ref-label">Order Reference</p>
+            <h2 class="td-ref" id="tdRef">Z14-XXXXXX</h2>
+            <p class="td-date" id="tdDate"></p>
+          </div>
+          <span class="td-status" id="tdStatus">Pending</span>
+        </header>
+
+        <!-- Timeline -->
+        <ol class="track-timeline" id="tdTimeline">
+          <!-- populated by JS -->
+        </ol>
+
+        <!-- Items -->
+        <section class="td-block">
+          <h3>Items</h3>
+          <ul class="td-items" id="tdItems"></ul>
+          <div id="tdCustom" class="td-custom" hidden></div>
+        </section>
+
+        <!-- Bill -->
+        <section class="td-block">
+          <h3>Bill</h3>
+          <div class="td-bill" id="tdBill"></div>
+        </section>
+
+        <!-- Delivery -->
+        <section class="td-block">
+          <h3>Delivery</h3>
+          <p class="td-delivery" id="tdDelivery"></p>
+          <p class="td-payment" id="tdPayment"></p>
+        </section>
+
+        <div class="td-actions">
+          <a id="tdWhatsapp" href="#" target="_blank" rel="noopener" class="btn btn-whatsapp">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M20.52 3.48A11.86 11.86 0 0012.04 0C5.46 0 .12 5.34.12 11.92c0 2.1.55 4.15 1.6 5.96L0 24l6.27-1.64a11.9 11.9 0 005.77 1.47h.01c6.58 0 11.92-5.34 11.92-11.92 0-3.18-1.24-6.17-3.45-8.43z"/></svg>
+            Message Zone14
+          </a>
+          <button type="button" id="tdPrint" class="btn btn-ghost">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 8h-1V3H6v5H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zM8 5h8v3H8V5zm8 14H8v-4h8v4zm3-6H5v-2h14v2z"/></svg>
+            Print Receipt
+          </button>
+          <a href="index.html#jerseys" class="btn btn-ghost">Shop Again</a>
+        </div>
+      </article>
+    </div>
+  </main>
+
+  <footer class="footer no-print">
+    <div class="footer-bottom">
+      <div class="container">
+        <p>© <span id="year"></span> Zone14 · <a href="about.html">About</a> · <a href="shipping.html">Shipping</a> · <a href="refund.html">Refund</a> · <a href="contact.html">Contact</a></p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="track.js"></script>
+</body>
+</html>
