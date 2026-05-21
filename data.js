@@ -300,6 +300,118 @@ function deleteOrder(ref) {
 
 const ORDER_STATUSES = ['pending', 'confirmed', 'packed', 'shipped', 'delivered', 'cancelled'];
 
+/* ============================================================
+   MATCH PREDICTIONS + RESULTS (localStorage-backed for now)
+   When you wire a real backend, swap these helpers and the rest
+   of the app keeps working unchanged.
+   ============================================================ */
+const PREDICTIONS_KEY = 'zone14_predictions_v1';
+const RESULTS_KEY     = 'zone14_results_v1';
+const PREDICTOR_KEY   = 'zone14_predictor_name'; // remembers visitor's name
+
+function readPredictions() {
+  try { return JSON.parse(localStorage.getItem(PREDICTIONS_KEY)) || []; }
+  catch (_) { return []; }
+}
+function writePredictions(list) {
+  localStorage.setItem(PREDICTIONS_KEY, JSON.stringify(list));
+  window.dispatchEvent(new CustomEvent('predictions:change'));
+}
+function savePrediction(matchId, name, choice) {
+  const clean = name.trim();
+  if (!clean) return false;
+  const list = readPredictions();
+  const idx = list.findIndex(p =>
+    p.matchId === matchId && p.name.toLowerCase() === clean.toLowerCase()
+  );
+  if (idx >= 0) {
+    list[idx].choice    = choice;
+    list[idx].updatedAt = Date.now();
+  } else {
+    list.push({
+      id:        'p_' + Math.random().toString(36).slice(2, 10),
+      matchId, name: clean, choice,
+      createdAt: Date.now(),
+    });
+  }
+  writePredictions(list);
+  localStorage.setItem(PREDICTOR_KEY, clean);   // remember for next time
+  return true;
+}
+function getPredictorName() {
+  return localStorage.getItem(PREDICTOR_KEY) || '';
+}
+function getMyPrediction(matchId) {
+  const name = getPredictorName();
+  if (!name) return null;
+  return readPredictions().find(p =>
+    p.matchId === matchId && p.name.toLowerCase() === name.toLowerCase()
+  ) || null;
+}
+
+function readResults() {
+  try { return JSON.parse(localStorage.getItem(RESULTS_KEY)) || {}; }
+  catch (_) { return {}; }
+}
+function writeResults(r) {
+  localStorage.setItem(RESULTS_KEY, JSON.stringify(r));
+  window.dispatchEvent(new CustomEvent('results:change'));
+}
+function saveResult(matchId, homeScore, awayScore) {
+  const home = Math.max(0, parseInt(homeScore, 10) || 0);
+  const away = Math.max(0, parseInt(awayScore, 10) || 0);
+  const r = readResults();
+  r[matchId] = {
+    homeScore: home,
+    awayScore: away,
+    outcome:   home > away ? 'home' : away > home ? 'away' : 'draw',
+    finishedAt: Date.now(),
+  };
+  writeResults(r);
+  return r[matchId];
+}
+function clearResult(matchId) {
+  const r = readResults();
+  delete r[matchId];
+  writeResults(r);
+}
+
+/* Compute leaderboard — aggregate predictions across all results */
+function computeLeaderboard() {
+  const preds   = readPredictions();
+  const results = readResults();
+  const tally   = {};
+
+  preds.forEach(p => {
+    const key = p.name.trim().toLowerCase();
+    if (!key) return;
+    if (!tally[key]) {
+      tally[key] = { name: p.name.trim(), correct: 0, scored: 0, pending: 0, total: 0 };
+    }
+    tally[key].total++;
+    const r = results[p.matchId];
+    if (r) {
+      tally[key].scored++;
+      if (r.outcome === p.choice) tally[key].correct++;
+    } else {
+      tally[key].pending++;
+    }
+  });
+
+  return Object.values(tally).sort((a, b) =>
+       b.correct - a.correct                   // most correct first
+    || (b.scored ? b.correct/b.scored : 0) - (a.scored ? a.correct/a.scored : 0) // then accuracy
+    || b.total - a.total                       // then most active
+    || a.name.localeCompare(b.name)
+  );
+}
+
+const PREDICTION_CHOICES = [
+  { value: 'home', label: 'WIN' },
+  { value: 'draw', label: 'DRAW' },
+  { value: 'away', label: 'WIN' },
+];
+
 /* ---------- JERSEY DATA ----------
    Each jersey supports up to 4 real photos and an optional video.
    Drop files matching the naming convention in /images/jerseys/<id>/N.jpg

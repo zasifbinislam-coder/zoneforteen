@@ -76,7 +76,88 @@ function bootDashboard() {
   });
 
   render();
-  window.addEventListener('storage', render); // cross-tab sync
+  renderResults();
+  window.addEventListener('storage', () => { render(); renderResults(); });
+  window.addEventListener('predictions:change', renderResults);
+  window.addEventListener('results:change',     renderResults);
+}
+
+/* ---------- Match results entry ---------- */
+function renderResults() {
+  const wrap = document.getElementById('resultsGrid');
+  if (!wrap) return;
+  const results = readResults();
+  const sorted = [...MATCHES].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  // Quick stats line
+  const totalPreds = readPredictions().length;
+  const resolved   = Object.keys(results).length;
+
+  wrap.innerHTML = `
+    <div class="results-stats">
+      <span><strong>${totalPreds}</strong> total predictions</span>
+      <span><strong>${resolved}</strong> matches with results</span>
+      <span><strong>${MATCHES.length - resolved}</strong> pending</span>
+    </div>
+    <div class="results-cards">
+      ${sorted.map(m => {
+        const home = COUNTRY[m.home] || { name: m.home };
+        const away = COUNTRY[m.away] || { name: m.away };
+        const r = results[m.id];
+        const preds = readPredictions().filter(p => p.matchId === m.id);
+        const correctCount = r ? preds.filter(p => p.choice === r.outcome).length : 0;
+        return `
+          <article class="result-card${r ? ' resolved' : ''}" data-mid="${m.id}">
+            <div class="rc-head">
+              <span class="rc-stage">${m.stage}</span>
+              <span class="rc-date">${new Date(m.date).toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' })}</span>
+            </div>
+            <div class="rc-teams">
+              <span class="rc-team">${flagImg(m.home)}<span>${home.name}</span></span>
+              <span class="rc-vs">VS</span>
+              <span class="rc-team">${flagImg(m.away)}<span>${away.name}</span></span>
+            </div>
+            <div class="rc-score">
+              <input type="number" min="0" max="20" class="rc-input" data-side="home"
+                     value="${r ? r.homeScore : ''}" placeholder="0" aria-label="${home.name} score" />
+              <span class="rc-dash">–</span>
+              <input type="number" min="0" max="20" class="rc-input" data-side="away"
+                     value="${r ? r.awayScore : ''}" placeholder="0" aria-label="${away.name} score" />
+            </div>
+            <div class="rc-actions">
+              ${r
+                ? `<button type="button" class="btn btn-ghost" data-clear-result>Clear Result</button>
+                   <span class="rc-meta">${preds.length} predictions · <strong>${correctCount} correct</strong></span>`
+                : `<button type="button" class="btn btn-primary" data-save-result>Save Result</button>
+                   <span class="rc-meta">${preds.length} prediction${preds.length === 1 ? '' : 's'} pending</span>`
+              }
+            </div>
+          </article>
+        `;
+      }).join('')}
+    </div>
+  `;
+
+  // Wire save/clear buttons
+  wrap.querySelectorAll('[data-save-result]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const card = btn.closest('.result-card');
+      const mid = card.dataset.mid;
+      const home = card.querySelector('[data-side=home]').value;
+      const away = card.querySelector('[data-side=away]').value;
+      if (home === '' || away === '') { alert('Enter both scores.'); return; }
+      saveResult(mid, home, away);
+      renderResults();
+    });
+  });
+  wrap.querySelectorAll('[data-clear-result]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const card = btn.closest('.result-card');
+      if (!confirm('Clear this result? Predictions will go back to pending.')) return;
+      clearResult(card.dataset.mid);
+      renderResults();
+    });
+  });
 }
 
 /* ---------- Render ---------- */

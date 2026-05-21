@@ -862,14 +862,49 @@ function renderMatchGrid() {
   const grid = document.getElementById('matchGrid');
   if (!grid) return;
   const sorted = [...MATCHES].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const results = readResults();
 
   grid.innerHTML = sorted.map(m => {
     const home = COUNTRY[m.home] || { name: m.home, bg: '#222', fg: '#fff' };
     const away = COUNTRY[m.away] || { name: m.away, bg: '#222', fg: '#fff' };
     const hasOurJersey = COUNTRY_TO_JERSEY[m.home] || COUNTRY_TO_JERSEY[m.away];
-    const ms = new Date(m.date).getTime() - Date.now();
+    const ts = new Date(m.date).getTime();
+    const ms = ts - Date.now();
+    const isUpcoming = ms > 0;
+    const result = results[m.id];
+    const myPred = getMyPrediction(m.id);
+
+    // Predict button label varies with state
+    let predictBtn = '';
+    if (result) {
+      const winLabel = result.outcome === 'home' ? home.name : result.outcome === 'away' ? away.name : 'Draw';
+      const myStatus = myPred
+        ? (myPred.choice === result.outcome
+            ? '<span class="my-pred correct">✓ You called it</span>'
+            : '<span class="my-pred wrong">✗ You picked ' + outcomeLabel(myPred.choice, m) + '</span>')
+        : '';
+      predictBtn = `
+        <div class="mc-final">
+          <span class="mc-final-score">${result.homeScore} – ${result.awayScore}</span>
+          <span class="mc-final-label">FT · Winner: <strong>${winLabel}</strong></span>
+          ${myStatus}
+        </div>`;
+    } else if (isUpcoming) {
+      const myMark = myPred
+        ? `<span class="mc-mypred">Your pick: ${outcomeLabel(myPred.choice, m)}</span>`
+        : '';
+      predictBtn = `
+        <button class="mc-predict-btn" type="button" data-predict="${m.id}">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6 4.4 2.3 7.4-6.3-4.6-6.3 4.6 2.3-7.4-6-4.4h7.6z"/></svg>
+          ${myPred ? 'Change your prediction' : 'Predict the winner'}
+        </button>
+        ${myMark}`;
+    } else {
+      predictBtn = `<div class="mc-final"><span class="mc-final-label">⏳ Match in progress · result pending</span></div>`;
+    }
+
     return `
-      <article class="match-card reveal ${hasOurJersey ? 'has-jersey' : ''}" data-ts="${new Date(m.date).getTime()}">
+      <article class="match-card reveal ${hasOurJersey ? 'has-jersey' : ''}" data-id="${m.id}" data-ts="${ts}">
         <div class="mc-head">
           <span class="mc-stage">${m.stage}</span>
           <span class="mc-date">${formatMatchDate(m.date)}</span>
@@ -891,7 +926,7 @@ function renderMatchGrid() {
             ${m.city} · ${formatBdLocalTime(m.date)}
           </div>
           <div class="mc-actions">
-            <span class="mc-countdown-pill" data-mc-cd="${new Date(m.date).getTime()}">${compactCountdown(ms)}</span>
+            ${isUpcoming ? `<span class="mc-countdown-pill" data-mc-cd="${ts}">${compactCountdown(ms)}</span>` : ''}
             <a class="mc-ico-btn" href="${setReminderHref(m)}" target="_blank" rel="noopener" title="Set reminder on WhatsApp">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 22a2 2 0 002-2h-4a2 2 0 002 2zm6-6V11a6 6 0 00-5-5.91V4a1 1 0 00-2 0v1.09A6 6 0 006 11v5l-2 2v1h16v-1l-2-2z"/></svg>
             </a>
@@ -901,13 +936,194 @@ function renderMatchGrid() {
               </a>` : ''}
           </div>
         </div>
+        ${predictBtn}
       </article>
     `;
   }).join('');
 
+  // Wire predict buttons
+  grid.querySelectorAll('[data-predict]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (window.openPredictModal) window.openPredictModal(btn.dataset.predict);
+    });
+  });
+
   if (typeof revealObserver !== 'undefined') {
     grid.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
   }
+}
+
+function outcomeLabel(choice, match) {
+  if (choice === 'draw') return 'Draw';
+  if (choice === 'home') return (COUNTRY[match.home] || {}).name || match.home;
+  return (COUNTRY[match.away] || {}).name || match.away;
+}
+
+/* ---------- Render leaderboard ---------- */
+function renderLeaderboard() {
+  const list = document.getElementById('lbList');
+  const totalEl = document.getElementById('lbTotalPreds');
+  const resolvedEl = document.getElementById('lbResolved');
+  if (!list) return;
+
+  const board   = computeLeaderboard();
+  const preds   = readPredictions();
+  const results = readResults();
+
+  totalEl.textContent    = `${preds.length} prediction${preds.length === 1 ? '' : 's'}`;
+  resolvedEl.textContent = `${Object.keys(results).length} match${Object.keys(results).length === 1 ? '' : 'es'} resolved`;
+
+  if (board.length === 0) {
+    list.innerHTML = `
+      <li class="lb-empty">
+        <div class="lb-empty-ico">🎯</div>
+        <h4>No predictions yet</h4>
+        <p>Be the first — pick a winner on any upcoming match above.</p>
+      </li>`;
+    return;
+  }
+
+  const myName = (getPredictorName() || '').toLowerCase();
+  const medal  = ['🥇','🥈','🥉'];
+
+  list.innerHTML = board.slice(0, 50).map((row, i) => {
+    const accuracy = row.scored ? Math.round((row.correct / row.scored) * 100) : 0;
+    const isMe = row.name.toLowerCase() === myName;
+    return `
+      <li class="lb-row${i < 3 ? ' lb-top' : ''}${isMe ? ' lb-me' : ''}">
+        <span class="lb-rank">${i < 3 ? medal[i] : '#' + (i + 1)}</span>
+        <span class="lb-name">${escapeHtml(row.name)}${isMe ? '<span class="lb-you">YOU</span>' : ''}</span>
+        <span class="lb-stats">
+          <span class="lb-correct">${row.correct}</span>
+          <span class="lb-divider">/</span>
+          <span class="lb-scored">${row.scored}</span>
+          ${row.scored > 0 ? `<span class="lb-acc">${accuracy}%</span>` : `<span class="lb-pending">${row.pending} pending</span>`}
+        </span>
+      </li>
+    `;
+  }).join('');
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch]);
+}
+
+/* ---------- Prediction modal ---------- */
+function initPredictionModal() {
+  const modal = document.getElementById('predictModal');
+  if (!modal) return;
+
+  const headline = document.getElementById('predictHeadline');
+  const meta     = document.getElementById('predictMeta');
+  const opts     = document.getElementById('predictOptions');
+  const nameIn   = document.getElementById('predictName');
+  const submit   = document.getElementById('predictSubmit');
+  const success  = document.getElementById('predictSuccess');
+  const form     = document.getElementById('predictForm');
+
+  let current = { matchId: null, choice: null };
+
+  function open(matchId) {
+    const m = MATCHES.find(x => x.id === matchId);
+    if (!m) return;
+
+    const home = COUNTRY[m.home] || { name: m.home };
+    const away = COUNTRY[m.away] || { name: m.away };
+
+    headline.innerHTML = `
+      ${flagImg(m.home)}
+      <span>${home.name}</span>
+      <span class="predict-vs">vs</span>
+      <span>${away.name}</span>
+      ${flagImg(m.away)}
+    `;
+    meta.textContent = `${m.stage} · ${formatMatchDate(m.date)} · ${formatBdLocalTime(m.date)}`;
+
+    const myPred = getMyPrediction(m.id);
+    current = { matchId: m.id, choice: myPred ? myPred.choice : null };
+
+    opts.innerHTML = `
+      <button type="button" class="predict-opt${current.choice === 'home' ? ' active' : ''}" data-choice="home">
+        ${flagImg(m.home)}
+        <span class="po-team">${home.name}</span>
+        <span class="po-result">WIN</span>
+      </button>
+      <button type="button" class="predict-opt${current.choice === 'draw' ? ' active' : ''}" data-choice="draw">
+        <span class="po-draw-ico">⚖</span>
+        <span class="po-team">Draw</span>
+        <span class="po-result">−</span>
+      </button>
+      <button type="button" class="predict-opt${current.choice === 'away' ? ' active' : ''}" data-choice="away">
+        ${flagImg(m.away)}
+        <span class="po-team">${away.name}</span>
+        <span class="po-result">WIN</span>
+      </button>
+    `;
+
+    opts.querySelectorAll('.predict-opt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        opts.querySelectorAll('.predict-opt').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        current.choice = btn.dataset.choice;
+        updateSubmit();
+      });
+    });
+
+    nameIn.value = getPredictorName();
+    success.hidden = true;
+    form.style.display = '';
+    updateSubmit();
+
+    modal.hidden = false;
+    requestAnimationFrame(() => modal.classList.add('show'));
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => nameIn.focus(), 100);
+  }
+
+  function close() {
+    modal.classList.remove('show');
+    setTimeout(() => { modal.hidden = true; document.body.style.overflow = ''; }, 250);
+  }
+
+  function updateSubmit() {
+    submit.disabled = !current.choice || !nameIn.value.trim();
+  }
+
+  nameIn.addEventListener('input', updateSubmit);
+  modal.querySelectorAll('[data-predict-close]').forEach(el => el.addEventListener('click', close));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !modal.hidden) close(); });
+
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    if (submit.disabled) return;
+    const ok = savePrediction(current.matchId, nameIn.value, current.choice);
+    if (!ok) return;
+    form.style.display = 'none';
+    success.hidden = false;
+    renderMatchGrid();
+    renderLeaderboard();
+  });
+
+  window.openPredictModal = open;
+}
+
+/* Re-render predictions UI when results change in admin */
+function initPredictionListeners() {
+  window.addEventListener('predictions:change', () => {
+    renderMatchGrid();
+    renderLeaderboard();
+  });
+  window.addEventListener('results:change', () => {
+    renderMatchGrid();
+    renderLeaderboard();
+  });
+  // Cross-tab sync — when admin enters a result, the landing page updates
+  window.addEventListener('storage', e => {
+    if (e.key === RESULTS_KEY || e.key === PREDICTIONS_KEY) {
+      renderMatchGrid();
+      renderLeaderboard();
+    }
+  });
 }
 
 /* Update small countdown pills on every match card */
@@ -1064,8 +1280,11 @@ document.addEventListener('DOMContentLoaded', () => {
   renderMatchGrid();
   renderGroups();
   renderVenues();
+  renderLeaderboard();
   initMatchTabs();
   initMatchDayStrip();
+  initPredictionModal();
+  initPredictionListeners();
 
   // Countdowns
   updateCountdown();

@@ -337,7 +337,8 @@
 
       <!-- Tabs -->
       <div class="match-tabs reveal" role="tablist" aria-label="Match hub sections">
-        <button class="match-tab active" data-tab="upcoming" role="tab" aria-selected="true">Upcoming Fixtures</button>
+        <button class="match-tab active" data-tab="upcoming" role="tab" aria-selected="true">Upcoming</button>
+        <button class="match-tab" data-tab="leaderboard" role="tab" aria-selected="false">🏆 Predictions</button>
         <button class="match-tab" data-tab="standings" role="tab" aria-selected="false">Group Standings</button>
         <button class="match-tab" data-tab="venues" role="tab" aria-selected="false">Host Stadiums</button>
       </div>
@@ -346,6 +347,26 @@
       <div class="match-panel active" data-panel="upcoming" role="tabpanel">
         <div class="match-grid" id="matchGrid">
           <!-- populated by JS -->
+        </div>
+      </div>
+
+      <!-- Panel: Leaderboard -->
+      <div class="match-panel" data-panel="leaderboard" role="tabpanel" hidden>
+        <div class="leaderboard-wrap">
+          <header class="lb-head">
+            <div>
+              <h3>🏆 Top Predictors</h3>
+              <p class="lb-sub">Free to play · Updated after every result</p>
+            </div>
+            <div class="lb-meta">
+              <span class="lb-stat" id="lbTotalPreds">0 predictions</span>
+              <span class="lb-stat" id="lbResolved">0 resolved</span>
+            </div>
+          </header>
+          <ol class="lb-list" id="lbList"><!-- populated by JS --></ol>
+          <p class="lb-rules">
+            🎯 Pick the winner of each match · 1 point per correct call · Top of the table at the World Cup final wins a free jersey on us.
+          </p>
         </div>
       </div>
 
@@ -364,6 +385,39 @@
       </div>
     </div>
   </section>
+
+  <!-- ============ PREDICTION MODAL ============ -->
+  <div id="predictModal" class="predict-modal" role="dialog" aria-modal="true" hidden>
+    <div class="qv-backdrop" data-predict-close></div>
+    <div class="predict-card">
+      <button type="button" class="qv-close" data-predict-close aria-label="Close">×</button>
+
+      <p class="eyebrow" style="text-align:center">🎯 Make Your Prediction</p>
+      <h3 class="predict-headline" id="predictHeadline">Team vs Team</h3>
+      <p class="predict-meta" id="predictMeta"></p>
+
+      <form id="predictForm" novalidate>
+        <label class="predict-name-row">
+          <span>Your Name</span>
+          <input type="text" id="predictName" required maxlength="24" autocomplete="off" placeholder="e.g. Rakib H." />
+        </label>
+
+        <p class="qv-label" style="margin-top:18px">Who will win?</p>
+        <div class="predict-options" id="predictOptions" role="radiogroup"></div>
+
+        <button type="submit" class="btn btn-primary btn-lg" id="predictSubmit" disabled>
+          Submit Prediction
+        </button>
+      </form>
+
+      <div class="predict-success" id="predictSuccess" hidden>
+        <div class="predict-success-ico">✓</div>
+        <h4>Prediction locked in!</h4>
+        <p>Good luck. Check the <strong>Predictions</strong> tab to see where you rank after the match.</p>
+        <button type="button" class="btn btn-ghost" data-predict-close>Close</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ============ REVIEWS ============ -->
   <section id="reviews" class="section section-reviews">
