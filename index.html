@@ -57,6 +57,29 @@
   }
   </script>
 
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      { "@type": "Question", "name": "How long does delivery take?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Inside Dhaka: 24 hours. Outside Dhaka: 2–3 working days via Sundarban / Steadfast courier." } },
+      { "@type": "Question", "name": "What payment methods do you accept?",
+        "acceptedAnswer": { "@type": "Answer", "text": "bKash, Nagad, Rocket, bank transfer, and Cash on Delivery (COD) across Bangladesh." } },
+      { "@type": "Question", "name": "Can I exchange or return my jersey?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Yes — size exchange within 7 days of delivery. Item must be unworn with tags. Customized jerseys are non-returnable." } },
+      { "@type": "Question", "name": "Do you offer custom name and number printing?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Yes. Add ৳150 per jersey. Heat-pressed, durable, professional. Mention your name & number when ordering on WhatsApp." } },
+      { "@type": "Question", "name": "Are these original or replica jerseys?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Premium-grade fan jerseys (Master Copy) — same fabric, fit, accurate crest prints. Not licensed originals, but the closest you can get for the price." } },
+      { "@type": "Question", "name": "Do you ship outside Bangladesh?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Not currently. We focus on serving the Bangladesh market with best prices and fast delivery." } },
+      { "@type": "Question", "name": "Is there a delivery charge?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Inside Dhaka: ৳70. Outside Dhaka: ৳130. Free delivery on orders above ৳3,000." } }
+    ]
+  }
+  </script>
+
   <!-- ============================================
        ANALYTICS — uncomment when you have IDs
        ============================================
@@ -209,14 +232,27 @@
         <p class="section-sub">Hand-picked World Cup 2026 kits. Tap a card to order via WhatsApp.</p>
       </header>
 
-      <div class="jersey-filter reveal" role="tablist" aria-label="Jersey filters">
-        <button class="chip active" data-filter="all">All</button>
-        <button class="chip" data-filter="home">Home Kit</button>
-        <button class="chip" data-filter="away">Away Kit</button>
+      <div class="jersey-toolbar reveal">
+        <div class="jersey-search">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27a6.51 6.51 0 001.48-5.34c-.47-2.78-2.79-5-5.59-5.34a6.505 6.505 0 00-7.27 7.27c.34 2.8 2.56 5.12 5.34 5.59a6.51 6.51 0 005.34-1.48l.27.28v.79l4.25 4.25c.41.41 1.08.41 1.49 0 .41-.41.41-1.08 0-1.49L15.5 14zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+          <input type="search" id="jerseySearch" placeholder="Search by country..." autocomplete="off" />
+          <button type="button" class="js-clear" id="jerseySearchClear" hidden aria-label="Clear">×</button>
+        </div>
+        <div class="jersey-filter" role="tablist" aria-label="Jersey filters">
+          <button class="chip active" data-filter="all">All</button>
+          <button class="chip" data-filter="home">Home Kit</button>
+          <button class="chip" data-filter="away">Away Kit</button>
+        </div>
       </div>
 
       <div class="jersey-grid" id="jerseyGrid">
         <!-- jerseys injected by JS -->
+      </div>
+
+      <div id="jerseyEmpty" class="jersey-empty" hidden>
+        <div class="je-ico">🔍</div>
+        <h3>No matching jerseys</h3>
+        <p>Try a different country name or clear the filters.</p>
       </div>
     </div>
   </section>
@@ -467,6 +503,31 @@
               <div class="stars">★★★★★</div>
               <p>"France away kit এর কালার আর fitting দারুণ। WhatsApp এ অর্ডার করা অনেক easy ছিল। Will order again."</p>
               <footer><strong>Nusrat Jahan</strong><span>Dhaka</span></footer>
+            </article>
+            <article class="review-card">
+              <div class="stars">★★★★★</div>
+              <p>"Brazil 7 number print নিয়েছি Vini Jr fan হিসেবে। Quality price 1500 এর জন্য unbelievable। সবাইকে recommend করব।"</p>
+              <footer><strong>Mehrab Hossain</strong><span>Mymensingh</span></footer>
+            </article>
+            <article class="review-card">
+              <div class="stars">★★★★★</div>
+              <p>"Ordered 3 jerseys at once with the BUY 2 GET 1 FREE offer. Saved me ৳1500. Delivery was on time and packaging was premium. 10/10."</p>
+              <footer><strong>Shahriar Kabir</strong><span>Barishal</span></footer>
+            </article>
+            <article class="review-card">
+              <div class="stars">★★★★★</div>
+              <p>"আমার husband এর জন্য Argentina jersey gift দিয়েছি birthday-তে। ও অনেক খুশি হয়েছে। Quality really good মা শা আল্লাহ্।"</p>
+              <footer><strong>Tahmina Akhter</strong><span>Uttara, Dhaka</span></footer>
+            </article>
+            <article class="review-card">
+              <div class="stars">★★★★★</div>
+              <p>"COD-তে নিয়েছি, hands-on inspect করার পরে taka দিয়েছি। 100% satisfied। Fabric original feel আছে।"</p>
+              <footer><strong>Anik Mahmud</strong><span>Cumilla</span></footer>
+            </article>
+            <article class="review-card">
+              <div class="stars">★★★★★</div>
+              <p>"Spain home kit। Stitching tight. Sleeve cuff এ cream accent — looks just like the real Adidas. Will definitely buy more."</p>
+              <footer><strong>Junaid Ali</strong><span>Chattogram</span></footer>
             </article>
           </div>
         </div>
@@ -732,6 +793,31 @@
   <a href="https://m.me/zone14bd" target="_blank" rel="noopener" class="float-messenger" aria-label="Chat on Messenger">
     <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.27.5 11.16c0 3.35 1.66 6.34 4.26 8.3v4.04l3.89-2.14c1.04.29 2.14.45 3.35.45 6.35 0 11.5-4.77 11.5-10.65S18.35.5 12 .5zm1.16 14.34l-2.93-3.13-5.72 3.13L10.8 8.5l3 3.12 5.65-3.12-6.29 6.34z"/></svg>
   </a>
+
+  <!-- ============ MOBILE BOTTOM NAV ============ -->
+  <nav class="mobile-bottom-nav" aria-label="Quick navigation">
+    <a href="#home"    class="mbn-item" data-section="home">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      <span>Home</span>
+    </a>
+    <a href="#jerseys" class="mbn-item" data-section="jerseys">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M16 4l-4 2-4-2-6 4 2 6 4-2v8h8v-8l4 2 2-6z"/></svg>
+      <span>Shop</span>
+    </a>
+    <a href="order.html" class="mbn-item mbn-cart">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M7 18a2 2 0 11.001 4.001A2 2 0 017 18zm10 0a2 2 0 11.001 4.001A2 2 0 0117 18zM6.16 13l1.5-3h8.68l1.5 3H6.16zM5 1h2.27l1 2H22l-3 8H7l-.9-2H4V7h2l1.6 3.5L5 5 4 3H2V1h3z"/></svg>
+      <span class="mbn-cart-count" id="mbnCartCount" hidden>0</span>
+      <span>Cart</span>
+    </a>
+    <a href="track.html" class="mbn-item">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M20 8h-3V4H3a2 2 0 00-2 2v11h2a3 3 0 006 0h6a3 3 0 006 0h2v-5l-3-4zM6 18.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm12 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm-1-7.5h-2V7h4.5l1.5 2.5V11z"/></svg>
+      <span>Track</span>
+    </a>
+    <a href="https://wa.me/8801723360078" target="_blank" rel="noopener" class="mbn-item mbn-wa">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M20.52 3.48A11.86 11.86 0 0012.04 0C5.46 0 .12 5.34.12 11.92c0 2.1.55 4.15 1.6 5.96L0 24l6.27-1.64a11.9 11.9 0 005.77 1.47h.01c6.58 0 11.92-5.34 11.92-11.92 0-3.18-1.24-6.17-3.45-8.43z"/></svg>
+      <span>Chat</span>
+    </a>
+  </nav>
 
   <!-- ============ FLOATING CART ============ -->
   <a id="cartPill" href="order.html" class="cart-pill" aria-label="View cart">

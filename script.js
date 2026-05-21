@@ -8,12 +8,15 @@ function renderJerseys() {
   const grid = document.getElementById('jerseyGrid');
   if (!grid) return;
   grid.innerHTML = JERSEYS.map(j => {
-    const oos = !j.inStock;
-    const stockBadge = oos
-      ? `<span class="stock-badge oos">Restocking</span>`
-      : (j.stockLeft <= 6
-          ? `<span class="stock-badge low">Only ${j.stockLeft} left</span>`
-          : `<span class="stock-badge ok">In Stock</span>`);
+    const oos       = !j.inStock;
+    const coming    = !!j.comingSoon;
+    const stockBadge = coming
+      ? `<span class="stock-badge soon">Coming Soon</span>`
+      : oos
+        ? `<span class="stock-badge oos">Restocking</span>`
+        : (j.stockLeft <= 6
+            ? `<span class="stock-badge low">Only ${j.stockLeft} left</span>`
+            : `<span class="stock-badge ok">In Stock</span>`);
     // Prefer admin-uploaded photo first, then declared data.js path, else SVG.
     const adminMedia   = getJerseyMedia(j.id);
     const adminPhoto   = (adminMedia.images[0] && adminMedia.images[0].url) || '';
@@ -27,7 +30,7 @@ function renderJerseys() {
       : '';
 
     return `
-    <article class="jersey-card reveal${oos ? ' out-of-stock' : ''}" data-tag="${j.tag}" data-id="${j.id}">
+    <article class="jersey-card reveal${oos ? ' out-of-stock' : ''}${coming ? ' coming-soon' : ''}" data-tag="${j.tag}" data-id="${j.id}" data-country="${j.country.toLowerCase()}">
       <div class="jersey-img-wrap">
         <span class="jersey-tag ${j.tag}">${j.edition}</span>
         ${stockBadge}
@@ -41,7 +44,7 @@ function renderJerseys() {
         <span class="jersey-shine"></span>
         ${jerseySVG(j)}
         ${photoOverlay}
-        ${oos ? '<span class="oos-stamp">Out of Stock</span>' : ''}
+        ${oos && !coming ? '<span class="oos-stamp">Out of Stock</span>' : ''}
       </div>
       <div class="jersey-body">
         <div class="jersey-head">
@@ -56,7 +59,7 @@ function renderJerseys() {
         ${oos
           ? `<button class="jersey-order notify" type="button">
                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 22a2 2 0 002-2h-4a2 2 0 002 2zm6-6V11a6 6 0 00-5-5.91V4a1 1 0 00-2 0v1.09A6 6 0 006 11v5l-2 2v1h16v-1l-2-2z"/></svg>
-               Notify Me When Available
+               ${coming ? 'Pre-order · Reserve Now' : 'Notify Me When Available'}
              </button>`
           : `<button class="jersey-order" type="button">
                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M7 4V2h10v2h5v2h-2v15a2 2 0 01-2 2H6a2 2 0 01-2-2V6H2V4h5zm2 4v11h2V8H9zm4 0v11h2V8h-2z" opacity="0"/><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.8 2.8A1 1 0 005 17h12M9 21a1 1 0 11-2 0 1 1 0 012 0zm10 0a1 1 0 11-2 0 1 1 0 012 0z" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -111,12 +114,16 @@ function renderJerseys() {
       const size = card.querySelector('.size-btn.active')?.dataset.size || 'M';
 
       if (!jersey.inStock) {
-        // OOS → fire a WhatsApp "notify me" message
+        const isComing = !!jersey.comingSoon;
+        const subj = isComing
+          ? `Hi Zone14! I'd like to pre-order this kit:`
+          : `Hi Zone14! Please notify me when this is back in stock:`;
         const msg = encodeURIComponent(
-          `Hi Zone14! Please notify me when this is back in stock:\n\n` +
+          `${subj}\n\n` +
           `👕 ${jersey.country} — ${jersey.edition}\n` +
           `📏 My size: ${size}\n` +
-          `💰 Price: ৳${jersey.price.toLocaleString('en-IN')}`
+          `💰 Price: ৳${jersey.price.toLocaleString('en-IN')}` +
+          (isComing ? `\n\nPlease confirm expected delivery timeline.` : '')
         );
         window.open(`https://wa.me/${WHATSAPP}?text=${msg}`, '_blank', 'noopener');
         return;
@@ -134,21 +141,52 @@ function renderJerseys() {
   }
 }
 
-/* ---------- FILTERS ---------- */
+/* ---------- FILTERS + SEARCH ---------- */
+const filterState = { tag: 'all', query: '' };
+
+function applyJerseyFilter() {
+  const cards = document.querySelectorAll('.jersey-card');
+  const empty = document.getElementById('jerseyEmpty');
+  let visibleCount = 0;
+  cards.forEach(card => {
+    const tagOk   = filterState.tag === 'all' || card.dataset.tag === filterState.tag;
+    const queryOk = !filterState.query || (card.dataset.country || '').includes(filterState.query);
+    const show    = tagOk && queryOk;
+    card.classList.toggle('hide', !show);
+    if (show) visibleCount++;
+  });
+  if (empty) empty.hidden = visibleCount > 0;
+}
+
 function initFilters() {
   const chips = document.querySelectorAll('.jersey-filter .chip');
-  const cards = () => document.querySelectorAll('.jersey-card');
   chips.forEach(chip => {
     chip.addEventListener('click', () => {
       chips.forEach(c => c.classList.remove('active'));
       chip.classList.add('active');
-      const f = chip.dataset.filter;
-      cards().forEach(card => {
-        const show = f === 'all' || card.dataset.tag === f;
-        card.classList.toggle('hide', !show);
-      });
+      filterState.tag = chip.dataset.filter;
+      applyJerseyFilter();
     });
   });
+
+  const search = document.getElementById('jerseySearch');
+  const clear  = document.getElementById('jerseySearchClear');
+  if (search) {
+    search.addEventListener('input', () => {
+      filterState.query = search.value.trim().toLowerCase();
+      clear.hidden = !filterState.query;
+      applyJerseyFilter();
+    });
+  }
+  if (clear) {
+    clear.addEventListener('click', () => {
+      search.value = '';
+      filterState.query = '';
+      clear.hidden = true;
+      applyJerseyFilter();
+      search.focus();
+    });
+  }
 }
 
 /* ---------- COUNTDOWN ---------- */
@@ -390,21 +428,25 @@ function initYear() {
   if (el) el.textContent = new Date().getFullYear();
 }
 
-/* ---------- CART PILL ---------- */
+/* ---------- CART PILL + BOTTOM NAV COUNTER ---------- */
 function initCartPill() {
-  const pill  = document.getElementById('cartPill');
-  const count = document.getElementById('cartCount');
-  if (!pill || !count) return;
+  const pill   = document.getElementById('cartPill');
+  const count  = document.getElementById('cartCount');
+  const mbnCt  = document.getElementById('mbnCartCount');
 
   const sync = () => {
     const n = cartCount();
-    count.textContent = n;
-    pill.classList.toggle('show', n > 0);
+    if (count) count.textContent = n;
+    if (pill)  pill.classList.toggle('show', n > 0);
+    if (mbnCt) {
+      mbnCt.textContent = n;
+      mbnCt.hidden = n === 0;
+    }
   };
 
   sync();
   window.addEventListener('cart:change', sync);
-  window.addEventListener('storage', sync); // sync across tabs
+  window.addEventListener('storage', sync);
 }
 
 /* ============================================================

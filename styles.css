@@ -790,9 +790,14 @@ h1, h2, h3, .display { font-family: 'Bebas Neue', 'Oswald', sans-serif; letter-s
   background: currentColor;
   box-shadow: 0 0 8px currentColor;
 }
-.stock-badge.ok  { color: #5ee9e3; border: 1px solid rgba(94, 233, 227, 0.35); }
-.stock-badge.low { color: #ffb547; border: 1px solid rgba(255, 181, 71, 0.35); animation: pulseBadge 1.6s infinite; }
-.stock-badge.oos { color: #ff6b6b; border: 1px solid rgba(255, 107, 107, 0.4); }
+.stock-badge.ok   { color: #5ee9e3; border: 1px solid rgba(94, 233, 227, 0.35); }
+.stock-badge.low  { color: #ffb547; border: 1px solid rgba(255, 181, 71, 0.35); animation: pulseBadge 1.6s infinite; }
+.stock-badge.oos  { color: #ff6b6b; border: 1px solid rgba(255, 107, 107, 0.4); }
+.stock-badge.soon { color: #ffd700; border: 1px solid rgba(255, 215, 0, 0.45); background: linear-gradient(135deg, rgba(255, 215, 0, 0.12), rgba(94, 233, 227, 0.08)); }
+
+/* Coming-soon card has a subtle gold border + slight image desaturation */
+.jersey-card.coming-soon { border-color: rgba(255, 215, 0, 0.25); }
+.jersey-card.coming-soon .jersey-img-wrap svg { filter: saturate(0.85) brightness(0.92); }
 @keyframes pulseBadge {
   0%, 100% { transform: scale(1); }
   50%      { transform: scale(1.05); }
@@ -5293,6 +5298,168 @@ h1, h2, h3, .display { font-family: 'Bebas Neue', 'Oswald', sans-serif; letter-s
   .cd-num { font-size: 20px; }
   .hero-watermark { width: 80vw; opacity: 0.05; }
   .hero-cta { margin-bottom: 20px; }
+}
+
+/* ============================================================
+   JERSEY TOOLBAR — search + filter chips
+   ============================================================ */
+.jersey-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+.jersey-search {
+  position: relative;
+  flex: 1;
+  min-width: 220px;
+  max-width: 360px;
+  display: flex;
+  align-items: center;
+}
+.jersey-search svg {
+  position: absolute;
+  left: 16px;
+  color: var(--text-mute);
+  pointer-events: none;
+}
+.jersey-search input {
+  width: 100%;
+  padding: 12px 38px 12px 44px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s var(--ease), background 0.2s var(--ease);
+}
+.jersey-search input::placeholder { color: var(--text-mute); }
+.jersey-search input:focus {
+  outline: none;
+  border-color: var(--neon);
+  background: rgba(94, 233, 227, 0.04);
+}
+.js-clear {
+  position: absolute;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-dim);
+  font-size: 16px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.2s var(--ease);
+}
+.js-clear:hover { background: var(--neon); color: #052424; }
+
+.jersey-filter {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 0;
+}
+
+/* Empty state when search/filter returns nothing */
+.jersey-empty {
+  padding: 60px 24px;
+  text-align: center;
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+}
+.je-ico { font-size: 44px; margin-bottom: 12px; opacity: 0.5; }
+.jersey-empty h3 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 24px;
+  margin-bottom: 6px;
+  letter-spacing: 0.04em;
+}
+.jersey-empty p { color: var(--text-mute); font-size: 14px; }
+
+/* ============================================================
+   MOBILE BOTTOM NAV — app-style sticky toolbar
+   ============================================================ */
+.mobile-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  background: rgba(8, 12, 16, 0.92);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-top: 1px solid var(--border);
+  padding: 8px 4px;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom));
+}
+.mobile-bottom-nav > * {
+  flex: 1;
+}
+.mbn-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px 4px;
+  color: var(--text-mute);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-radius: 10px;
+  transition: color 0.2s var(--ease), background 0.2s var(--ease);
+  position: relative;
+}
+.mbn-item:hover, .mbn-item.active {
+  color: var(--neon);
+  background: rgba(94, 233, 227, 0.06);
+}
+.mbn-item svg { transition: transform 0.2s var(--ease); }
+.mbn-item:active svg { transform: scale(0.85); }
+.mbn-cart-count {
+  position: absolute;
+  top: 4px;
+  right: calc(50% - 22px);
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  display: grid;
+  place-items: center;
+  background: var(--grad-neon);
+  color: #052424;
+  border-radius: 999px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+.mbn-wa svg { color: #25d366; }
+.mbn-wa.active { color: #25d366; }
+
+/* Show only on mobile; bump body bottom padding so content doesn't hide behind bar */
+@media (max-width: 768px) {
+  .mobile-bottom-nav { display: flex; }
+  body { padding-bottom: 64px; }
+  /* Floating widgets shift up to clear the bottom nav */
+  .float-whatsapp { bottom: calc(76px + env(safe-area-inset-bottom)); }
+  .cart-pill      { bottom: calc(132px + env(safe-area-inset-bottom)); }
+  .wishlist-pill  { bottom: calc(184px + env(safe-area-inset-bottom)); }
+  .back-to-top    { bottom: calc(236px + env(safe-area-inset-bottom)); }
+}
+
+@media (max-width: 480px) {
+  .jersey-toolbar { gap: 12px; }
+  .jersey-search { max-width: 100%; min-width: 0; width: 100%; }
 }
 
 /* ============ MOTION PREFS ============ */
