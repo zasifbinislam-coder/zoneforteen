@@ -569,7 +569,7 @@ const JERSEYS = [
     price: 1500, inStock: true, stockLeft: 8,
     palette: { primary: '#fbe10d', secondary: '#009c3b', accent: '#002776', stripes: false },
     crest: 'CBF', number: '10',
-    images: _jImgs('bra-home', 4), video: _jVideo('bra-home'),
+    images: [], video: '',
     details: { ...DEFAULT_DETAILS },
   },
   {
@@ -577,7 +577,7 @@ const JERSEYS = [
     price: 1500, inStock: true, stockLeft: 5,
     palette: { primary: '#75aadb', secondary: '#ffffff', accent: '#f6b40e', stripes: true },
     crest: 'AFA', number: '10',
-    images: _jImgs('arg-home', 4), video: _jVideo('arg-home'),
+    images: [], video: '',
     details: { ...DEFAULT_DETAILS },
   },
   {
@@ -585,7 +585,7 @@ const JERSEYS = [
     price: 1500, inStock: true, stockLeft: 11,
     palette: { primary: '#1e3a8a', secondary: '#ffffff', accent: '#ef4135', stripes: false },
     crest: 'FFF', number: '10',
-    images: _jImgs('fra-home', 4), video: _jVideo('fra-home'),
+    images: [], video: '',
     details: { ...DEFAULT_DETAILS },
   },
   {
@@ -593,7 +593,7 @@ const JERSEYS = [
     price: 1500, inStock: true, stockLeft: 7,
     palette: { primary: '#c60b1e', secondary: '#ffc400', accent: '#1a3a5e', stripes: false },
     crest: 'RFEF', number: '9',
-    images: _jImgs('esp-home', 4), video: _jVideo('esp-home'),
+    images: [], video: '',
     details: { ...DEFAULT_DETAILS },
   },
 
@@ -603,7 +603,7 @@ const JERSEYS = [
     price: 1500, inStock: false, stockLeft: 0,
     palette: { primary: '#002776', secondary: '#fbe10d', accent: '#009c3b', stripes: false },
     crest: 'CBF', number: '11',
-    images: _jImgs('bra-away', 4), video: _jVideo('bra-away'),
+    images: [], video: '',
     details: { ...DEFAULT_DETAILS },
   },
   {
@@ -611,7 +611,7 @@ const JERSEYS = [
     price: 1500, inStock: false, stockLeft: 0,
     palette: { primary: '#1a1a3e', secondary: '#75aadb', accent: '#f6b40e', stripes: false },
     crest: 'AFA', number: '10',
-    images: _jImgs('arg-away', 4), video: _jVideo('arg-away'),
+    images: [], video: '',
     details: { ...DEFAULT_DETAILS },
   },
   {
@@ -619,7 +619,7 @@ const JERSEYS = [
     price: 1500, inStock: false, stockLeft: 0,
     palette: { primary: '#f4eedb', secondary: '#1e3a8a', accent: '#ef4135', stripes: false },
     crest: 'FFF', number: '7',
-    images: _jImgs('fra-away', 4), video: _jVideo('fra-away'),
+    images: [], video: '',
     details: { ...DEFAULT_DETAILS },
   },
   {
@@ -627,7 +627,7 @@ const JERSEYS = [
     price: 1500, inStock: false, stockLeft: 0,
     palette: { primary: '#0a1f44', secondary: '#c60b1e', accent: '#ffc400', stripes: false },
     crest: 'RFEF', number: '6',
-    images: _jImgs('esp-away', 4), video: _jVideo('esp-away'),
+    images: [], video: '',
     details: { ...DEFAULT_DETAILS },
   },
 
@@ -637,7 +637,7 @@ const JERSEYS = [
     price: 1500, inStock: false, comingSoon: true, stockLeft: 0,
     palette: { primary: '#ffffff', secondary: '#1a1a1a', accent: '#dd0000', stripes: false },
     crest: 'DFB', number: '13',
-    images: _jImgs('ger-home', 4), video: _jVideo('ger-home'),
+    images: [], video: '',
     details: { ...DEFAULT_DETAILS },
   },
   {
@@ -645,7 +645,7 @@ const JERSEYS = [
     price: 1500, inStock: false, comingSoon: true, stockLeft: 0,
     palette: { primary: '#c8102e', secondary: '#006a44', accent: '#ffd700', stripes: false },
     crest: 'FPF', number: '7',
-    images: _jImgs('por-home', 4), video: _jVideo('por-home'),
+    images: [], video: '',
     details: { ...DEFAULT_DETAILS },
   },
   {
@@ -653,7 +653,7 @@ const JERSEYS = [
     price: 1500, inStock: false, comingSoon: true, stockLeft: 0,
     palette: { primary: '#ffffff', secondary: '#1a3a8e', accent: '#cf142b', stripes: false },
     crest: 'ENG', number: '9',
-    images: _jImgs('eng-home', 4), video: _jVideo('eng-home'),
+    images: [], video: '',
     details: { ...DEFAULT_DETAILS },
   },
   {
@@ -661,7 +661,7 @@ const JERSEYS = [
     price: 1500, inStock: false, comingSoon: true, stockLeft: 0,
     palette: { primary: '#0066b3', secondary: '#ffffff', accent: '#ffd700', stripes: false },
     crest: 'FIGC', number: '10',
-    images: _jImgs('ita-home', 4), video: _jVideo('ita-home'),
+    images: [], video: '',
     details: { ...DEFAULT_DETAILS },
   },
   {
@@ -669,7 +669,7 @@ const JERSEYS = [
     price: 1500, inStock: false, comingSoon: true, stockLeft: 0,
     palette: { primary: '#ff6b00', secondary: '#0a1a4a', accent: '#ffffff', stripes: false },
     crest: 'KNVB', number: '4',
-    images: _jImgs('ned-home', 4), video: _jVideo('ned-home'),
+    images: [], video: '',
     details: { ...DEFAULT_DETAILS },
   },
 ];

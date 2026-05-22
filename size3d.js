@@ -8,6 +8,18 @@
   const stage = document.getElementById('size3DStage');
   if (!stage) return;
 
+  /* ---------- Size mapping (declared FIRST — build() reads these) ---------- */
+  const SIZES = {
+    XS:   { chest: '32–34 in', length: '26.5 in', sx: 0.86, sy: 0.92, ss: 0.88 },
+    S:    { chest: '35–37 in', length: '27.5 in', sx: 0.93, sy: 0.96, ss: 0.94 },
+    M:    { chest: '38–40 in', length: '28.5 in', sx: 1.00, sy: 1.00, ss: 1.00 },
+    L:    { chest: '41–43 in', length: '29.5 in', sx: 1.08, sy: 1.04, ss: 1.06 },
+    XL:   { chest: '44–46 in', length: '30.5 in', sx: 1.18, sy: 1.08, ss: 1.12 },
+    XXL:  { chest: '47–49 in', length: '31.5 in', sx: 1.28, sy: 1.12, ss: 1.18 },
+    '3XL':{ chest: '50–52 in', length: '32.5 in', sx: 1.40, sy: 1.16, ss: 1.24 },
+  };
+  const SIZE_KEYS = ['XS','S','M','L','XL','XXL','3XL'];
+
   // Three.js may load slightly after this script — wait if needed.
   if (typeof THREE === 'undefined') {
     return waitForThree(() => init());
@@ -44,18 +56,6 @@
         (c.getContext('webgl') || c.getContext('experimental-webgl')));
     } catch (_) { return false; }
   }
-
-  /* ---------- Size mapping ---------- */
-  const SIZES = {
-    XS:   { chest: '32–34 in', length: '26.5 in', sx: 0.86, sy: 0.92, ss: 0.88 },
-    S:    { chest: '35–37 in', length: '27.5 in', sx: 0.93, sy: 0.96, ss: 0.94 },
-    M:    { chest: '38–40 in', length: '28.5 in', sx: 1.00, sy: 1.00, ss: 1.00 },
-    L:    { chest: '41–43 in', length: '29.5 in', sx: 1.08, sy: 1.04, ss: 1.06 },
-    XL:   { chest: '44–46 in', length: '30.5 in', sx: 1.18, sy: 1.08, ss: 1.12 },
-    XXL:  { chest: '47–49 in', length: '31.5 in', sx: 1.28, sy: 1.12, ss: 1.18 },
-    '3XL':{ chest: '50–52 in', length: '32.5 in', sx: 1.40, sy: 1.16, ss: 1.24 },
-  };
-  const SIZE_KEYS = ['XS','S','M','L','XL','XXL','3XL'];
 
   function build() {
     const COLOR = {
