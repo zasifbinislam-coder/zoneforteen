@@ -577,7 +577,7 @@ const JERSEYS = [
   /* ----- HOME KITS (in stock) ----- */
   {
     id: 'bra-home', country: 'Brazil', edition: 'Home Kit', tag: 'home',
-    price: 1500, inStock: true, stockLeft: 8,
+    price: 1499, inStock: true, stockLeft: 8,
     palette: { primary: '#fbe10d', secondary: '#009c3b', accent: '#002776', stripes: false },
     crest: 'CBF', number: '10',
     images: [], video: '',
@@ -585,7 +585,7 @@ const JERSEYS = [
   },
   {
     id: 'arg-home', country: 'Argentina', edition: 'Home Kit', tag: 'home',
-    price: 1500, inStock: true, stockLeft: 5,
+    price: 1499, inStock: true, stockLeft: 5,
     palette: { primary: '#75aadb', secondary: '#ffffff', accent: '#f6b40e', stripes: true },
     crest: 'AFA', number: '10',
     images: [], video: '',
@@ -593,7 +593,7 @@ const JERSEYS = [
   },
   {
     id: 'fra-home', country: 'France', edition: 'Home Kit', tag: 'home',
-    price: 1500, inStock: true, stockLeft: 11,
+    price: 1499, inStock: true, stockLeft: 11,
     palette: { primary: '#1e3a8a', secondary: '#ffffff', accent: '#ef4135', stripes: false },
     crest: 'FFF', number: '10',
     images: [], video: '',
@@ -601,7 +601,7 @@ const JERSEYS = [
   },
   {
     id: 'esp-home', country: 'Spain', edition: 'Home Kit', tag: 'home',
-    price: 1500, inStock: true, stockLeft: 7,
+    price: 1499, inStock: true, stockLeft: 7,
     palette: { primary: '#c60b1e', secondary: '#ffc400', accent: '#1a3a5e', stripes: false },
     crest: 'RFEF', number: '9',
     images: [], video: '',
@@ -611,7 +611,7 @@ const JERSEYS = [
   /* ----- AWAY KITS (out of stock — restock soon) ----- */
   {
     id: 'bra-away', country: 'Brazil', edition: 'Away Kit', tag: 'away',
-    price: 1500, inStock: false, stockLeft: 0,
+    price: 1499, inStock: false, stockLeft: 0,
     palette: { primary: '#002776', secondary: '#fbe10d', accent: '#009c3b', stripes: false },
     crest: 'CBF', number: '11',
     images: [], video: '',
@@ -619,7 +619,7 @@ const JERSEYS = [
   },
   {
     id: 'arg-away', country: 'Argentina', edition: 'Away Kit', tag: 'away',
-    price: 1500, inStock: false, stockLeft: 0,
+    price: 1499, inStock: false, stockLeft: 0,
     palette: { primary: '#1a1a3e', secondary: '#75aadb', accent: '#f6b40e', stripes: false },
     crest: 'AFA', number: '10',
     images: [], video: '',
@@ -627,7 +627,7 @@ const JERSEYS = [
   },
   {
     id: 'fra-away', country: 'France', edition: 'Away Kit', tag: 'away',
-    price: 1500, inStock: false, stockLeft: 0,
+    price: 1499, inStock: false, stockLeft: 0,
     palette: { primary: '#f4eedb', secondary: '#1e3a8a', accent: '#ef4135', stripes: false },
     crest: 'FFF', number: '7',
     images: [], video: '',
@@ -635,7 +635,7 @@ const JERSEYS = [
   },
   {
     id: 'esp-away', country: 'Spain', edition: 'Away Kit', tag: 'away',
-    price: 1500, inStock: false, stockLeft: 0,
+    price: 1499, inStock: false, stockLeft: 0,
     palette: { primary: '#0a1f44', secondary: '#c60b1e', accent: '#ffc400', stripes: false },
     crest: 'RFEF', number: '6',
     images: [], video: '',
@@ -645,7 +645,7 @@ const JERSEYS = [
   /* ----- COMING SOON — pre-order to reserve a kit ----- */
   {
     id: 'ger-home', country: 'Germany', edition: 'Home Kit', tag: 'home',
-    price: 1500, inStock: false, comingSoon: true, stockLeft: 0,
+    price: 1499, inStock: false, comingSoon: true, stockLeft: 0,
     palette: { primary: '#ffffff', secondary: '#1a1a1a', accent: '#dd0000', stripes: false },
     crest: 'DFB', number: '13',
     images: [], video: '',
@@ -653,7 +653,7 @@ const JERSEYS = [
   },
   {
     id: 'por-home', country: 'Portugal', edition: 'Home Kit', tag: 'home',
-    price: 1500, inStock: false, comingSoon: true, stockLeft: 0,
+    price: 1499, inStock: false, comingSoon: true, stockLeft: 0,
     palette: { primary: '#c8102e', secondary: '#006a44', accent: '#ffd700', stripes: false },
     crest: 'FPF', number: '7',
     images: [], video: '',
@@ -661,7 +661,7 @@ const JERSEYS = [
   },
   {
     id: 'eng-home', country: 'England', edition: 'Home Kit', tag: 'home',
-    price: 1500, inStock: false, comingSoon: true, stockLeft: 0,
+    price: 1499, inStock: false, comingSoon: true, stockLeft: 0,
     palette: { primary: '#ffffff', secondary: '#1a3a8e', accent: '#cf142b', stripes: false },
     crest: 'ENG', number: '9',
     images: [], video: '',
@@ -669,7 +669,7 @@ const JERSEYS = [
   },
   {
     id: 'ita-home', country: 'Italy', edition: 'Home Kit', tag: 'home',
-    price: 1500, inStock: false, comingSoon: true, stockLeft: 0,
+    price: 1499, inStock: false, comingSoon: true, stockLeft: 0,
     palette: { primary: '#0066b3', secondary: '#ffffff', accent: '#ffd700', stripes: false },
     crest: 'FIGC', number: '10',
     images: [], video: '',
@@ -677,7 +677,7 @@ const JERSEYS = [
   },
   {
     id: 'ned-home', country: 'Netherlands', edition: 'Home Kit', tag: 'home',
-    price: 1500, inStock: false, comingSoon: true, stockLeft: 0,
+    price: 1499, inStock: false, comingSoon: true, stockLeft: 0,
     palette: { primary: '#ff6b00', secondary: '#0a1a4a', accent: '#ffffff', stripes: false },
     crest: 'KNVB', number: '4',
     images: [], video: '',
