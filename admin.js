@@ -82,6 +82,11 @@ function bootDashboard() {
   window.addEventListener('predictions:change', renderResults);
   window.addEventListener('results:change',     renderResults);
   window.addEventListener('media:change',       renderMediaGallery);
+
+  // Pull latest shared predictions + results from Supabase, then subscribe
+  // for realtime updates so admin sees customer activity live.
+  syncFromSupabase().then(ok => { if (ok) renderResults(); });
+  subscribeToSupabaseChanges();
 }
 
 /* ============================================================

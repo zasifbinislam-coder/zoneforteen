@@ -1,0 +1,56 @@
+-- ============================================================
+-- Zone14 — Supabase one-time setup
+-- Run this in: Supabase Dashboard → SQL Editor → New query → Run
+-- ============================================================
+
+-- 1. Predictions table — one row per (match × customer name)
+create table if not exists public.predictions (
+  id          uuid primary key default gen_random_uuid(),
+  match_id    text not null,
+  name        text not null,
+  choice      text not null check (choice in ('home','draw','away')),
+  created_at  timestamptz default now(),
+  updated_at  timestamptz default now(),
+  unique (match_id, name)
+);
+
+create index if not exists predictions_match_idx on public.predictions (match_id);
+
+-- 2. Match results — one row per finished match
+create table if not exists public.match_results (
+  match_id    text primary key,
+  home_score  integer not null check (home_score >= 0 and home_score < 50),
+  away_score  integer not null check (away_score >= 0 and away_score < 50),
+  outcome     text not null check (outcome in ('home','draw','away')),
+  finished_at timestamptz default now()
+);
+
+-- 3. Enable Row Level Security
+alter table public.predictions    enable row level security;
+alter table public.match_results  enable row level security;
+
+-- 4. Policies — predictions are a public game, anyone can read/write
+drop policy if exists "predictions_read"   on public.predictions;
+drop policy if exists "predictions_insert" on public.predictions;
+drop policy if exists "predictions_update" on public.predictions;
+drop policy if exists "predictions_delete" on public.predictions;
+create policy "predictions_read"   on public.predictions for select using (true);
+create policy "predictions_insert" on public.predictions for insert with check (true);
+create policy "predictions_update" on public.predictions for update using (true) with check (true);
+create policy "predictions_delete" on public.predictions for delete using (true);
+
+-- 5. Match results — open writes for now (admin passcode is the gate).
+--    To lock down later, add Supabase Auth and require auth.uid() is not null.
+drop policy if exists "results_read"   on public.match_results;
+drop policy if exists "results_insert" on public.match_results;
+drop policy if exists "results_update" on public.match_results;
+drop policy if exists "results_delete" on public.match_results;
+create policy "results_read"   on public.match_results for select using (true);
+create policy "results_insert" on public.match_results for insert with check (true);
+create policy "results_update" on public.match_results for update using (true) with check (true);
+create policy "results_delete" on public.match_results for delete using (true);
+
+-- 6. Enable realtime broadcasts so the landing page leaderboard updates
+--    instantly when anyone (anywhere in the world) submits a prediction.
+alter publication supabase_realtime add table public.predictions;
+alter publication supabase_realtime add table public.match_results;

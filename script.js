@@ -1495,4 +1495,12 @@ document.addEventListener('DOMContentLoaded', () => {
     tickFeaturedCountdown();
   }, 1000);
   setInterval(tickMatchPills, 60000); // pills update every minute
+
+  // Supabase: pull latest shared data on load, then subscribe for realtime updates.
+  // Cache-first design means the UI shows localStorage instantly, then refreshes
+  // when Supabase responds (typically <300ms).
+  syncFromSupabase().then(ok => {
+    if (ok) { renderMatchGrid(); renderLeaderboard(); renderFeatured(); }
+  });
+  subscribeToSupabaseChanges();
 });

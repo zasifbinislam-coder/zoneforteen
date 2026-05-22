@@ -317,9 +317,125 @@ function deleteOrder(ref) {
 const ORDER_STATUSES = ['pending', 'confirmed', 'packed', 'shipped', 'delivered', 'cancelled'];
 
 /* ============================================================
-   MATCH PREDICTIONS + RESULTS (localStorage-backed for now)
-   When you wire a real backend, swap these helpers and the rest
-   of the app keeps working unchanged.
+   SUPABASE — real shared backend for predictions + results.
+   Anon key below is the PUBLIC client-side key (safe to commit);
+   Row-Level Security policies in supabase-setup.sql gate writes.
+   ============================================================ */
+const SUPABASE_CFG = {
+  url:  'https://ndtndrnzhfmlyukjjypv.supabase.co',
+  anon: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdG5kcm56aGZtbHl1a2pqeXB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0Njg2ODIsImV4cCI6MjA5NTA0NDY4Mn0.yc5eVYz-hnC-IRjC8JWRUfVOGDoroYl-SbETQnFBoIY',
+};
+let _sb = null;
+function getSupabase() {
+  if (_sb) return _sb;
+  if (typeof supabase === 'undefined') return null;   // CDN not loaded yet
+  _sb = supabase.createClient(SUPABASE_CFG.url, SUPABASE_CFG.anon, {
+    realtime: { params: { eventsPerSecond: 5 } },
+  });
+  return _sb;
+}
+
+/* Pull latest predictions + results from Supabase into localStorage cache.
+   Called on page load and on every realtime change broadcast.
+   Returns true if sync succeeded. */
+async function syncFromSupabase() {
+  const sb = getSupabase();
+  if (!sb) return false;
+  try {
+    const [{ data: preds, error: e1 }, { data: results, error: e2 }] = await Promise.all([
+      sb.from('predictions').select('*'),
+      sb.from('match_results').select('*'),
+    ]);
+    if (e1) throw e1;
+    if (e2) throw e2;
+
+    const local = (preds || []).map(p => ({
+      id:        p.id,
+      matchId:   p.match_id,
+      name:      p.name,
+      choice:    p.choice,
+      createdAt: new Date(p.created_at).getTime(),
+      updatedAt: p.updated_at ? new Date(p.updated_at).getTime() : null,
+    }));
+    localStorage.setItem(PREDICTIONS_KEY, JSON.stringify(local));
+
+    const map = {};
+    (results || []).forEach(r => {
+      map[r.match_id] = {
+        homeScore:  r.home_score,
+        awayScore:  r.away_score,
+        outcome:    r.outcome,
+        finishedAt: new Date(r.finished_at).getTime(),
+      };
+    });
+    localStorage.setItem(RESULTS_KEY, JSON.stringify(map));
+
+    window.dispatchEvent(new CustomEvent('predictions:change'));
+    window.dispatchEvent(new CustomEvent('results:change'));
+    return true;
+  } catch (err) {
+    console.warn('Supabase sync failed (using localStorage cache):', err.message || err);
+    return false;
+  }
+}
+
+/* Subscribe to realtime changes — leaderboard updates the moment
+   anyone in the world submits a prediction or the admin enters a result. */
+function subscribeToSupabaseChanges() {
+  const sb = getSupabase();
+  if (!sb) return;
+  sb.channel('zone14-predictions')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'predictions' },
+        () => syncFromSupabase())
+    .subscribe();
+  sb.channel('zone14-results')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'match_results' },
+        () => syncFromSupabase())
+    .subscribe();
+}
+
+/* Background pushes — called from savePrediction / saveResult / clearResult.
+   Fire-and-forget; UI doesn't wait on them. */
+async function pushPrediction(matchId, name, choice) {
+  const sb = getSupabase();
+  if (!sb) return;
+  try {
+    const { error } = await sb.from('predictions').upsert({
+      match_id:   matchId,
+      name:       name,
+      choice:     choice,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'match_id,name' });
+    if (error) throw error;
+  } catch (err) { console.warn('Push prediction failed:', err.message || err); }
+}
+async function pushResult(matchId, homeScore, awayScore, outcome) {
+  const sb = getSupabase();
+  if (!sb) return;
+  try {
+    const { error } = await sb.from('match_results').upsert({
+      match_id:    matchId,
+      home_score:  homeScore,
+      away_score:  awayScore,
+      outcome:     outcome,
+      finished_at: new Date().toISOString(),
+    });
+    if (error) throw error;
+  } catch (err) { console.warn('Push result failed:', err.message || err); }
+}
+async function deleteResultRemote(matchId) {
+  const sb = getSupabase();
+  if (!sb) return;
+  try {
+    const { error } = await sb.from('match_results').delete().eq('match_id', matchId);
+    if (error) throw error;
+  } catch (err) { console.warn('Delete result failed:', err.message || err); }
+}
+
+/* ============================================================
+   MATCH PREDICTIONS + RESULTS
+   Cache-first: localStorage powers instant reads, Supabase is
+   source of truth — synced on load and via realtime broadcasts.
    ============================================================ */
 const PREDICTIONS_KEY = 'zone14_predictions_v1';
 const RESULTS_KEY     = 'zone14_results_v1';
@@ -352,6 +468,7 @@ function savePrediction(matchId, name, choice) {
   }
   writePredictions(list);
   localStorage.setItem(PREDICTOR_KEY, clean);   // remember for next time
+  pushPrediction(matchId, clean, choice);       // sync to Supabase (fire & forget)
   return true;
 }
 function getPredictorName() {
@@ -376,20 +493,18 @@ function writeResults(r) {
 function saveResult(matchId, homeScore, awayScore) {
   const home = Math.max(0, parseInt(homeScore, 10) || 0);
   const away = Math.max(0, parseInt(awayScore, 10) || 0);
+  const outcome = home > away ? 'home' : away > home ? 'away' : 'draw';
   const r = readResults();
-  r[matchId] = {
-    homeScore: home,
-    awayScore: away,
-    outcome:   home > away ? 'home' : away > home ? 'away' : 'draw',
-    finishedAt: Date.now(),
-  };
+  r[matchId] = { homeScore: home, awayScore: away, outcome, finishedAt: Date.now() };
   writeResults(r);
+  pushResult(matchId, home, away, outcome);   // sync to Supabase
   return r[matchId];
 }
 function clearResult(matchId) {
   const r = readResults();
   delete r[matchId];
   writeResults(r);
+  deleteResultRemote(matchId);                // sync to Supabase
 }
 
 /* Compute leaderboard — aggregate predictions across all results */
