@@ -176,15 +176,21 @@ h1, h2, h3, .display { font-family: 'Bebas Neue', 'Oswald', sans-serif; letter-s
 /* Transparent crest in the navbar — no backplate, sits clean on the dark nav.
    Subtle cyan drop-shadow ties it to the brand glow. */
 .logo-mark {
-  height: 52px;
+  height: 80px;
   width: auto;
   display: block;
-  filter: drop-shadow(0 0 10px rgba(94, 233, 227, 0.35));
+  filter: drop-shadow(0 0 12px rgba(94, 233, 227, 0.4));
   transition: transform 0.4s var(--ease), filter 0.4s var(--ease);
 }
 .logo:hover .logo-mark {
   transform: scale(1.04);
-  filter: drop-shadow(0 0 16px rgba(94, 233, 227, 0.6));
+  filter: drop-shadow(0 0 20px rgba(94, 233, 227, 0.65));
+}
+/* Bump the navbar height for the bigger crest — :root --nav-h cascades to
+   scroll-padding, the off-canvas mobile menu top offset, etc. */
+:root { --nav-h: 92px; }
+@media (max-width: 768px) {
+  :root { --nav-h: 76px; }
 }
 
 .nav-links {
@@ -374,25 +380,29 @@ h1, h2, h3, .display { font-family: 'Bebas Neue', 'Oswald', sans-serif; letter-s
   text-align: center;
 }
 
-/* Hero watermark — main.png faded into the background like a printed crest behind the headline */
+/* Hero watermark — main.png as a bold-but-restrained backdrop crest.
+   Radial mask softens the center where the headline sits so the type
+   stays crisp; the edges of the shield stay clearly present. */
 .hero-watermark {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: min(135vw, 1900px);
+  width: min(145vw, 2100px);
   height: auto;
   transform: translate(-50%, -50%);
-  opacity: 0.17;
-  z-index: 1;
+  opacity: 0.28;
+  z-index: 0;          /* sits behind the headline / countdown */
   pointer-events: none;
   user-select: none;
-  filter: drop-shadow(0 0 90px rgba(94, 233, 227, 0.55))
-          drop-shadow(0 0 40px rgba(29, 107, 58, 0.45));
+  filter: drop-shadow(0 0 100px rgba(94, 233, 227, 0.55))
+          drop-shadow(0 0 50px rgba(29, 107, 58, 0.45));
   animation: watermarkBreath 8s ease-in-out infinite;
+  mask-image: radial-gradient(ellipse 55% 35% at center, transparent 0%, rgba(0,0,0,0.5) 55%, #000 100%);
+  -webkit-mask-image: radial-gradient(ellipse 55% 35% at center, transparent 0%, rgba(0,0,0,0.5) 55%, #000 100%);
 }
 @keyframes watermarkBreath {
-  0%, 100% { opacity: 0.14; transform: translate(-50%, -50%) scale(1); }
-  50%      { opacity: 0.22; transform: translate(-50%, -50%) scale(1.03); }
+  0%, 100% { opacity: 0.22; transform: translate(-50%, -50%) scale(1); }
+  50%      { opacity: 0.32; transform: translate(-50%, -50%) scale(1.025); }
 }
 
 .hero-badge {
@@ -2260,9 +2270,9 @@ h1, h2, h3, .display { font-family: 'Bebas Neue', 'Oswald', sans-serif; letter-s
 
   .hero { padding: 100px 0 80px; }
   .hero-title { font-size: clamp(40px, 12vw, 80px); }
-  .hero-watermark { width: 135vw; opacity: 0.16; }
+  .hero-watermark { width: 145vw; opacity: 0.26; }
 
-  .logo-mark { height: 44px; }
+  .logo-mark { height: 62px; }
   .countdown { padding: 14px 18px; gap: 4px; }
   .cd-box { min-width: 48px; }
   .cd-num { font-size: 28px; }
@@ -5296,7 +5306,7 @@ h1, h2, h3, .display { font-family: 'Bebas Neue', 'Oswald', sans-serif; letter-s
   .hero-title { font-size: clamp(28px, 6vh, 48px); margin-bottom: 12px; }
   .countdown { padding: 8px 12px; }
   .cd-num { font-size: 20px; }
-  .hero-watermark { width: 80vw; opacity: 0.05; }
+  .hero-watermark { width: 95vw; opacity: 0.18; }
   .hero-cta { margin-bottom: 20px; }
 }
 
