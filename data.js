@@ -79,17 +79,28 @@ const VENUES = [
   { city:'Vancouver',   stadium:'BC Place',             country:'CAN', cap:54000 },
 ];
 
-/* Country names + ISO-2 codes (for flagcdn.com images) + palette fallback */
+/* Country names + ISO-2 codes (for flagcdn.com images) + palette + flag gradient
+   used to color the country name text in jersey cards. Gradients mirror the
+   horizontal/vertical bands of each national flag. */
 const COUNTRY = {
-  ARG: { name:'Argentina',     iso2:'ar',     bg:'#75aadb', fg:'#1a3a5e' },
-  BRA: { name:'Brazil',        iso2:'br',     bg:'#fbe10d', fg:'#009c3b' },
-  FRA: { name:'France',        iso2:'fr',     bg:'#1e3a8a', fg:'#ffffff' },
-  ESP: { name:'Spain',         iso2:'es',     bg:'#c60b1e', fg:'#ffc400' },
-  GER: { name:'Germany',       iso2:'de',     bg:'#1a1a1a', fg:'#ffffff' },
-  POR: { name:'Portugal',      iso2:'pt',     bg:'#c8102e', fg:'#006a44' },
-  ENG: { name:'England',       iso2:'gb-eng', bg:'#ffffff', fg:'#cf142b' },
-  ITA: { name:'Italy',         iso2:'it',     bg:'#0066b3', fg:'#ffffff' },
-  NED: { name:'Netherlands',   iso2:'nl',     bg:'#ff6b00', fg:'#0a1a4a' },
+  ARG: { name:'Argentina',     iso2:'ar',     bg:'#75aadb', fg:'#1a3a5e',
+         gradient:'linear-gradient(180deg, #75aadb 0% 33%, #ffffff 33% 67%, #75aadb 67% 100%)' },
+  BRA: { name:'Brazil',        iso2:'br',     bg:'#fbe10d', fg:'#009c3b',
+         gradient:'linear-gradient(135deg, #009c3b 0% 50%, #fbe10d 50% 100%)' },
+  FRA: { name:'France',        iso2:'fr',     bg:'#1e3a8a', fg:'#ffffff',
+         gradient:'linear-gradient(90deg, #1e3a8a 0% 33%, #ffffff 33% 67%, #ef4135 67% 100%)' },
+  ESP: { name:'Spain',         iso2:'es',     bg:'#c60b1e', fg:'#ffc400',
+         gradient:'linear-gradient(180deg, #c60b1e 0% 25%, #ffc400 25% 75%, #c60b1e 75% 100%)' },
+  GER: { name:'Germany',       iso2:'de',     bg:'#1a1a1a', fg:'#ffffff',
+         gradient:'linear-gradient(180deg, #1a1a1a 0% 33%, #dd0000 33% 67%, #ffd700 67% 100%)' },
+  POR: { name:'Portugal',      iso2:'pt',     bg:'#c8102e', fg:'#006a44',
+         gradient:'linear-gradient(90deg, #006a44 0% 40%, #ffd700 40% 50%, #c8102e 50% 100%)' },
+  ENG: { name:'England',       iso2:'gb-eng', bg:'#ffffff', fg:'#cf142b',
+         gradient:'linear-gradient(90deg, #ffffff 0% 40%, #cf142b 40% 60%, #ffffff 60% 100%)' },
+  ITA: { name:'Italy',         iso2:'it',     bg:'#0066b3', fg:'#ffffff',
+         gradient:'linear-gradient(90deg, #009246 0% 33%, #ffffff 33% 67%, #ce2b37 67% 100%)' },
+  NED: { name:'Netherlands',   iso2:'nl',     bg:'#ff6b00', fg:'#0a1a4a',
+         gradient:'linear-gradient(180deg, #ae1c28 0% 33%, #ffffff 33% 67%, #21468b 67% 100%)' },
   MEX: { name:'Mexico',        iso2:'mx',     bg:'#006847', fg:'#ce1126' },
   USA: { name:'USA',           iso2:'us',     bg:'#0a1f5c', fg:'#ffffff' },
   CAN: { name:'Canada',        iso2:'ca',     bg:'#d52b1e', fg:'#ffffff' },

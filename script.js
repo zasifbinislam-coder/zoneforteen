@@ -48,11 +48,11 @@ function renderJerseys() {
       </div>
       <div class="jersey-body">
         <div class="jersey-head">
-          <h3 class="jersey-country">${j.country}</h3>
+          <h3 class="jersey-country flag-text" style="background-image:${(COUNTRY[j.id.split('-')[0].toUpperCase()] || {}).gradient || 'linear-gradient(180deg,#fff,#b0b0b0)'}">${j.country}</h3>
           <span class="jersey-price">৳${j.price.toLocaleString('en-IN')}</span>
         </div>
         <div class="size-picker" role="group" aria-label="Select size for ${j.country}">
-          ${['XS','M','L','XL','XXL','3XL'].map(s =>
+          ${['M','L','XL','XXL'].map(s =>
             `<button class="size-btn${s === 'M' ? ' active' : ''}" data-size="${s}"${oos ? ' disabled' : ''}>${s}</button>`
           ).join('')}
         </div>
@@ -851,9 +851,20 @@ function initQuickView() {
       ? `<span class="qv-stock-ok">${j.stockLeft <= 6 ? `🔥 Only ${j.stockLeft} left in stock` : '✓ In stock — ships within 24 h'}</span>`
       : `<span class="qv-stock-oos">⏳ Currently restocking — get a WhatsApp alert</span>`;
 
-    qvSizes.innerHTML = ['XS','M','L','XL','XXL','3XL']
+    qvSizes.innerHTML = ['M','L','XL','XXL']
       .map(s => `<button class="size-btn${s === 'M' ? ' active' : ''}" data-size="${s}"${j.inStock ? '' : ' disabled'}>${s}</button>`)
       .join('');
+
+    // Apply country flag gradient to the Quick View title text
+    const code = j.id.split('-')[0].toUpperCase();
+    const grad = (COUNTRY[code] || {}).gradient;
+    if (grad) {
+      qvTitle.classList.add('flag-text');
+      qvTitle.style.backgroundImage = grad;
+    } else {
+      qvTitle.classList.remove('flag-text');
+      qvTitle.style.backgroundImage = '';
+    }
     qvQty.textContent = '1';
 
     qvAdd.disabled = !j.inStock;
