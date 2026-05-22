@@ -92,7 +92,7 @@ const COUNTRY = {
   ESP: { name:'Spain',         iso2:'es',     bg:'#c60b1e', fg:'#ffc400',
          gradient:'linear-gradient(180deg, #c60b1e 0% 25%, #ffc400 25% 75%, #c60b1e 75% 100%)' },
   GER: { name:'Germany',       iso2:'de',     bg:'#1a1a1a', fg:'#ffffff',
-         gradient:'linear-gradient(180deg, #1a1a1a 0% 33%, #dd0000 33% 67%, #ffd700 67% 100%)' },
+         gradient:'linear-gradient(180deg, #d8d8d8 0% 33%, #ee0a17 33% 67%, #ffce00 67% 100%)' },
   POR: { name:'Portugal',      iso2:'pt',     bg:'#c8102e', fg:'#006a44',
          gradient:'linear-gradient(90deg, #006a44 0% 40%, #ffd700 40% 50%, #c8102e 50% 100%)' },
   ENG: { name:'England',       iso2:'gb-eng', bg:'#ffffff', fg:'#cf142b',
