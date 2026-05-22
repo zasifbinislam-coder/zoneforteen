@@ -3,6 +3,21 @@
    Design tokens, base, components, sections
    ============================================================ */
 
+/* Bohemian Typewriter — self-host fallback.
+   If the file exists at fonts/BohemianTypewriter.ttf the browser uses it.
+   If not, it transparently falls through to the cdnfonts.com link in
+   index.html, and finally to Courier Prime / Bebas Neue. */
+@font-face {
+  font-family: 'Bohemian Typewriter';
+  src: url('fonts/BohemianTypewriter.ttf') format('truetype'),
+       url('fonts/BohemianTypewriter.otf') format('opentype'),
+       url('fonts/BohemianTypewriter.woff2') format('woff2'),
+       url('fonts/BohemianTypewriter.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   /* Theme derived from Zone14 logos:
      - fav.PNG: neon cyan ring on smoky black-blue
@@ -85,14 +100,15 @@ input, select, textarea { font: inherit; }
 .container { max-width: var(--container); margin: 0 auto; padding: 0 24px; }
 
 /* ============ TYPOGRAPHY ============ */
-/* Bohemian-Typewriter look via Google Fonts. Courier Prime is the cleanest
-   classic-typewriter face on Google Fonts — full crisp strokes (Special
-   Elite's distressed glyphs read as broken at hero size). Bold weight
-   keeps strokes thick at all sizes. */
+/* Primary brand font: Bohemian Typewriter (typewriterfonts.net).
+   Loaded via cdnfonts.com CDN AND a local @font-face fallback pointing to
+   fonts/BohemianTypewriter.ttf — whichever exists wins.
+   If both fail, the chain falls back to Courier Prime (similar typewriter
+   look) and finally Bebas Neue, so the layout never breaks. */
 h1, h2, h3, .display {
-  font-family: 'Courier Prime', 'Bebas Neue', 'Oswald', monospace;
+  font-family: 'Bohemian Typewriter', 'Courier Prime', 'Bebas Neue', 'Oswald', monospace;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
 }
 .hero-title, .section-title, .qv-country, .td-ref { letter-spacing: -0.03em; }
 .accent { color: var(--neon); }
@@ -444,7 +460,7 @@ h1, h2, h3, .display {
 }
 
 .hero-title {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: clamp(48px, 9vw, 128px);
   line-height: 0.95;
   letter-spacing: 0.01em;
@@ -504,7 +520,7 @@ h1, h2, h3, .display {
   min-width: 60px;
 }
 .cd-num {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: clamp(28px, 4vw, 44px);
   line-height: 1;
   background: var(--grad-neon);
@@ -522,7 +538,7 @@ h1, h2, h3, .display {
   text-transform: uppercase;
 }
 .cd-sep {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: clamp(24px, 3.5vw, 36px);
   color: var(--text-mute);
   margin-top: -10px;
@@ -556,7 +572,7 @@ h1, h2, h3, .display {
   align-items: center;
 }
 .hero-stats strong {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 36px;
   color: var(--text);
   line-height: 1;
@@ -635,7 +651,7 @@ h1, h2, h3, .display {
   border-radius: 999px;
 }
 .section-title {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: clamp(36px, 5.5vw, 68px);
   line-height: 1;
   letter-spacing: 0.02em;
@@ -812,7 +828,7 @@ h1, h2, h3, .display {
   padding: 8px 22px;
   background: rgba(122, 31, 43, 0.92);
   color: #fff;
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 22px;
   letter-spacing: 0.2em;
   border: 2px solid #fff;
@@ -865,13 +881,13 @@ h1, h2, h3, .display {
   gap: 12px;
 }
 .jersey-country {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 26px;
   line-height: 1;
   letter-spacing: 0.02em;
 }
 .jersey-price {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 24px;
   color: var(--neon);
   white-space: nowrap;
@@ -980,7 +996,7 @@ h1, h2, h3, .display {
   filter: drop-shadow(0 4px 12px rgba(94, 233, 227, 0.3));
 }
 .trust-card h3 {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 22px;
   letter-spacing: 0.03em;
   margin-bottom: 8px;
@@ -1050,7 +1066,7 @@ h1, h2, h3, .display {
   text-transform: uppercase;
 }
 .offer-card h3 {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 32px;
   letter-spacing: 0.02em;
   margin-top: 8px;
@@ -1061,7 +1077,7 @@ h1, h2, h3, .display {
   min-height: 42px;
 }
 .offer-price {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 26px;
   color: var(--neon);
   margin: 6px 0 14px;
@@ -1153,7 +1169,7 @@ h1, h2, h3, .display {
   z-index: 1;
 }
 .mf-name {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 22px;
   letter-spacing: 0.04em;
 }
@@ -1165,7 +1181,7 @@ h1, h2, h3, .display {
   padding: 0 12px;
 }
 .mf-vs {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 36px;
   color: var(--text-mute);
   line-height: 1;
@@ -1185,7 +1201,7 @@ h1, h2, h3, .display {
   min-width: 42px;
 }
 .mf-cd-num {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 24px;
   line-height: 1;
   color: var(--neon);
@@ -1306,12 +1322,12 @@ h1, h2, h3, .display {
   z-index: 1;
 }
 .mc-team-name {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 14px;
   letter-spacing: 0.04em;
   text-align: center;
 }
-.mc-vs { font-family: 'Courier Prime', sans-serif; color: var(--text-mute); font-size: 18px; }
+.mc-vs { font-family: 'Bohemian Typewriter', sans-serif; color: var(--text-mute); font-size: 18px; }
 
 .mc-foot {
   display: flex;
@@ -1376,7 +1392,7 @@ h1, h2, h3, .display {
   backdrop-filter: blur(20px);
 }
 .group-card h3 {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 22px;
   letter-spacing: 0.06em;
   margin-bottom: 14px;
@@ -1432,7 +1448,7 @@ h1, h2, h3, .display {
 .group-table .team-name { font-weight: 600; font-size: 13px; }
 .group-table tr.team-highlight td { background: rgba(94, 233, 227, 0.04); }
 .group-table tr.team-highlight .team-name { color: var(--neon); }
-.group-table td.pts { font-family: 'Courier Prime', sans-serif; font-size: 16px; color: var(--neon); }
+.group-table td.pts { font-family: 'Bohemian Typewriter', sans-serif; font-size: 16px; color: var(--neon); }
 
 /* Venues */
 .venues-grid {
@@ -1489,7 +1505,7 @@ h1, h2, h3, .display {
   display: block;
 }
 .venue-card h3 {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 22px;
   letter-spacing: 0.04em;
   margin-bottom: 4px;
@@ -1509,7 +1525,7 @@ h1, h2, h3, .display {
   letter-spacing: 0.05em;
 }
 .venue-card .v-cap strong {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 16px;
   color: var(--neon);
   letter-spacing: 0.04em;
@@ -1620,7 +1636,7 @@ h1, h2, h3, .display {
   padding-top: 14px;
 }
 .review-card strong {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 18px;
   letter-spacing: 0.04em;
 }
@@ -1748,7 +1764,7 @@ h1, h2, h3, .display {
 }
 .hud-row { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
 .hud-lbl { color: var(--text-mute); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; }
-.hud-val { color: var(--neon); font-family: 'Courier Prime', sans-serif; font-size: 14px; letter-spacing: 0.04em; }
+.hud-val { color: var(--neon); font-family: 'Bohemian Typewriter', sans-serif; font-size: 14px; letter-spacing: 0.04em; }
 
 /* Drag hint */
 .size-3d-hint {
@@ -1821,7 +1837,7 @@ h1, h2, h3, .display {
   white-space: nowrap;
 }
 .size-table th {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 13px;
   letter-spacing: 0.15em;
   color: var(--neon);
@@ -1830,7 +1846,7 @@ h1, h2, h3, .display {
 }
 .size-table tr:hover td { background: rgba(94, 233, 227, 0.04); }
 .size-table td:first-child strong {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 18px;
   color: var(--text);
 }
@@ -1870,7 +1886,7 @@ h1, h2, h3, .display {
 .step-num {
   position: absolute;
   top: 16px; right: 24px;
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 64px;
   color: rgba(94, 233, 227, 0.08);
   line-height: 1;
@@ -1880,7 +1896,7 @@ h1, h2, h3, .display {
   margin-bottom: 16px;
 }
 .step-card h3 {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 22px;
   letter-spacing: 0.04em;
   margin-bottom: 10px;
@@ -1965,7 +1981,7 @@ h1, h2, h3, .display {
   padding-bottom: 60px;
 }
 .footer-col h4 {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 18px;
   letter-spacing: 0.15em;
   color: var(--neon);
@@ -2108,7 +2124,7 @@ h1, h2, h3, .display {
   box-shadow: 0 14px 32px -8px rgba(94, 233, 227, 0.8);
 }
 .cart-count {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 18px;
   line-height: 1;
 }
@@ -2365,7 +2381,7 @@ h1, h2, h3, .display {
   backdrop-filter: blur(20px);
 }
 .block-title {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 22px;
   letter-spacing: 0.06em;
   margin-bottom: 22px;
@@ -2480,7 +2496,7 @@ h1, h2, h3, .display {
   gap: 18px;
 }
 .summary-title {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 22px;
   letter-spacing: 0.06em;
   margin-bottom: 4px;
@@ -2548,7 +2564,7 @@ h1, h2, h3, .display {
   align-items: flex-end;
   gap: 8px;
 }
-.cart-item-price { font-family: 'Courier Prime', sans-serif; font-size: 16px; color: var(--neon); }
+.cart-item-price { font-family: 'Bohemian Typewriter', sans-serif; font-size: 16px; color: var(--neon); }
 .cart-item-remove {
   width: 24px; height: 24px;
   display: grid;
@@ -2640,7 +2656,7 @@ h1, h2, h3, .display {
 }
 .totals-row.discount { color: #51e0a4; }
 .totals-row.grand {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 28px;
   color: var(--text);
   border-top: 1px solid var(--border);
@@ -2750,7 +2766,7 @@ h1, h2, h3, .display {
   box-shadow: 0 0 40px rgba(94, 233, 227, 0.5);
 }
 .order-success h3 {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 32px;
   letter-spacing: 0.04em;
   margin-bottom: 10px;
@@ -2833,7 +2849,7 @@ h1, h2, h3, .display {
   z-index: 2;
 }
 .player-num {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 168px;
   line-height: 1;
   color: var(--fg);
@@ -2850,7 +2866,7 @@ h1, h2, h3, .display {
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 999px;
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 13px;
   letter-spacing: 0.1em;
   color: #fff;
@@ -2882,7 +2898,7 @@ h1, h2, h3, .display {
 }
 .player-pos { color: var(--neon); font-weight: 700; }
 .player-name {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 26px;
   letter-spacing: 0.04em;
   line-height: 1;
@@ -3015,7 +3031,7 @@ h1, h2, h3, .display {
   box-shadow: 0 14px 32px -8px rgba(255, 59, 108, 0.75);
 }
 .wishlist-count {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 18px;
   line-height: 1;
 }
@@ -3050,7 +3066,7 @@ h1, h2, h3, .display {
   display: grid;
   place-items: center;
   color: #052424;
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 18px;
   font-weight: 700;
   flex-shrink: 0;
@@ -3276,14 +3292,14 @@ h1, h2, h3, .display {
 }
 .qv-tag.away { color: var(--blue); border-color: rgba(0, 212, 255, 0.3); background: rgba(0, 212, 255, 0.1); }
 .qv-country {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 48px;
   line-height: 1;
   letter-spacing: 0.02em;
 }
 .qv-edition { font-size: 13px; color: var(--text-mute); letter-spacing: 0.1em; text-transform: uppercase; margin-top: -4px; }
 .qv-price {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 40px;
   color: var(--neon);
   letter-spacing: 0.04em;
@@ -3327,7 +3343,7 @@ h1, h2, h3, .display {
 }
 .qv-qty button:hover { background: var(--grad-neon); color: #052424; }
 .qv-qty span {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 22px;
   min-width: 24px;
   text-align: center;
@@ -3401,7 +3417,7 @@ h1, h2, h3, .display {
 }
 .gate-logo { width: 96px; margin: 0 auto 18px; filter: drop-shadow(0 0 14px rgba(94, 233, 227, 0.35)); }
 .admin-gate-card h1 {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 32px;
   letter-spacing: 0.04em;
   margin-bottom: 6px;
@@ -3448,7 +3464,7 @@ h1, h2, h3, .display {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 18px;
   letter-spacing: 0.06em;
   text-decoration: none;
@@ -3494,7 +3510,7 @@ h1, h2, h3, .display {
   font-weight: 600;
 }
 .kpi-val {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 40px;
   line-height: 1;
   color: var(--neon);
@@ -3548,7 +3564,7 @@ h1, h2, h3, .display {
   border-radius: var(--radius);
 }
 .admin-empty-ico { font-size: 48px; margin-bottom: 14px; opacity: 0.6; }
-.admin-empty h3 { font-family: 'Courier Prime', sans-serif; font-size: 24px; margin-bottom: 8px; }
+.admin-empty h3 { font-family: 'Bohemian Typewriter', sans-serif; font-size: 24px; margin-bottom: 8px; }
 .admin-empty p { color: var(--text-dim); font-size: 14px; max-width: 480px; margin: 0 auto; }
 
 .order-card {
@@ -3583,7 +3599,7 @@ h1, h2, h3, .display {
 .oc-mid span { font-size: 12px; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .oc-right { display: flex; align-items: center; gap: 14px; }
 .oc-items { font-size: 11px; color: var(--text-mute); letter-spacing: 0.05em; text-transform: uppercase; }
-.oc-total { font-family: 'Courier Prime', sans-serif; font-size: 22px; color: var(--neon); }
+.oc-total { font-family: 'Bohemian Typewriter', sans-serif; font-size: 22px; color: var(--neon); }
 
 .status-select {
   padding: 6px 28px 6px 10px;
@@ -3624,7 +3640,7 @@ h1, h2, h3, .display {
   padding: 24px 20px;
 }
 .ocb-grid h4 {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 14px;
   letter-spacing: 0.15em;
   color: var(--neon);
@@ -3648,7 +3664,7 @@ h1, h2, h3, .display {
 .ocb-items li:last-child { border-bottom: none; }
 .ocb-items strong { color: var(--text); font-weight: 700; }
 .ocb-items span { font-size: 11px; color: var(--text-mute); letter-spacing: 0.05em; }
-.ocb-line-price { font-family: 'Courier Prime', sans-serif !important; font-size: 15px !important; color: var(--neon) !important; align-self: end; }
+.ocb-line-price { font-family: 'Bohemian Typewriter', sans-serif !important; font-size: 15px !important; color: var(--neon) !important; align-self: end; }
 
 .ocb-tags { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
 .custom-pill, .promo-pill {
@@ -3670,7 +3686,7 @@ h1, h2, h3, .display {
   padding: 4px 0;
 }
 .bill-row.grand {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 22px;
   color: var(--text);
   border-top: 1px solid var(--border);
@@ -3737,7 +3753,7 @@ h1, h2, h3, .display {
   margin-bottom: 18px;
 }
 .static-block h2 {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 26px;
   letter-spacing: 0.04em;
   margin-bottom: 12px;
@@ -3782,7 +3798,7 @@ h1, h2, h3, .display {
   backdrop-filter: blur(20px);
 }
 .legal-text h2 {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 22px;
   letter-spacing: 0.05em;
   color: var(--neon);
@@ -3822,7 +3838,7 @@ h1, h2, h3, .display {
 .contact-item:hover { transform: translateY(-3px); border-color: rgba(94, 233, 227, 0.3); }
 .contact-ico { font-size: 24px; margin-bottom: 10px; }
 .contact-item h3 {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 16px;
   letter-spacing: 0.1em;
   color: var(--neon);
@@ -3841,7 +3857,7 @@ h1, h2, h3, .display {
   backdrop-filter: blur(20px);
 }
 .contact-form h3 {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 22px;
   letter-spacing: 0.05em;
   margin-bottom: 18px;
@@ -3977,7 +3993,7 @@ h1, h2, h3, .display {
 
 .media-group { margin-bottom: 20px; }
 .media-group h4 {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 16px;
   letter-spacing: 0.06em;
   color: var(--neon);
@@ -4126,7 +4142,7 @@ h1, h2, h3, .display {
   color: #ffb547;
   border: 1px solid rgba(255, 181, 71, 0.4);
   border-radius: 999px;
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 14px;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -4139,7 +4155,7 @@ h1, h2, h3, .display {
   background: rgba(0, 0, 0, 0.7);
   color: #fff;
   border-radius: 4px;
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 13px;
   letter-spacing: 0.05em;
 }
@@ -4149,7 +4165,7 @@ h1, h2, h3, .display {
   flex: 1;
 }
 .vc-title {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 20px;
   letter-spacing: 0.04em;
   margin-bottom: 4px;
@@ -4217,7 +4233,7 @@ h1, h2, h3, .display {
   border-top: 1px solid var(--border);
 }
 .video-modal-meta h3 {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 24px;
   letter-spacing: 0.04em;
   margin-bottom: 4px;
@@ -4310,7 +4326,7 @@ h1, h2, h3, .display {
   background: rgba(0, 0, 0, 0.4);
   border: 1.5px solid var(--border);
   border-radius: 999px;
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 14px;
   letter-spacing: 0.15em;
 }
@@ -4371,7 +4387,7 @@ h1, h2, h3, .display {
 }
 .tl-step.cancelled .tl-dot { background: rgba(255, 107, 107, 0.15); border-color: #ff6b6b; color: #ff6b6b; }
 .tl-label {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 18px;
   letter-spacing: 0.04em;
   color: var(--text-mute);
@@ -4389,7 +4405,7 @@ h1, h2, h3, .display {
 }
 .td-block:first-of-type { padding-top: 0; border-top: none; margin-top: 0; }
 .td-block h3 {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 16px;
   letter-spacing: 0.15em;
   color: var(--neon);
@@ -4409,7 +4425,7 @@ h1, h2, h3, .display {
 .td-items li:last-child { border-bottom: none; padding-bottom: 0; }
 .td-item-name { font-weight: 700; color: var(--text); }
 .td-item-meta { font-size: 11px; color: var(--text-mute); letter-spacing: 0.05em; text-transform: uppercase; }
-.td-item-price { font-family: 'Courier Prime', sans-serif; font-size: 18px; color: var(--neon); grid-row: span 2; align-self: center; }
+.td-item-price { font-family: 'Bohemian Typewriter', sans-serif; font-size: 18px; color: var(--neon); grid-row: span 2; align-self: center; }
 
 .td-custom {
   margin-top: 12px;
@@ -4430,7 +4446,7 @@ h1, h2, h3, .display {
   color: var(--text-dim);
 }
 .td-bill-row.grand {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 24px;
   color: var(--text);
   border-top: 1px solid var(--border);
@@ -4470,7 +4486,7 @@ h1, h2, h3, .display {
 }
 .error-card { text-align: center; max-width: 600px; }
 .error-code {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: clamp(140px, 25vw, 240px);
   line-height: 1;
   letter-spacing: 0.05em;
@@ -4490,7 +4506,7 @@ h1, h2, h3, .display {
   transition: transform 0.08s linear;
 }
 .error-card h1 {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: clamp(40px, 7vw, 72px);
   letter-spacing: 0.06em;
   color: var(--neon);
@@ -4621,7 +4637,7 @@ h1, h2, h3, .display {
   gap: 4px;
 }
 .mc-final-score {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 32px;
   line-height: 1;
   color: var(--neon);
@@ -4677,7 +4693,7 @@ h1, h2, h3, .display {
 .predict-modal.show .predict-card { transform: scale(1); }
 
 .predict-headline {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 24px;
   letter-spacing: 0.04em;
   display: flex;
@@ -4764,7 +4780,7 @@ h1, h2, h3, .display {
   color: var(--text-mute);
 }
 .po-team {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 14px;
   letter-spacing: 0.04em;
   text-align: center;
@@ -4804,7 +4820,7 @@ h1, h2, h3, .display {
   box-shadow: 0 0 30px rgba(94, 233, 227, 0.5);
 }
 .predict-success h4 {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 26px;
   letter-spacing: 0.04em;
   margin-bottom: 8px;
@@ -4829,7 +4845,7 @@ h1, h2, h3, .display {
   flex-wrap: wrap;
 }
 .lb-head h3 {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 28px;
   letter-spacing: 0.04em;
   margin-bottom: 4px;
@@ -4881,7 +4897,7 @@ h1, h2, h3, .display {
   background: rgba(94, 233, 227, 0.05);
 }
 .lb-rank {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 26px;
   text-align: center;
   color: var(--text-mute);
@@ -4908,7 +4924,7 @@ h1, h2, h3, .display {
   display: flex;
   align-items: baseline;
   gap: 4px;
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 18px;
 }
 .lb-correct { color: var(--neon); font-size: 22px; }
@@ -4944,7 +4960,7 @@ h1, h2, h3, .display {
   border: 1px dashed var(--border);
 }
 .lb-empty-ico { font-size: 44px; margin-bottom: 12px; opacity: 0.6; }
-.lb-empty h4 { font-family: 'Courier Prime', sans-serif; font-size: 22px; margin-bottom: 6px; }
+.lb-empty h4 { font-family: 'Bohemian Typewriter', sans-serif; font-size: 22px; margin-bottom: 6px; }
 .lb-empty p { color: var(--text-mute); font-size: 13px; }
 
 .lb-rules {
@@ -4966,7 +4982,7 @@ h1, h2, h3, .display {
   backdrop-filter: blur(20px);
 }
 .admin-section-head h2 {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 24px;
   letter-spacing: 0.05em;
   margin-bottom: 4px;
@@ -4982,7 +4998,7 @@ h1, h2, h3, .display {
   color: var(--text-dim);
   letter-spacing: 0.04em;
 }
-.results-stats strong { color: var(--neon); font-family: 'Courier Prime', sans-serif; font-size: 16px; margin-right: 4px; }
+.results-stats strong { color: var(--neon); font-family: 'Bohemian Typewriter', sans-serif; font-size: 16px; margin-right: 4px; }
 .results-stats span {
   padding: 6px 12px;
   background: rgba(255, 255, 255, 0.04);
@@ -5031,7 +5047,7 @@ h1, h2, h3, .display {
 }
 .rc-team img { width: 24px; height: 16px; border-radius: 3px; object-fit: cover; }
 .rc-team:last-child { justify-content: flex-end; }
-.rc-vs { font-family: 'Courier Prime', sans-serif; color: var(--text-mute); font-size: 14px; }
+.rc-vs { font-family: 'Bohemian Typewriter', sans-serif; color: var(--text-mute); font-size: 14px; }
 .rc-score {
   display: flex;
   justify-content: center;
@@ -5047,13 +5063,13 @@ h1, h2, h3, .display {
   border: 1px solid var(--border);
   border-radius: 8px;
   color: var(--neon);
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 24px;
   letter-spacing: 0.04em;
 }
 .rc-input:focus { outline: none; border-color: var(--neon); }
 .rc-dash {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   color: var(--text-mute);
   font-size: 22px;
 }
@@ -5394,7 +5410,7 @@ h1, h2, h3, .display {
 }
 .je-ico { font-size: 44px; margin-bottom: 12px; opacity: 0.5; }
 .jersey-empty h3 {
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 24px;
   margin-bottom: 6px;
   letter-spacing: 0.04em;
@@ -5456,7 +5472,7 @@ h1, h2, h3, .display {
   background: var(--grad-neon);
   color: #052424;
   border-radius: 999px;
-  font-family: 'Courier Prime', sans-serif;
+  font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 11px;
   font-weight: 800;
   line-height: 1;
