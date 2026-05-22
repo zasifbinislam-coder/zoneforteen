@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <title>404 — Off-side · Zone14</title>
+  <meta name="robots" content="noindex,follow" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" type="image/svg+xml" href="logo/favicon.svg" />
+</head>
+<body class="page-404">
+
+  <header id="navbar" class="navbar order-nav scrolled">
+    <div class="container nav-inner">
+      <a href="index.html" class="logo"><img class="logo-mark" src="logo/main.png" alt="Zone14" /></a>
+      <a href="index.html" class="back-link">← Back to Shop</a>
+    </div>
+  </header>
+
+  <main class="error-page">
+    <div class="container">
+      <div class="error-card">
+        <div class="error-code">
+          <span>4</span>
+          <span class="ball">⚽</span>
+          <span>4</span>
+        </div>
+        <h1>OFF-SIDE</h1>
+        <p class="error-msg">
+          The page you're chasing has gone out of bounds.<br/>
+          Let's get you back into the box.
+        </p>
+        <div class="error-actions">
+          <a href="index.html" class="btn btn-primary btn-lg">Back to Home</a>
+          <a href="index.html#jerseys" class="btn btn-ghost btn-lg">Browse Jerseys</a>
+        </div>
+        <div class="error-shortcuts">
+          <a href="index.html#matches">🏆 Match Hub</a>
+          <a href="track.html">📦 Track Order</a>
+          <a href="contact.html">💬 Contact Us</a>
+          <a href="https://wa.me/8801723360078" target="_blank" rel="noopener">📱 WhatsApp</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Light animation — the ball nudges between the 4s
+    const ball = document.querySelector('.error-code .ball');
+    if (ball) {
+      let dir = 1, x = 0;
+      setInterval(() => {
+        x += dir * 2;
+        if (x > 8 || x < -8) dir *= -1;
+        ball.style.transform = `translateY(${x}px) rotate(${x * 20}deg)`;
+      }, 80);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Terms &amp; Conditions · Zone14</title>
+  <meta name="description" content="Terms and conditions for shopping at Zone14." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" type="image/svg+xml" href="logo/favicon.svg" />
+</head>
+<body class="page-static">
+
+  <header id="navbar" class="navbar order-nav scrolled">
+    <div class="container nav-inner">
+      <a href="index.html" class="logo"><img class="logo-mark" src="logo/main.png" alt="Zone14" /></a>
+      <a href="index.html" class="back-link">← Back to Shop</a>
+    </div>
+  </header>
+
+  <main class="static-page">
+    <div class="container narrow">
+      <header class="static-head">
+        <p class="eyebrow">Legal</p>
+        <h1 class="section-title">Terms &amp; <span class="accent">Conditions</span></h1>
+        <p class="section-sub">Last updated: <span id="legalDate"></span></p>
+      </header>
+
+      <section class="legal-text">
+        <h2>1. About these terms</h2>
+        <p>By placing an order with Zone14 you agree to these terms. Please read them carefully before purchasing.</p>
+
+        <h2>2. Products</h2>
+        <p>Zone14 sells premium fan-grade football jerseys. These are <strong>not licensed original</strong> Nike or Adidas products — they are high-quality replicas (sometimes called "Master Copy" in the BD market) made with match-grade fabric and accurate crest prints. We never represent these as licensed originals.</p>
+
+        <h2>3. Orders</h2>
+        <ul>
+          <li>An order is confirmed once you receive a WhatsApp confirmation from us with your order reference (Z14-XXXXXX).</li>
+          <li>We reserve the right to refuse or cancel any order — for example, if a product is out of stock, mispriced, or we suspect fraud.</li>
+          <li>Prices are in Bangladeshi Taka (৳) and inclusive of any applicable taxes.</li>
+        </ul>
+
+        <h2>4. Pricing &amp; payment</h2>
+        <ul>
+          <li>We accept Cash on Delivery (COD), bKash, Nagad, Rocket, and bank transfer.</li>
+          <li>For mobile financial services, payment is collected after we confirm your order.</li>
+          <li>Promotional codes (WC2026, MATCHDAY, etc.) are valid only during their stated period and cannot be combined unless stated.</li>
+        </ul>
+
+        <h2>5. Customization</h2>
+        <p>Custom name &amp; number printing is heat-pressed. Once a jersey is customized it cannot be returned or exchanged for size or design reasons.</p>
+
+        <h2>6. Delivery</h2>
+        <p>Refer to our <a href="shipping.html">Shipping Policy</a>. Delivery times are estimates, not guarantees — courier delays beyond our control may occur.</p>
+
+        <h2>7. Returns &amp; refunds</h2>
+        <p>See our <a href="refund.html">Refund &amp; Exchange Policy</a>.</p>
+
+        <h2>8. Intellectual property</h2>
+        <p>All site content (text, photos, design, code) is owned by Zone14 unless otherwise credited. Country crests and player names belong to their respective rights holders and are reproduced under fair use for fan-merchandise reference.</p>
+
+        <h2>9. Limitation of liability</h2>
+        <p>To the maximum extent permitted by Bangladesh law, our liability for any claim arising from an order is limited to the price you paid for the affected item.</p>
+
+        <h2>10. Governing law</h2>
+        <p>These terms are governed by the laws of Bangladesh. Any dispute will be resolved in the courts of Dhaka.</p>
+
+        <h2>11. Changes</h2>
+        <p>We may update these terms occasionally. The current version is always shown on this page.</p>
+
+        <h2>12. Contact</h2>
+        <p>Questions? WhatsApp <a href="https://wa.me/8801723360078">+880 1723-360078</a> or email <a href="mailto:hello@zone14.bd">hello@zone14.bd</a>.</p>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-bottom">
+      <div class="container">
+        <p>© <span id="year"></span> Zone14 · <a href="about.html">About</a> · <a href="privacy.html">Privacy</a> · <a href="shipping.html">Shipping</a> · <a href="refund.html">Refund</a> · <a href="contact.html">Contact</a></p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+    document.getElementById('legalDate').textContent = new Date().toLocaleDateString('en-GB', {year:'numeric', month:'long', day:'numeric'});
+  </script>
+</body>
+</html>

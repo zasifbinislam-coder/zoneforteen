@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <title>Checkout — Zone14</title>
+  <meta name="description" content="Complete your Zone14 World Cup 2026 jersey order. Cash on Delivery, bKash, Nagad, Rocket accepted. Fast nationwide shipping." />
+  <meta name="robots" content="noindex,follow" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" type="image/svg+xml" href="logo/favicon.svg" />
+  <link rel="alternate icon" type="image/png" href="logo/fav.PNG" />
+</head>
+<body class="page-order">
+
+  <!-- ============ NAVBAR ============ -->
+  <header id="navbar" class="navbar order-nav scrolled">
+    <div class="container nav-inner">
+      <a href="index.html" class="logo" aria-label="Zone14 home">
+        <img class="logo-mark" src="logo/main.png" alt="Zone14" />
+      </a>
+      <a href="index.html#jerseys" class="back-link">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M11 5l-7 7 7 7 1.4-1.4L7.8 13H20v-2H7.8l4.6-4.6z"/></svg>
+        Continue Shopping
+      </a>
+    </div>
+  </header>
+
+  <!-- ============ CHECKOUT ============ -->
+  <main class="checkout">
+    <div class="container">
+      <header class="checkout-head">
+        <h1 class="section-title">Check<span class="accent">out</span></h1>
+        <ol class="breadcrumb">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="index.html#jerseys">Jerseys</a></li>
+          <li>Checkout</li>
+        </ol>
+      </header>
+
+      <div class="checkout-grid">
+
+        <!-- ============ LEFT — FORM ============ -->
+        <form id="orderForm" class="checkout-form" novalidate>
+
+          <!-- Step 1: Delivery -->
+          <section class="form-block">
+            <h2 class="block-title"><span class="step-pill">1</span> Delivery Information</h2>
+
+            <div class="form-row">
+              <label>Full Name<span class="req">*</span>
+                <input type="text" name="name" required autocomplete="name" placeholder="Md. Karim Ahmed" />
+              </label>
+              <label>Phone Number<span class="req">*</span>
+                <input type="tel" name="phone" required autocomplete="tel" placeholder="01XXXXXXXXX" pattern="01[0-9]{9}" />
+              </label>
+            </div>
+
+            <div class="form-row full">
+              <label>Email (optional)
+                <input type="email" name="email" autocomplete="email" placeholder="you@email.com" />
+                <span class="hint">For order updates &amp; tracking.</span>
+              </label>
+            </div>
+
+            <div class="form-row">
+              <label>Division<span class="req">*</span>
+                <select name="division" id="divisionSelect" required>
+                  <option value="">Select division</option>
+                </select>
+              </label>
+              <label>District<span class="req">*</span>
+                <select name="district" id="districtSelect" required disabled>
+                  <option value="">Pick division first</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="form-row">
+              <label>Thana / Sub-district<span class="req">*</span>
+                <select name="thana" id="thanaSelect" required disabled>
+                  <option value="">Pick district first</option>
+                </select>
+              </label>
+              <label>Postcode (optional)
+                <input type="text" name="postcode" autocomplete="postal-code" placeholder="1209" />
+              </label>
+            </div>
+
+            <div class="form-row full">
+              <label>House / Road / Area<span class="req">*</span>
+                <textarea name="address" required autocomplete="street-address" placeholder="House #, Road #, Block/Sector, landmark..."></textarea>
+                <span class="hint">As specific as possible — helps the courier reach you faster.</span>
+              </label>
+            </div>
+
+            <!-- Delivery zone -->
+            <div class="form-row full" style="margin-bottom:0">
+              <label style="margin-bottom:8px">Delivery Zone<span class="req">*</span></label>
+              <div class="delivery-options">
+                <label class="opt-card">
+                  <input type="radio" name="zone" value="dhaka" checked />
+                  <div class="opt-ico">🏙️</div>
+                  <div class="opt-text">
+                    <span>Inside Dhaka</span>
+                    <span class="opt-sub">৳70 · 24 hours</span>
+                  </div>
+                </label>
+                <label class="opt-card">
+                  <input type="radio" name="zone" value="outside" />
+                  <div class="opt-ico">🚚</div>
+                  <div class="opt-text">
+                    <span>Outside Dhaka</span>
+                    <span class="opt-sub">৳130 · 2–3 days</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </section>
+
+          <!-- Step 2: Customization -->
+          <section class="form-block">
+            <h2 class="block-title"><span class="step-pill">2</span> Customization <span style="font-size:11px; font-weight:500; color: var(--text-mute); letter-spacing:0.05em; margin-left:6px">(optional)</span></h2>
+
+            <div class="form-row">
+              <label>Name on Back
+                <input type="text" name="customName" maxlength="12" placeholder="e.g. MESSI" />
+                <span class="hint">Max 12 letters · uppercase</span>
+              </label>
+              <label>Number (0–99)
+                <input type="number" name="customNumber" min="0" max="99" placeholder="10" />
+              </label>
+            </div>
+            <p style="font-size:12px; color: var(--text-mute); margin-top:4px">
+              <strong style="color: var(--neon)">FREE</strong> until World Cup kick-off · Normally ৳150 per jersey.
+            </p>
+          </section>
+
+          <!-- Step 3: Payment -->
+          <section class="form-block">
+            <h2 class="block-title"><span class="step-pill">3</span> Payment Method</h2>
+
+            <div class="payment-options">
+              <label class="opt-card">
+                <input type="radio" name="payment" value="cod" checked />
+                <div class="opt-ico" style="background:rgba(255,181,71,0.2);color:#ffb547">💵</div>
+                <div class="opt-text">
+                  <span>Cash on Delivery</span>
+                  <span class="opt-sub">Pay when you receive</span>
+                </div>
+              </label>
+              <label class="opt-card">
+                <input type="radio" name="payment" value="bkash" />
+                <div class="opt-ico" style="background:rgba(226,0,116,0.15);color:#e20074">📱</div>
+                <div class="opt-text">
+                  <span>bKash</span>
+                  <span class="opt-sub">Personal · 017XX</span>
+                </div>
+              </label>
+              <label class="opt-card">
+                <input type="radio" name="payment" value="nagad" />
+                <div class="opt-ico" style="background:rgba(241,90,36,0.15);color:#f15a24">📱</div>
+                <div class="opt-text">
+                  <span>Nagad</span>
+                  <span class="opt-sub">Personal · 017XX</span>
+                </div>
+              </label>
+              <label class="opt-card">
+                <input type="radio" name="payment" value="rocket" />
+                <div class="opt-ico" style="background:rgba(140,38,144,0.18);color:#a93dab">📱</div>
+                <div class="opt-text">
+                  <span>Rocket</span>
+                  <span class="opt-sub">Personal · 017XX</span>
+                </div>
+              </label>
+              <label class="opt-card">
+                <input type="radio" name="payment" value="bank" />
+                <div class="opt-ico">🏦</div>
+                <div class="opt-text">
+                  <span>Bank Transfer</span>
+                  <span class="opt-sub">Details on confirmation</span>
+                </div>
+              </label>
+            </div>
+          </section>
+
+          <!-- Step 4: Notes -->
+          <section class="form-block">
+            <h2 class="block-title"><span class="step-pill">4</span> Order Notes <span style="font-size:11px; font-weight:500; color: var(--text-mute); letter-spacing:0.05em; margin-left:6px">(optional)</span></h2>
+            <div class="form-row full">
+              <label style="margin-bottom:0">
+                <textarea name="notes" placeholder="Anything we should know? Specific delivery time, gift packaging, etc."></textarea>
+              </label>
+            </div>
+          </section>
+        </form>
+
+        <!-- ============ RIGHT — SUMMARY ============ -->
+        <aside class="order-summary" aria-label="Order summary">
+          <h2 class="summary-title">
+            Order Summary
+            <span class="sum-count" id="sumCount">0 items</span>
+          </h2>
+
+          <div class="cart-items" id="cartItems">
+            <!-- populated by order.js -->
+          </div>
+
+          <!-- Free shipping bar -->
+          <div class="ship-progress" id="shipProgress">
+            <p id="shipMsg"></p>
+            <div class="ship-bar"><div class="ship-bar-fill" id="shipBarFill"></div></div>
+          </div>
+
+          <!-- Promo code -->
+          <div class="promo-row">
+            <input type="text" id="promoInput" placeholder="Promo code" maxlength="16" />
+            <button type="button" id="applyPromo">Apply</button>
+          </div>
+          <div class="promo-feedback" id="promoFeedback"></div>
+          <p class="promo-hint">
+            Try <code data-promo="WC2026">WC2026</code> <code data-promo="ZONE14">ZONE14</code> <code data-promo="FIRSTORDER">FIRSTORDER</code>
+          </p>
+
+          <!-- Totals -->
+          <div class="totals" id="totals">
+            <div class="totals-row"><span>Subtotal</span><span id="tSubtotal">৳0</span></div>
+            <div class="totals-row" id="customRow" hidden><span>Name &amp; Number</span><span id="tCustom">FREE</span></div>
+            <div class="totals-row"><span>Delivery</span><span id="tShipping">—</span></div>
+            <div class="totals-row discount" id="discountRow" hidden><span id="tDiscountLabel">Discount</span><span id="tDiscount">−৳0</span></div>
+            <div class="totals-row grand"><span>Total</span><span id="tGrand">৳0</span></div>
+          </div>
+
+          <button type="button" id="placeOrder" class="place-order-btn" disabled>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            Place Order
+          </button>
+
+          <div class="trust-row">
+            <div><span>🔒</span>Secure</div>
+            <div><span>🔄</span>Easy Returns</div>
+            <div><span>🛡️</span>Quality Guarantee</div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <!-- ============ ORDER SUCCESS MODAL ============ -->
+  <div id="orderSuccess" class="order-success" role="dialog" aria-modal="true" aria-labelledby="successTitle">
+    <div class="order-success-card">
+      <div class="order-success-icon">✓</div>
+      <h3 id="successTitle">Order sent to WhatsApp!</h3>
+      <p>We've opened WhatsApp with your full order details. Send the message to confirm — we'll reply within minutes.</p>
+      <div class="order-ref" id="orderRef">Z14-XXXXXX</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+        <a id="successTrackLink" href="track.html" class="btn btn-primary btn-lg">Track Your Order</a>
+        <a href="index.html" class="btn btn-ghost btn-lg">Back to Shop</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ FLOATING WHATSAPP ============ -->
+  <a href="https://wa.me/8801723360078" target="_blank" rel="noopener" class="float-whatsapp" aria-label="Chat on WhatsApp">
+    <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor" aria-hidden="true"><path d="M20.52 3.48A11.86 11.86 0 0012.04 0C5.46 0 .12 5.34.12 11.92c0 2.1.55 4.15 1.6 5.96L0 24l6.27-1.64a11.9 11.9 0 005.77 1.47h.01c6.58 0 11.92-5.34 11.92-11.92 0-3.18-1.24-6.17-3.45-8.43z"/></svg>
+    <span class="wa-pulse"></span>
+  </a>
+
+  <script src="data.js"></script>
+  <script src="order.js"></script>
+</body>
+</html>

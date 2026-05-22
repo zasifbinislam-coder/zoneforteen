@@ -1,0 +1,13 @@
+{
+  "name": "Zone14 — World Cup 2026 Jerseys",
+  "short_name": "Zone14",
+  "description": "Premium FIFA World Cup 2026 football jerseys in Bangladesh.",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#060a0e",
+  "theme_color": "#5ee9e3",
+  "icons": [
+    { "src": "logo/fav.PNG", "sizes": "512x512", "type": "image/png" },
+    { "src": "logo/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
