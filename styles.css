@@ -176,21 +176,21 @@ h1, h2, h3, .display { font-family: 'Bebas Neue', 'Oswald', sans-serif; letter-s
 /* Transparent crest in the navbar — no backplate, sits clean on the dark nav.
    Subtle cyan drop-shadow ties it to the brand glow. */
 .logo-mark {
-  height: 80px;
+  height: 116px;
   width: auto;
   display: block;
-  filter: drop-shadow(0 0 12px rgba(94, 233, 227, 0.4));
+  filter: drop-shadow(0 0 14px rgba(94, 233, 227, 0.45));
   transition: transform 0.4s var(--ease), filter 0.4s var(--ease);
 }
 .logo:hover .logo-mark {
   transform: scale(1.04);
-  filter: drop-shadow(0 0 20px rgba(94, 233, 227, 0.65));
+  filter: drop-shadow(0 0 22px rgba(94, 233, 227, 0.7));
 }
 /* Bump the navbar height for the bigger crest — :root --nav-h cascades to
    scroll-padding, the off-canvas mobile menu top offset, etc. */
-:root { --nav-h: 92px; }
+:root { --nav-h: 128px; }
 @media (max-width: 768px) {
-  :root { --nav-h: 76px; }
+  :root { --nav-h: 96px; }
 }
 
 .nav-links {
@@ -2272,7 +2272,7 @@ h1, h2, h3, .display { font-family: 'Bebas Neue', 'Oswald', sans-serif; letter-s
   .hero-title { font-size: clamp(40px, 12vw, 80px); }
   .hero-watermark { width: 145vw; opacity: 0.26; }
 
-  .logo-mark { height: 62px; }
+  .logo-mark { height: 80px; }
   .countdown { padding: 14px 18px; gap: 4px; }
   .cd-box { min-width: 48px; }
   .cd-num { font-size: 28px; }
