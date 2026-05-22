@@ -1788,8 +1788,8 @@ h1, h2, h3, .display { font-family: 'Bebas Neue', 'Oswald', sans-serif; letter-s
 /* Size chips for the 3D viewer */
 .size-3d-controls {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
 }
 .size-3d-chip {
   padding: 10px 0;
@@ -2050,7 +2050,7 @@ h1, h2, h3, .display { font-family: 'Bebas Neue', 'Oswald', sans-serif; letter-s
 .footer-bottom .dot { margin: 0 10px; color: var(--neon); }
 
 /* ============ FLOATING BUTTONS ============ */
-.float-whatsapp, .float-messenger {
+.float-whatsapp, .float-messenger, .float-instagram {
   position: fixed;
   width: 56px;
   height: 56px;
@@ -2072,7 +2072,12 @@ h1, h2, h3, .display { font-family: 'Bebas Neue', 'Oswald', sans-serif; letter-s
   right: 24px;
   background: linear-gradient(135deg, #0084ff, #00c6ff);
 }
-.float-whatsapp:hover, .float-messenger:hover {
+.float-instagram {
+  bottom: 160px;
+  right: 24px;
+  background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285aeb 90%);
+}
+.float-whatsapp:hover, .float-messenger:hover, .float-instagram:hover {
   transform: scale(1.1) rotate(-8deg);
 }
 .wa-pulse {
@@ -2091,7 +2096,7 @@ h1, h2, h3, .display { font-family: 'Bebas Neue', 'Oswald', sans-serif; letter-s
 /* Floating cart pill */
 .cart-pill {
   position: fixed;
-  bottom: 230px;
+  bottom: 298px;
   right: 24px;
   height: 48px;
   min-width: 48px;
@@ -2201,7 +2206,7 @@ h1, h2, h3, .display { font-family: 'Bebas Neue', 'Oswald', sans-serif; letter-s
 
 .back-to-top {
   position: fixed;
-  bottom: 160px;
+  bottom: 228px;
   right: 24px;
   width: 48px;
   height: 48px;
@@ -2998,7 +3003,7 @@ h1, h2, h3, .display { font-family: 'Bebas Neue', 'Oswald', sans-serif; letter-s
    ============================================================ */
 .wishlist-pill {
   position: fixed;
-  bottom: 298px;
+  bottom: 366px;
   right: 24px;
   height: 48px;
   min-width: 48px;
@@ -5223,13 +5228,15 @@ h1, h2, h3, .display { font-family: 'Bebas Neue', 'Oswald', sans-serif; letter-s
   .float-whatsapp { width: 50px; height: 50px; bottom: 18px; right: 16px; }
   .float-whatsapp svg { width: 22px; height: 22px; }
   .float-messenger { display: none; } /* one tap path is enough on mobile */
-  .cart-pill { bottom: 80px; right: 16px; height: 42px; padding: 0 12px 0 10px; }
+  .float-instagram { width: 50px; height: 50px; bottom: 80px; right: 16px; }
+  .float-instagram svg { width: 22px; height: 22px; }
+  .cart-pill { bottom: 142px; right: 16px; height: 42px; padding: 0 12px 0 10px; }
   .cart-pill svg { width: 18px; height: 18px; }
   .cart-count { font-size: 16px; }
-  .wishlist-pill { bottom: 132px; right: 16px; height: 42px; padding: 0 12px 0 10px; }
+  .wishlist-pill { bottom: 194px; right: 16px; height: 42px; padding: 0 12px 0 10px; }
   .wishlist-pill svg { width: 18px; height: 18px; }
   .wishlist-count { font-size: 16px; }
-  .back-to-top { bottom: 184px; right: 16px; width: 42px; height: 42px; }
+  .back-to-top { bottom: 246px; right: 16px; width: 42px; height: 42px; }
 
   /* Social toast — full width, smaller */
   .social-toast { left: 12px; right: 12px; bottom: 12px; padding: 10px 12px; max-width: none; }

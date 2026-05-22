@@ -10,15 +10,12 @@
 
   /* ---------- Size mapping (declared FIRST — build() reads these) ---------- */
   const SIZES = {
-    XS:   { chest: '32–34 in', length: '26.5 in', sx: 0.86, sy: 0.92, ss: 0.88 },
-    S:    { chest: '35–37 in', length: '27.5 in', sx: 0.93, sy: 0.96, ss: 0.94 },
-    M:    { chest: '38–40 in', length: '28.5 in', sx: 1.00, sy: 1.00, ss: 1.00 },
-    L:    { chest: '41–43 in', length: '29.5 in', sx: 1.08, sy: 1.04, ss: 1.06 },
-    XL:   { chest: '44–46 in', length: '30.5 in', sx: 1.18, sy: 1.08, ss: 1.12 },
-    XXL:  { chest: '47–49 in', length: '31.5 in', sx: 1.28, sy: 1.12, ss: 1.18 },
-    '3XL':{ chest: '50–52 in', length: '32.5 in', sx: 1.40, sy: 1.16, ss: 1.24 },
+    M:   { chest: '38–40 in', length: '28.5 in', sx: 1.00, sy: 1.00, ss: 1.00 },
+    L:   { chest: '41–43 in', length: '29.5 in', sx: 1.08, sy: 1.04, ss: 1.06 },
+    XL:  { chest: '44–46 in', length: '30.5 in', sx: 1.18, sy: 1.08, ss: 1.12 },
+    XXL: { chest: '47–49 in', length: '31.5 in', sx: 1.28, sy: 1.12, ss: 1.18 },
   };
-  const SIZE_KEYS = ['XS','S','M','L','XL','XXL','3XL'];
+  const SIZE_KEYS = ['M','L','XL','XXL'];
 
   // Three.js may load slightly after this script — wait if needed.
   if (typeof THREE === 'undefined') {
@@ -67,9 +64,9 @@
 
     /* ---- Scene / camera / renderer ---- */
     const scene  = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-    camera.position.set(0, 1.4, 6.2);
-    camera.lookAt(0, 1.4, 0);
+    const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 100);
+    camera.position.set(0, 1.3, 7.4);
+    camera.lookAt(0, 1.3, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -89,89 +86,198 @@
     const jerseyMat = new THREE.MeshPhongMaterial({ color: COLOR.jersey, shininess: 35, specular: 0x222222 });
     const accentMat = new THREE.MeshPhongMaterial({ color: COLOR.accent, shininess: 60, specular: 0x444444 });
 
-    /* ---- Static body (always same size) ---- */
+    /* ============================================================
+       STATIC BODY — proper anatomical mannequin (always same size)
+       ============================================================
+       Y-axis layout (ground at 0):
+         3.30  top of head
+         2.95  head centre
+         2.60  chin
+         2.40  shoulder line (covered by yoke)
+         2.05  upper-arm centre
+         1.90  chest centre
+         1.40  waist
+         0.85  hip / jersey hem
+         0.55  upper thigh (visible below hem)
+        -0.30  thigh cut-off
+    */
     const bodyGroup = new THREE.Group();
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.36, 32, 32), skinMat);
-    head.position.y = 2.92;
-    head.scale.set(0.92, 1.05, 0.95);
+
+    // --- HEAD: elongated sphere, slight oval profile ---
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.32, 40, 40), skinMat);
+    head.position.y = 2.95;
+    head.scale.set(0.92, 1.10, 0.94);
     bodyGroup.add(head);
+
+    // Subtle hair cap — slightly darker sphere clipped above head
+    const hairMat = new THREE.MeshPhongMaterial({ color: 0x1a1a20, shininess: 18, specular: 0x222222 });
+    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.33, 40, 40, 0, Math.PI * 2, 0, Math.PI * 0.55), hairMat);
+    hair.position.set(0, 2.97, 0);
+    hair.scale.set(0.94, 1.05, 0.96);
+    bodyGroup.add(hair);
+
+    // Ears (tiny side spheres for human silhouette)
+    const earGeo = new THREE.SphereGeometry(0.05, 12, 12);
+    const earL = new THREE.Mesh(earGeo, skinMat);
+    const earR = new THREE.Mesh(earGeo, skinMat);
+    earL.position.set(-0.31, 2.93, 0); earL.scale.set(0.4, 1, 1.2);
+    earR.position.set( 0.31, 2.93, 0); earR.scale.set(0.4, 1, 1.2);
+    bodyGroup.add(earL, earR);
+
+    // --- NECK ---
     const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 0.32, 24), skinMat);
     neck.position.y = 2.48;
     bodyGroup.add(neck);
+
+    // --- UPPER ARMS (covered by sleeves — render lightly so they peek at the sleeve hole) ---
+    const upperArmGeo = new THREE.CylinderGeometry(0.13, 0.11, 0.50, 18);
+    const upperArmL = new THREE.Mesh(upperArmGeo, skinMat);
+    upperArmL.position.set(-0.70, 1.95, 0);
+    upperArmL.rotation.z =  Math.PI / 9;     // small outward angle (relaxed pose)
+    const upperArmR = upperArmL.clone();
+    upperArmR.position.x = 0.70;
+    upperArmR.rotation.z = -Math.PI / 9;
+    bodyGroup.add(upperArmL, upperArmR);
+
+    // --- FOREARMS (skin, visible below the short sleeve cuff) ---
+    const forearmGeo = new THREE.CylinderGeometry(0.105, 0.085, 0.62, 18);
+    const forearmL = new THREE.Mesh(forearmGeo, skinMat);
+    forearmL.position.set(-0.87, 1.32, 0.02);
+    forearmL.rotation.z =  Math.PI / 11;
+    const forearmR = forearmL.clone();
+    forearmR.position.x = 0.87;
+    forearmR.rotation.z = -Math.PI / 11;
+    bodyGroup.add(forearmL, forearmR);
+
+    // --- HANDS ---
+    const handGeo = new THREE.SphereGeometry(0.10, 16, 16);
+    const handL = new THREE.Mesh(handGeo, skinMat);
+    handL.position.set(-1.00, 0.98, 0.02);
+    handL.scale.set(0.85, 1.30, 0.65);
+    const handR = handL.clone();
+    handR.position.x = 1.00;
+    bodyGroup.add(handL, handR);
+
+    // --- HIPS (mostly hidden under jersey hem — provides anchor for thighs) ---
+    const hips = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.34, 0.20, 24), skinMat);
+    hips.position.y = 0.70;
+    hips.scale.z = 0.78;
+    bodyGroup.add(hips);
+
+    // --- UPPER THIGHS (visible below jersey hem, like wearing shorts) ---
+    const thighGeo = new THREE.CylinderGeometry(0.19, 0.16, 0.95, 18);
+    const thighL = new THREE.Mesh(thighGeo, skinMat);
+    thighL.position.set(-0.18, 0.10, 0);
+    const thighR = thighL.clone();
+    thighR.position.x = 0.18;
+    bodyGroup.add(thighL, thighR);
+
+    // --- SHORTS (a darker band wrapping the upper thighs for context) ---
+    const shortsMat = new THREE.MeshPhongMaterial({ color: 0x0a0a0a, shininess: 25, specular: 0x222222 });
+    const shortsGeo = new THREE.CylinderGeometry(0.40, 0.37, 0.50, 28);
+    const shorts = new THREE.Mesh(shortsGeo, shortsMat);
+    shorts.position.y = 0.45;
+    shorts.scale.z = 0.80;
+    bodyGroup.add(shorts);
+
     scene.add(bodyGroup);
 
-    /* ---- Jersey group (scales with size) ---- */
+    /* ============================================================
+       JERSEY GROUP (scales with selected size)
+       ============================================================ */
     const jerseyGroup = new THREE.Group();
 
+    // Shoulder yoke — top band, slightly wider than chest
     const shoulders = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.90, 0.74, 0.32, 32, 4),
+      new THREE.CylinderGeometry(0.78, 0.72, 0.32, 32, 4),
       jerseyMat
     );
-    shoulders.position.y = 2.20;
-    shoulders.scale.z = 0.70;
+    shoulders.position.y = 2.24;
+    shoulders.scale.z = 0.74;
     jerseyGroup.add(shoulders);
 
-    const torso = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.72, 0.58, 1.55, 32, 12),
+    // Chest section — fuller
+    const chest = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.72, 0.66, 0.65, 32, 6),
       jerseyMat
     );
-    torso.position.y = 1.30;
-    torso.scale.z = 0.70;
-    jerseyGroup.add(torso);
+    chest.position.y = 1.80;
+    chest.scale.z = 0.74;
+    jerseyGroup.add(chest);
 
+    // Waist section — tapered narrower
+    const waist = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.66, 0.60, 0.55, 32, 6),
+      jerseyMat
+    );
+    waist.position.y = 1.20;
+    waist.scale.z = 0.74;
+    jerseyGroup.add(waist);
+
+    // Hip section — flares slightly outward for jersey drape
+    const hipSection = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.60, 0.64, 0.40, 32, 4),
+      jerseyMat
+    );
+    hipSection.position.y = 0.73;
+    hipSection.scale.z = 0.78;
+    jerseyGroup.add(hipSection);
+
+    // Hem stripe — cream accent at jersey bottom
     const hem = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.59, 0.59, 0.04, 32),
+      new THREE.CylinderGeometry(0.65, 0.65, 0.05, 32),
       accentMat
     );
     hem.position.y = 0.55;
-    hem.scale.z = 0.70;
+    hem.scale.z = 0.78;
     jerseyGroup.add(hem);
 
+    // Collar — cream U-shape at neckline
     const collar = new THREE.Mesh(
-      new THREE.TorusGeometry(0.16, 0.04, 12, 28, Math.PI),
+      new THREE.TorusGeometry(0.16, 0.038, 12, 28, Math.PI),
       accentMat
     );
-    collar.position.set(0, 2.36, 0.12);
+    collar.position.set(0, 2.44, 0.12);
     collar.rotation.x = Math.PI;
-    collar.scale.z = 0.6;
+    collar.scale.z = 0.62;
     jerseyGroup.add(collar);
 
-    // Sleeves (scaled separately so thickness changes with size but length stays put)
-    const sleeveGeo = new THREE.CylinderGeometry(0.24, 0.22, 0.68, 20);
+    // SHORT football sleeves — end mid-bicep, leaving forearms visible
+    const sleeveGeo = new THREE.CylinderGeometry(0.21, 0.17, 0.40, 20);
     const leftSleeve  = new THREE.Mesh(sleeveGeo, jerseyMat);
     const rightSleeve = new THREE.Mesh(sleeveGeo, jerseyMat);
-    leftSleeve.position.set(-0.95, 2.00, 0);
-    leftSleeve.rotation.z =  Math.PI / 4.5;
-    rightSleeve.position.set(0.95, 2.00, 0);
-    rightSleeve.rotation.z = -Math.PI / 4.5;
+    leftSleeve.position.set(-0.72, 2.04, 0);
+    leftSleeve.rotation.z =  Math.PI / 9;
+    rightSleeve.position.set(0.72, 2.04, 0);
+    rightSleeve.rotation.z = -Math.PI / 9;
     jerseyGroup.add(leftSleeve, rightSleeve);
 
-    // Cuffs
-    const cuffGeo = new THREE.TorusGeometry(0.225, 0.025, 8, 20);
+    // Cuff rings at sleeve ends — accent stripe
+    const cuffGeo = new THREE.TorusGeometry(0.18, 0.022, 8, 20);
     const leftCuff  = new THREE.Mesh(cuffGeo, accentMat);
     const rightCuff = new THREE.Mesh(cuffGeo, accentMat);
-    leftCuff.position.set(-1.23,  1.72, 0);
-    leftCuff.rotation.set(Math.PI / 2, 0,  Math.PI / 4.5);
-    rightCuff.position.set(1.23, 1.72, 0);
-    rightCuff.rotation.set(Math.PI / 2, 0, -Math.PI / 4.5);
+    leftCuff.position.set(-0.79, 1.85, 0);
+    leftCuff.rotation.set(Math.PI / 2, 0,  Math.PI / 9);
+    rightCuff.position.set(0.79, 1.85, 0);
+    rightCuff.rotation.set(Math.PI / 2, 0, -Math.PI / 9);
     jerseyGroup.add(leftCuff, rightCuff);
 
-    // Front "14" + back "14"
+    // Big "14" front + back numbers
     const numberTex = makeNumberTexture('14', COLOR.accent);
     const numberMat = new THREE.MeshBasicMaterial({ map: numberTex, transparent: true });
     const frontNum  = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 0.6), numberMat);
-    frontNum.position.set(0, 1.45, 0.51);
+    frontNum.position.set(0, 1.40, 0.55);
     jerseyGroup.add(frontNum);
     const backNum = frontNum.clone();
-    backNum.position.z = -0.51;
+    backNum.position.z = -0.55;
     backNum.rotation.y = Math.PI;
     jerseyGroup.add(backNum);
 
-    // Small "Z14" chest mark
+    // Small "Z14" chest mark, upper right
     const chestTex = makeNumberTexture('Z14', COLOR.cyan, 220);
     const chestMat = new THREE.MeshBasicMaterial({ map: chestTex, transparent: true });
-    const chestBadge = new THREE.Mesh(new THREE.PlaneGeometry(0.36, 0.18), chestMat);
-    chestBadge.position.set(0.32, 1.95, 0.51);
+    const chestBadge = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.17), chestMat);
+    chestBadge.position.set(0.30, 1.98, 0.56);
     jerseyGroup.add(chestBadge);
 
     scene.add(jerseyGroup);
@@ -220,7 +326,7 @@
     // Wheel = zoom (camera distance)
     renderer.domElement.addEventListener('wheel', (e) => {
       e.preventDefault();
-      camera.position.z = Math.max(4, Math.min(9, camera.position.z + e.deltaY * 0.004));
+      camera.position.z = Math.max(5, Math.min(10, camera.position.z + e.deltaY * 0.004));
       if (!interacted) { interacted = true; stage.classList.add('interacted'); }
     }, { passive: false });
 
