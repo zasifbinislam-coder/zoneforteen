@@ -277,6 +277,37 @@ h1, h2, h3, .display {
   overflow: hidden;
   background: var(--grad-hero);
   padding: 120px 0 80px;
+  isolation: isolate;          /* keeps the video layered correctly */
+}
+
+/* Cinematic background video — sits below every other hero layer */
+.hero-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  /* Slight desaturation + dim so the brand colors still pop on top */
+  filter: saturate(0.95) brightness(0.7);
+}
+
+/* Dark gradient vignette so the headline stays crisp over the video */
+.hero-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 45%, transparent 0%, rgba(6,10,14,0.35) 65%, rgba(6,10,14,0.85) 100%),
+    linear-gradient(180deg, rgba(6,10,14,0.45) 0%, transparent 25%, transparent 60%, rgba(6,10,14,0.9) 100%);
+  pointer-events: none;
+}
+
+/* Mobile: skip the 25 MB hero video so we don't burn customer data.
+   Phones see the existing gradient + watermark + aurora setup instead. */
+@media (max-width: 768px) {
+  .hero-video { display: none; }
+  .hero-vignette { display: none; }
 }
 
 /* ====================================================
@@ -287,8 +318,10 @@ h1, h2, h3, .display {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 0;
+  z-index: 2;          /* above video + vignette */
   overflow: hidden;
+  mix-blend-mode: screen;
+  opacity: 0.55;
 }
 .aurora-blob {
   position: absolute;
@@ -347,7 +380,7 @@ h1, h2, h3, .display {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 1;
+  z-index: 4;          /* topmost ambient layer, above content's siblings */
 }
 .hero-sparkles span {
   position: absolute;
@@ -379,8 +412,9 @@ h1, h2, h3, .display {
   background-size: 60px 60px;
   mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
   -webkit-mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
-  z-index: 0;
+  z-index: 2;          /* above video, below content */
   animation: gridPan 30s linear infinite;
+  opacity: 0.5;
 }
 @keyframes gridPan {
   from { background-position: 0 0; }
@@ -394,7 +428,7 @@ h1, h2, h3, .display {
   width: 800px; height: 800px;
   background: radial-gradient(circle, rgba(94, 233, 227, 0.15) 0%, transparent 60%);
   filter: blur(60px);
-  z-index: 0;
+  z-index: 2;          /* above video, below content */
   animation: glowPulse 6s ease-in-out infinite;
 }
 @keyframes glowPulse {
@@ -404,7 +438,7 @@ h1, h2, h3, .display {
 
 .hero-inner {
   position: relative;
-  z-index: 2;
+  z-index: 5;         /* always above video + every ambient layer */
   text-align: center;
 }
 
@@ -415,11 +449,11 @@ h1, h2, h3, .display {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: min(145vw, 2100px);
+  width: min(120vw, 1700px);
   height: auto;
   transform: translate(-50%, -50%);
-  opacity: 0.28;
-  z-index: 0;          /* sits behind the headline / countdown */
+  opacity: 0.14;
+  z-index: 3;          /* sits above video + vignette, below content */
   pointer-events: none;
   user-select: none;
   filter: drop-shadow(0 0 100px rgba(94, 233, 227, 0.55))
@@ -429,8 +463,8 @@ h1, h2, h3, .display {
   -webkit-mask-image: radial-gradient(ellipse 55% 35% at center, transparent 0%, rgba(0,0,0,0.5) 55%, #000 100%);
 }
 @keyframes watermarkBreath {
-  0%, 100% { opacity: 0.22; transform: translate(-50%, -50%) scale(1); }
-  50%      { opacity: 0.32; transform: translate(-50%, -50%) scale(1.025); }
+  0%, 100% { opacity: 0.12; transform: translate(-50%, -50%) scale(1); }
+  50%      { opacity: 0.18; transform: translate(-50%, -50%) scale(1.02); }
 }
 
 .hero-badge {
@@ -1743,6 +1777,80 @@ h1, h2, h3, .display {
   color: var(--text-mute);
   letter-spacing: 0.1em;
   text-transform: uppercase;
+}
+
+/* Real-review polish: avatars, verified badges, purchase + location footer */
+.rv-head {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.rv-avatar {
+  width: 44px; height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-family: 'Bohemian Typewriter', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.05em;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.18);
+}
+.rv-meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rv-meta strong {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--text);
+}
+.rv-sub {
+  font-size: 11px;
+  color: var(--text-mute);
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+.rv-verified {
+  color: #51e0a4;
+  font-weight: 600;
+}
+.rv-head .stars {
+  font-size: 14px;
+  letter-spacing: 1px;
+  color: var(--gold);
+  align-self: center;
+}
+
+.rv-body {
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 1.65;
+  flex: 1;
+  font-style: normal !important;   /* override italic from generic p rule above */
+  margin-bottom: 12px;
+}
+
+.rv-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px dashed var(--border);
+  padding-top: 12px;
+}
+.rv-foot .rv-buy {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--neon);
+  text-transform: uppercase;
+}
+.rv-foot .rv-loc {
+  font-size: 11px;
+  color: var(--text-mute);
+  letter-spacing: 0;
+  text-transform: none;
 }
 .review-nav {
   width: 44px;

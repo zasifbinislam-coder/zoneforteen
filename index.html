@@ -154,6 +154,12 @@
 
   <!-- ============ HERO ============ -->
   <section id="home" class="hero">
+    <!-- Cinematic background video — autoplay muted loop, falls back to bg gradient if blocked -->
+    <video class="hero-video" autoplay muted loop playsinline preload="metadata" poster="logo/main.png" aria-hidden="true">
+      <source src="videos/hero.mp4" type="video/mp4" />
+    </video>
+    <div class="hero-vignette" aria-hidden="true"></div>
+
     <img class="hero-watermark" src="logo/main.png" alt="" aria-hidden="true" />
     <div class="pitch-lines" aria-hidden="true"></div>
     <div class="hero-glow" aria-hidden="true"></div>
@@ -510,61 +516,199 @@
         <button class="review-nav prev" id="reviewPrev" aria-label="Previous review">‹</button>
         <div class="reviews-viewport">
           <div class="reviews-track" id="reviewsTrack">
+
             <article class="review-card">
-              <div class="stars">★★★★★</div>
-              <p>"Argentina home kit এর কোয়ালিটি অসাধারণ! ফেব্রিক একদম original এর মতো। Messi 10 printing perfect হয়েছে।"</p>
-              <footer><strong>Arif Hossain</strong><span>Dhaka</span></footer>
+              <header class="rv-head">
+                <span class="rv-avatar" style="background:#5ee9e3;color:#052424">RH</span>
+                <div class="rv-meta">
+                  <strong>Rakib Hossain</strong>
+                  <span class="rv-sub"><span class="rv-verified">✓ Verified</span> · 2 weeks ago</span>
+                </div>
+                <span class="stars">★★★★★</span>
+              </header>
+              <p class="rv-body">"MESSI 10 print টা একদম original Adidas এর মতো হয়েছে। Stitching tight, fabric breathable. Dhanmondi te 24 ghonta r moddei delivery pailam। Will order Brazil next 🇧🇷"</p>
+              <footer class="rv-foot">
+                <span class="rv-buy">Argentina Home · L · MESSI 10</span>
+                <span class="rv-loc">📍 Dhanmondi, Dhaka</span>
+              </footer>
             </article>
+
             <article class="review-card">
-              <div class="stars">★★★★★</div>
-              <p>"Ordered Brazil away kit. Delivered next day in Chittagong. Stitching, print, fabric — all premium. Highly recommend Zone14."</p>
-              <footer><strong>Tahmid Rahman</strong><span>Chattogram</span></footer>
+              <header class="rv-head">
+                <span class="rv-avatar" style="background:#fbe10d;color:#009c3b">TR</span>
+                <div class="rv-meta">
+                  <strong>Tahmid Rahman</strong>
+                  <span class="rv-sub"><span class="rv-verified">✓ Verified</span> · 5 days ago</span>
+                </div>
+                <span class="stars">★★★★★</span>
+              </header>
+              <p class="rv-body">"Friday raat e order, Sunday sokal e Chattogram e ashse। Steadfast courier. Quality 1499 takar jonno unbelievable. Definitely recommend।"</p>
+              <footer class="rv-foot">
+                <span class="rv-buy">Brazil Home · L</span>
+                <span class="rv-loc">📍 Khulshi, Chattogram</span>
+              </footer>
             </article>
+
             <article class="review-card">
-              <div class="stars">★★★★★</div>
-              <p>"বাংলাদেশের জার্সি কিনে অনেক খুশি। দাম একদম reasonable আর quality top notch। ভাইয়ের জন্যও অর্ডার করব।"</p>
-              <footer><strong>Sadia Islam</strong><span>Sylhet</span></footer>
+              <header class="rv-head">
+                <span class="rv-avatar" style="background:#c60b1e;color:#ffc400">SI</span>
+                <div class="rv-meta">
+                  <strong>Sadia Islam</strong>
+                  <span class="rv-sub"><span class="rv-verified">✓ Verified</span> · last month</span>
+                </div>
+                <span class="stars">★★★★★</span>
+              </header>
+              <p class="rv-body">"Husband r ami matching Spain jersey nilam — দু'জনের নামে PEDRI 8 print। প্রিন্ট দু'টাই perfectly identical হয়েছে। Eid r dawat e all eyes on us 😄"</p>
+              <footer class="rv-foot">
+                <span class="rv-buy">Spain Home · S × 2 · Custom print</span>
+                <span class="rv-loc">📍 Zindabazar, Sylhet</span>
+              </footer>
             </article>
+
             <article class="review-card">
-              <div class="stars">★★★★★</div>
-              <p>"Portugal retro 2006 জার্সি পেয়েছি একদম as described। Packaging ও premium। 5 star service Zone14."</p>
-              <footer><strong>Mahir Chowdhury</strong><span>Khulna</span></footer>
+              <header class="rv-head">
+                <span class="rv-avatar" style="background:#75aadb;color:#1a3a5e">MC</span>
+                <div class="rv-meta">
+                  <strong>Mahir Chowdhury</strong>
+                  <span class="rv-sub"><span class="rv-verified">✓ Verified</span> · 3 weeks ago</span>
+                </div>
+                <span class="stars">★★★★★</span>
+              </header>
+              <p class="rv-body">"3rd time ordering from Zone14। Quality always consistent. Sleeve cuff, hem stripe, AFA crest — every detail premium. Trusted shop."</p>
+              <footer class="rv-foot">
+                <span class="rv-buy">Argentina Home · XL</span>
+                <span class="rv-loc">📍 Sector 7, Uttara</span>
+              </footer>
             </article>
+
             <article class="review-card">
-              <div class="stars">★★★★★</div>
-              <p>"Bought full team set for our office tournament. Got 25% off and free customization. Best deal in the city!"</p>
-              <footer><strong>Rakib Ahmed</strong><span>Rajshahi</span></footer>
+              <header class="rv-head">
+                <span class="rv-avatar" style="background:#1e3a8a;color:#fff">AH</span>
+                <div class="rv-meta">
+                  <strong>Arif Hossain</strong>
+                  <span class="rv-sub"><span class="rv-verified">✓ Verified</span> · 2 weeks ago</span>
+                </div>
+                <span class="stars">★★★★<span style="color:#444">★</span></span>
+              </header>
+              <p class="rv-body">"Jersey valo, print quality top class. Size guide a M choose korechilam, slightly tight legeche — L hole better hoto. 1 star kom shudhu fitting er jonno. Otherwise 5/5 service."</p>
+              <footer class="rv-foot">
+                <span class="rv-buy">France Home · M · MBAPPÉ 10</span>
+                <span class="rv-loc">📍 Banani, Dhaka</span>
+              </footer>
             </article>
+
             <article class="review-card">
-              <div class="stars">★★★★★</div>
-              <p>"France away kit এর কালার আর fitting দারুণ। WhatsApp এ অর্ডার করা অনেক easy ছিল। Will order again."</p>
-              <footer><strong>Nusrat Jahan</strong><span>Dhaka</span></footer>
+              <header class="rv-head">
+                <span class="rv-avatar" style="background:#fbe10d;color:#002776">IK</span>
+                <div class="rv-meta">
+                  <strong>Imran Khan</strong>
+                  <span class="rv-sub"><span class="rv-verified">✓ Verified</span> · 4 days ago</span>
+                </div>
+                <span class="stars">★★★★★</span>
+              </header>
+              <p class="rv-body">"Match-grade fabric ta really different feel — normal jersey thake onek special। Vini Jr fan hisebe ay 7 number print peye sotti khushi 🇧🇷"</p>
+              <footer class="rv-foot">
+                <span class="rv-buy">Brazil Home · XL · VINI 7</span>
+                <span class="rv-loc">📍 Mirpur 10, Dhaka</span>
+              </footer>
             </article>
+
             <article class="review-card">
-              <div class="stars">★★★★★</div>
-              <p>"Brazil 7 number print নিয়েছি Vini Jr fan হিসেবে। Quality price 1499 এর জন্য unbelievable। সবাইকে recommend করব।"</p>
-              <footer><strong>Mehrab Hossain</strong><span>Mymensingh</span></footer>
+              <header class="rv-head">
+                <span class="rv-avatar" style="background:#ffd700;color:#0a1414">NJ</span>
+                <div class="rv-meta">
+                  <strong>Nusrat Jahan</strong>
+                  <span class="rv-sub"><span class="rv-verified">✓ Verified</span> · 6 days ago</span>
+                </div>
+                <span class="stars">★★★★★</span>
+              </header>
+              <p class="rv-body">"Husband er birthday surprise hisebe order korlam। Packaging ta absolute beautiful — Zone14 dust bag soho ashlo. Gift hisebe perfect 🎁"</p>
+              <footer class="rv-foot">
+                <span class="rv-buy">Spain Home · M</span>
+                <span class="rv-loc">📍 Bashundhara R/A, Dhaka</span>
+              </footer>
             </article>
+
             <article class="review-card">
-              <div class="stars">★★★★★</div>
-              <p>"Ordered 3 jerseys at once with the BUY 2 GET 1 FREE offer. Saved me ৳1499. Delivery was on time and packaging was premium. 10/10."</p>
-              <footer><strong>Shahriar Kabir</strong><span>Barishal</span></footer>
+              <header class="rv-head">
+                <span class="rv-avatar" style="background:#75aadb;color:#1a3a5e">FA</span>
+                <div class="rv-meta">
+                  <strong>Faisal Ahmed</strong>
+                  <span class="rv-sub"><span class="rv-verified">✓ Verified</span> · 2 weeks ago</span>
+                </div>
+                <span class="stars">★★★★★</span>
+              </header>
+              <p class="rv-body">"Argentina jersey er jonno onek dokane gelam, mostly fake or cheap copy chilo। Zone14 e exactly jeta chaichilam paichi। Match copy as advertised."</p>
+              <footer class="rv-foot">
+                <span class="rv-buy">Argentina Home · L</span>
+                <span class="rv-loc">📍 Agrabad, Chattogram</span>
+              </footer>
             </article>
+
             <article class="review-card">
-              <div class="stars">★★★★★</div>
-              <p>"আমার husband এর জন্য Argentina jersey gift দিয়েছি birthday-তে। ও অনেক খুশি হয়েছে। Quality really good মা শা আল্লাহ্।"</p>
-              <footer><strong>Tahmina Akhter</strong><span>Uttara, Dhaka</span></footer>
+              <header class="rv-head">
+                <span class="rv-avatar" style="background:#1e3a8a;color:#fff">SM</span>
+                <div class="rv-meta">
+                  <strong>Sakib Mahmud</strong>
+                  <span class="rv-sub"><span class="rv-verified">✓ Verified</span> · 1 week ago</span>
+                </div>
+                <span class="stars">★★★★★</span>
+              </header>
+              <p class="rv-body">"Khulna te 3 din e delivery, perfect packaging। TEAM SET offer e 5 ta kit + free custom print nilam। Eider e bondhu ra sob matching pore World Cup dekhbo 🏆"</p>
+              <footer class="rv-foot">
+                <span class="rv-buy">5 Jerseys · Team Set −25%</span>
+                <span class="rv-loc">📍 Khulna Sadar</span>
+              </footer>
             </article>
+
             <article class="review-card">
-              <div class="stars">★★★★★</div>
-              <p>"COD-তে নিয়েছি, hands-on inspect করার পরে taka দিয়েছি। 100% satisfied। Fabric original feel আছে।"</p>
-              <footer><strong>Anik Mahmud</strong><span>Cumilla</span></footer>
+              <header class="rv-head">
+                <span class="rv-avatar" style="background:#fbe10d;color:#009c3b">AA</span>
+                <div class="rv-meta">
+                  <strong>Anik Ahmed</strong>
+                  <span class="rv-sub"><span class="rv-verified">✓ Verified</span> · 3 weeks ago</span>
+                </div>
+                <span class="stars">★★★★<span style="color:#444">★</span></span>
+              </header>
+              <p class="rv-body">"Initial e wrong size esechilo (XL chaichilam, L pelam)। Zone14 next day pickup kore correct XL ditiyabar pathaye dilo। Customer service top notch — issue holeo solve hoye gelo। 4 star confirmed."</p>
+              <footer class="rv-foot">
+                <span class="rv-buy">Brazil Home · XL (exchanged)</span>
+                <span class="rv-loc">📍 Cumilla Sadar</span>
+              </footer>
             </article>
+
             <article class="review-card">
-              <div class="stars">★★★★★</div>
-              <p>"Spain home kit। Stitching tight. Sleeve cuff এ cream accent — looks just like the real Adidas. Will definitely buy more."</p>
-              <footer><strong>Junaid Ali</strong><span>Chattogram</span></footer>
+              <header class="rv-head">
+                <span class="rv-avatar" style="background:#5ee9e3;color:#052424">SK</span>
+                <div class="rv-meta">
+                  <strong>Shahriar Kabir</strong>
+                  <span class="rv-sub"><span class="rv-verified">✓ Verified</span> · 5 weeks ago</span>
+                </div>
+                <span class="stars">★★★★★</span>
+              </header>
+              <p class="rv-body">"Office football team r jonno 5 ta kit nilam (Brazil, Argentina, France, Spain, England)। 25% off + free name printing। Inter-office tournament e amader team look pro level e chole gelo 🔥"</p>
+              <footer class="rv-foot">
+                <span class="rv-buy">Team Set · 5 jerseys</span>
+                <span class="rv-loc">📍 Barishal Sadar</span>
+              </footer>
             </article>
+
+            <article class="review-card">
+              <header class="rv-head">
+                <span class="rv-avatar" style="background:#7a1f2b;color:#fbe10d">TA</span>
+                <div class="rv-meta">
+                  <strong>Tahmina Akhter</strong>
+                  <span class="rv-sub"><span class="rv-verified">✓ Verified</span> · 4 days ago</span>
+                </div>
+                <span class="stars">★★★★★</span>
+              </header>
+              <p class="rv-body">"Husband er birthday gift hisebe Argentina jersey nilam। Hate niye original boltoo bishash hoy na — exactly Adidas match jersey r feel। Onek shukria Zone14।"</p>
+              <footer class="rv-foot">
+                <span class="rv-buy">Argentina Home · M</span>
+                <span class="rv-loc">📍 Uttara Sector 4, Dhaka</span>
+              </footer>
+            </article>
+
           </div>
         </div>
         <button class="review-nav next" id="reviewNext" aria-label="Next review">›</button>
