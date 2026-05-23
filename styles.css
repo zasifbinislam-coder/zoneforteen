@@ -3,16 +3,19 @@
    Design tokens, base, components, sections
    ============================================================ */
 
-/* Bohemian Typewriter — self-host fallback.
-   If the file exists at fonts/BohemianTypewriter.ttf the browser uses it.
-   If not, it transparently falls through to the cdnfonts.com link in
-   index.html, and finally to Courier Prime / Bebas Neue. */
+/* Bohemian Typewriter — primary brand font.
+   Tries (in order): self-hosted local file → cdnfonts.com CDN.
+   URL is properly %20-encoded — the cdnfonts CSS @import shipped with
+   a literal space which Edge/Safari reject, causing silent fallback to
+   Courier Prime. Inlining the encoded URL here works in every browser. */
 @font-face {
   font-family: 'Bohemian Typewriter';
-  src: url('fonts/BohemianTypewriter.ttf') format('truetype'),
+  src: local('Bohemian Typewriter'),
+       url('fonts/BohemianTypewriter.ttf') format('truetype'),
        url('fonts/BohemianTypewriter.otf') format('opentype'),
        url('fonts/BohemianTypewriter.woff2') format('woff2'),
-       url('fonts/BohemianTypewriter.woff') format('woff');
+       url('fonts/BohemianTypewriter.woff') format('woff'),
+       url('https://fonts.cdnfonts.com/s/63708/Bohemian%20Typewriter.woff') format('woff');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
