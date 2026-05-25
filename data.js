@@ -342,12 +342,36 @@ async function syncFromSupabase() {
   const sb = getSupabase();
   if (!sb) return false;
   try {
-    const [{ data: preds, error: e1 }, { data: results, error: e2 }] = await Promise.all([
+    const [
+      { data: preds,   error: e1 },
+      { data: results, error: e2 },
+      { data: media,   error: e3 },
+    ] = await Promise.all([
       sb.from('predictions').select('*'),
       sb.from('match_results').select('*'),
+      sb.from('jersey_media').select('*').order('sort_order').order('uploaded_at'),
     ]);
     if (e1) throw e1;
     if (e2) throw e2;
+    if (e3) throw e3;
+
+    // jersey_media → group by jersey_id into local cache shape
+    const mediaByJersey = {};
+    (media || []).forEach(r => {
+      if (!mediaByJersey[r.jersey_id]) mediaByJersey[r.jersey_id] = { images: [], videos: [] };
+      const asset = {
+        id:           r.id,
+        type:         r.type,
+        url:          r.url,
+        storagePath:  r.storage_path,
+        name:         r.name,
+        size:         r.size_bytes,
+        uploadedAt:   r.uploaded_at ? new Date(r.uploaded_at).getTime() : null,
+      };
+      mediaByJersey[r.jersey_id][r.type === 'video' ? 'videos' : 'images'].push(asset);
+    });
+    localStorage.setItem(MEDIA_KEY, JSON.stringify(mediaByJersey));
+    window.dispatchEvent(new CustomEvent('media:change'));
 
     const local = (preds || []).map(p => ({
       id:        p.id,
@@ -390,6 +414,10 @@ function subscribeToSupabaseChanges() {
     .subscribe();
   sb.channel('zone14-results')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'match_results' },
+        () => syncFromSupabase())
+    .subscribe();
+  sb.channel('zone14-jersey-media')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'jersey_media' },
         () => syncFromSupabase())
     .subscribe();
 }
@@ -546,39 +574,57 @@ const PREDICTION_CHOICES = [
 /* ============================================================
    MEDIA LIBRARY — admin-uploaded photos & videos per jersey
    ============================================================
-   Two modes:
-     1. LOCAL  — files stored as Base64 in localStorage.
-                 Works immediately, no setup. Visible only on the
-                 admin's own browser (localStorage is per-device).
-                 Cap: ~3 MB per file, ~5 MB total.
-     2. CLOUD  — uploads pushed to Cloudinary via an unsigned preset.
-                 Cross-device, CDN-served, video support, no size cap.
-                 Setup (2 min):
-                   • Create free account at cloudinary.com
-                   • Settings → Upload → "Add upload preset"
-                     – Signing Mode: Unsigned
-                     – Folder: zone14
-                   • Paste your cloud name + preset name below
+   Uploads go to Supabase Storage (bucket: 'media'), URLs tracked in
+   the jersey_media table, instantly visible to every customer worldwide
+   via Supabase's CDN. localStorage acts purely as a read cache so the
+   sync helpers stay fast.
+
+   Cloud is always on now — there is no local-only fallback for uploads.
 */
-const CLOUDINARY = {
-  cloudName: '',          // e.g. 'zone14bd' — leave '' for local-only mode
-  uploadPreset: '',       // e.g. 'zone14_unsigned'
-};
 function isCloudConfigured() {
-  return !!(CLOUDINARY.cloudName && CLOUDINARY.uploadPreset);
+  return !!getSupabase();
 }
-async function cloudUpload(file) {
-  if (!isCloudConfigured()) throw new Error('Cloudinary not configured');
-  const isVideo = file.type.startsWith('video/');
-  const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY.cloudName}/${isVideo ? 'video' : 'image'}/upload`;
-  const fd  = new FormData();
-  fd.append('file', file);
-  fd.append('upload_preset', CLOUDINARY.uploadPreset);
-  fd.append('folder', 'zone14');
-  const res = await fetch(url, { method: 'POST', body: fd });
-  if (!res.ok) throw new Error('Upload failed: ' + res.status);
-  const json = await res.json();
-  return json.secure_url;
+
+/* Upload a single file to Supabase Storage + insert the matching
+   jersey_media row. Returns the inserted row (with public url). */
+async function cloudUpload(jerseyId, file) {
+  const sb = getSupabase();
+  if (!sb) throw new Error('Supabase client not ready');
+
+  const ext = (file.name.split('.').pop() || 'bin').toLowerCase();
+  const path = `${jerseyId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+  const { data: up, error: upErr } = await sb.storage
+    .from('media')
+    .upload(path, file, { contentType: file.type, upsert: false });
+  if (upErr) throw upErr;
+
+  const { data: pub } = sb.storage.from('media').getPublicUrl(up.path);
+
+  const { data: row, error: rowErr } = await sb.from('jersey_media').insert({
+    jersey_id:    jerseyId,
+    type:         file.type.startsWith('video/') ? 'video' : 'image',
+    url:          pub.publicUrl,
+    storage_path: up.path,
+    name:         file.name,
+    size_bytes:   file.size,
+  }).select().single();
+  if (rowErr) {
+    // Clean up the orphaned storage object so we don't leak files
+    await sb.storage.from('media').remove([up.path]).catch(() => {});
+    throw rowErr;
+  }
+  return row;
+}
+
+/* Delete both the row and the underlying storage object */
+async function cloudDelete(asset) {
+  const sb = getSupabase();
+  if (!sb) return;
+  if (asset.storagePath) {
+    await sb.storage.from('media').remove([asset.storagePath]).catch(() => {});
+  }
+  await sb.from('jersey_media').delete().eq('id', asset.id).catch(() => {});
 }
 
 const MEDIA_KEY = 'zone14_media_v1';

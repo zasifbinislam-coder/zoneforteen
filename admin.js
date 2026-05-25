@@ -96,26 +96,13 @@ const MAX_LOCAL_FILE_BYTES = 3 * 1024 * 1024;        // 3 MB per file in local m
 const MAX_LOCAL_TOTAL_BYTES = 4.5 * 1024 * 1024;     // ~5 MB localStorage budget
 
 function initMediaLibrary() {
-  // Mode banner
+  // Mode banner — Supabase Storage is always on now
   const banner = document.getElementById('mediaModeBanner');
   if (banner) {
-    if (isCloudConfigured()) {
-      banner.innerHTML = `☁️ <strong style="color:var(--neon)">Cloud mode</strong> · Uploads go to Cloudinary, visible to every visitor`;
-    }
+    banner.innerHTML = `☁️ <strong style="color:var(--neon)">Cloud mode (Supabase)</strong> · Uploads visible to every customer worldwide via CDN`;
   }
-  document.getElementById('mediaCloudHint').addEventListener('click', e => {
-    e.preventDefault();
-    alert(
-      'To enable cloud uploads (visible to every visitor):\n\n' +
-      '1. Sign up at cloudinary.com (free)\n' +
-      '2. Settings → Upload → "Add upload preset"\n' +
-      '   – Signing Mode: Unsigned\n' +
-      '   – Folder: zone14\n' +
-      '3. Open data.js in your repo\n' +
-      '4. Set CLOUDINARY.cloudName + CLOUDINARY.uploadPreset\n' +
-      '5. git commit + push — Vercel redeploys with cloud mode on'
-    );
-  });
+  const hint = document.getElementById('mediaCloudHint');
+  if (hint) hint.style.display = 'none';
 
   // Populate jersey selector
   const sel = document.getElementById('mediaJerseySelect');
@@ -161,40 +148,22 @@ async function handleFiles(fileList) {
 }
 
 async function uploadOne(jerseyId, file, warnEl) {
-  const isVideo = file.type.startsWith('video/');
-  const cloudOn = isCloudConfigured();
-
-  // Size guard for local mode
-  if (!cloudOn) {
-    if (file.size > MAX_LOCAL_FILE_BYTES) {
-      throw new Error(`File too large for local mode (${formatBytes(file.size)} / ${formatBytes(MAX_LOCAL_FILE_BYTES)} max). Enable cloud mode for unlimited uploads.`);
-    }
-    if (mediaStorageBytes() + file.size * 1.4 > MAX_LOCAL_TOTAL_BYTES) {
-      throw new Error('Local storage almost full. Remove some files or enable cloud mode.');
-    }
-    if (isVideo) {
-      warnEl.hidden = false;
-      warnEl.textContent = '⚠️ Videos in local mode are size-limited — Cloudinary recommended for video.';
-    }
+  if (!isCloudConfigured()) {
+    throw new Error('Supabase client not ready. Refresh and try again.');
   }
-
-  // Upload + persist
-  let url;
-  if (cloudOn) {
-    url = await cloudUpload(file);
-  } else {
-    url = await fileToDataUrl(file);
+  // Size sanity check — Supabase free tier per-file limit is 50 MB by default,
+  // and any single jersey photo really shouldn't exceed ~5 MB.
+  if (file.size > 50 * 1024 * 1024) {
+    throw new Error(`File too large (${formatBytes(file.size)}). Max 50 MB per file.`);
   }
-
-  const ok = addAsset(jerseyId, {
-    id:    'a_' + Math.random().toString(36).slice(2, 10),
-    type:  isVideo ? 'video' : 'image',
-    url,
-    name:  file.name,
-    size:  file.size,
-    uploadedAt: Date.now(),
-  });
-  if (!ok) throw new Error('Could not save — localStorage rejected the write (likely full).');
+  if (file.size > 5 * 1024 * 1024) {
+    warnEl.hidden = false;
+    warnEl.textContent = `⚠️ Large file (${formatBytes(file.size)}) — compress under 2 MB for faster customer loading.`;
+  }
+  // cloudUpload pushes to Storage + inserts the jersey_media row.
+  // syncFromSupabase() will re-populate the localStorage cache via the
+  // realtime subscription, so renderMediaGallery picks it up automatically.
+  await cloudUpload(jerseyId, file);
 }
 
 function renderMediaGallery() {
@@ -207,9 +176,7 @@ function renderMediaGallery() {
   const pct = Math.round((usedBytes / MAX_LOCAL_TOTAL_BYTES) * 100);
 
   if (stats) {
-    stats.innerHTML = isCloudConfigured()
-      ? `${all.length} file${all.length === 1 ? '' : 's'} uploaded · ☁️ Cloudinary`
-      : `${all.length} file${all.length === 1 ? '' : 's'} · ${formatBytes(usedBytes)} used (${pct}% of local cap)`;
+    stats.innerHTML = `${all.length} file${all.length === 1 ? '' : 's'} uploaded · ☁️ Supabase Storage (1 GB free tier)`;
   }
 
   if (all.length === 0) {
@@ -248,11 +215,18 @@ function renderMediaGallery() {
   }).join('');
 
   wrap.querySelectorAll('.media-tile-del').forEach(btn => {
-    btn.addEventListener('click', e => {
+    btn.addEventListener('click', async e => {
       e.stopPropagation();
       const tile = btn.closest('.media-tile');
-      if (!confirm('Delete this file?')) return;
-      removeAsset(tile.dataset.jid, tile.dataset.aid);
+      if (!confirm('Delete this file? It will be removed from Supabase Storage and every customer\'s view.')) return;
+      const assetId = tile.dataset.aid;
+      const jerseyId = tile.dataset.jid;
+      const bucket = getJerseyMedia(jerseyId);
+      const asset = [...bucket.images, ...bucket.videos].find(a => a.id === assetId);
+      if (asset) {
+        await cloudDelete(asset);             // removes from Storage + DB
+      }
+      removeAsset(jerseyId, assetId);          // removes from local cache
       renderMediaGallery();
     });
   });

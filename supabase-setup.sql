@@ -54,3 +54,47 @@ create policy "results_delete" on public.match_results for delete using (true);
 --    instantly when anyone (anywhere in the world) submits a prediction.
 alter publication supabase_realtime add table public.predictions;
 alter publication supabase_realtime add table public.match_results;
+
+-- ============================================================
+-- 7. JERSEY MEDIA — admin photo/video uploads
+--    Run this section ONCE after you've created the 'media' bucket
+--    in Storage (Dashboard → Storage → New bucket → name 'media',
+--    Public bucket: ON).
+-- ============================================================
+create table if not exists public.jersey_media (
+  id            uuid primary key default gen_random_uuid(),
+  jersey_id     text not null,
+  type          text not null check (type in ('image','video')),
+  url           text not null,
+  storage_path  text not null,
+  name          text,
+  size_bytes    bigint,
+  sort_order    integer default 0,
+  uploaded_at   timestamptz default now()
+);
+create index if not exists jersey_media_jersey_idx on public.jersey_media (jersey_id);
+
+alter table public.jersey_media enable row level security;
+
+drop policy if exists "jersey_media_read"   on public.jersey_media;
+drop policy if exists "jersey_media_insert" on public.jersey_media;
+drop policy if exists "jersey_media_update" on public.jersey_media;
+drop policy if exists "jersey_media_delete" on public.jersey_media;
+create policy "jersey_media_read"   on public.jersey_media for select using (true);
+create policy "jersey_media_insert" on public.jersey_media for insert with check (true);
+create policy "jersey_media_update" on public.jersey_media for update using (true) with check (true);
+create policy "jersey_media_delete" on public.jersey_media for delete using (true);
+
+-- Storage RLS — public read/write on the 'media' bucket.
+-- Admin passcode in the UI is the soft gate; for true admin-only writes
+-- later, swap these with policies requiring auth.uid() is not null.
+drop policy if exists "media_select" on storage.objects;
+drop policy if exists "media_insert" on storage.objects;
+drop policy if exists "media_update" on storage.objects;
+drop policy if exists "media_delete" on storage.objects;
+create policy "media_select" on storage.objects for select using (bucket_id = 'media');
+create policy "media_insert" on storage.objects for insert with check (bucket_id = 'media');
+create policy "media_update" on storage.objects for update using (bucket_id = 'media') with check (bucket_id = 'media');
+create policy "media_delete" on storage.objects for delete using (bucket_id = 'media');
+
+alter publication supabase_realtime add table public.jersey_media;
