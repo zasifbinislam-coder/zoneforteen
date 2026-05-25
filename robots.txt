@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin.html
 Disallow: /order.html
 
-Sitemap: https://zone14.bd/sitemap.xml
+Sitemap: https://zoneforteen.com/sitemap.xml

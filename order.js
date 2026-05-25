@@ -414,7 +414,7 @@ function hookPlaceOrder() {
     }
 
     lines.push(``);
-    lines.push(`Sent from zone14.bd ✓`);
+    lines.push(`Sent from zoneforteen.com ✓`);
 
     const message = encodeURIComponent(lines.join('\n'));
 
