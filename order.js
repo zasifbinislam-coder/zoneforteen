@@ -518,11 +518,42 @@ function hookSuccessModal() {
 /* ---------- EmailJS dispatch ----------
    Sends two emails (admin + customer) using the templates configured in
    emailjs-config.js. While credentials are placeholders, the function
-   silently exits so the WhatsApp flow continues to work unchanged. */
+   silently exits so the WhatsApp flow continues to work unchanged.
+   Errors are LOUDLY logged (red) so root-cause is obvious in console. */
 function sendOrderEmails({ ref, cart, fd, paymentLabel, grand, subtotal, shipping, discount }) {
   const c = window.EMAILJS_CONFIG;
-  if (!window.emailjs || !c || c.PUBLIC_KEY.startsWith('PASTE_')) return;
 
+  // Diagnostic preamble — surfaces silent skip conditions
+  console.group('%c[Zone14 EmailJS]', 'background:#5ee9e3;color:#000;padding:2px 6px;border-radius:3px;font-weight:bold;');
+  console.log('SDK loaded?  ', !!window.emailjs);
+  console.log('Config loaded?', !!c);
+  console.log('Public key ok?', c && !c.PUBLIC_KEY.startsWith('PASTE_'));
+
+  if (!window.emailjs) { console.error('✗ EmailJS SDK missing — script tag failed to load'); console.groupEnd(); return; }
+  if (!c)              { console.error('✗ EMAILJS_CONFIG missing — emailjs-config.js failed to load'); console.groupEnd(); return; }
+  if (c.PUBLIC_KEY.startsWith('PASTE_')) { console.warn('⚠ EmailJS placeholder credentials — emails skipped'); console.groupEnd(); return; }
+
+  const vars = buildEmailVars({ ref, cart, fd, paymentLabel, grand, subtotal, shipping, discount });
+  console.log('Sending vars:', vars);
+  console.groupEnd();
+
+  // Admin email — always fires
+  window.emailjs.send(c.SERVICE_ID, c.ADMIN_TEMPLATE_ID, vars)
+    .then(r => console.log('%c[Zone14 EmailJS] ✓ Admin email sent', 'color:#0aa37f;font-weight:bold;', r))
+    .catch(err => console.error('%c[Zone14 EmailJS] ✗ ADMIN SEND FAILED', 'color:#ff4040;font-weight:bold;', 'status:', err && err.status, 'text:', err && err.text, 'full:', err));
+
+  // Customer email — only if they gave an address
+  if (vars.customer_email) {
+    window.emailjs.send(c.SERVICE_ID, c.CUSTOMER_TEMPLATE_ID, vars)
+      .then(r => console.log('%c[Zone14 EmailJS] ✓ Customer email sent', 'color:#0aa37f;font-weight:bold;', r))
+      .catch(err => console.error('%c[Zone14 EmailJS] ✗ CUSTOMER SEND FAILED', 'color:#ff4040;font-weight:bold;', 'status:', err && err.status, 'text:', err && err.text, 'full:', err));
+  } else {
+    console.log('[Zone14 EmailJS] Customer email skipped — no email provided');
+  }
+}
+
+function buildEmailVars({ ref, cart, fd, paymentLabel, grand, subtotal, shipping, discount }) {
+  const c = window.EMAILJS_CONFIG;
   const itemsText = cart.map(i => {
     const j = getJersey(i.id);
     return `• ${j.country} ${j.edition} — Size ${i.size} × ${i.qty} = ${fmtBDT(j.price * i.qty)}`;
@@ -536,7 +567,7 @@ function sendOrderEmails({ ref, cart, fd, paymentLabel, grand, subtotal, shippin
     fd.get('postcode'),
   ].filter(Boolean).join(', ');
 
-  const vars = {
+  return {
     order_ref:      ref,
     customer_name:  fd.get('name'),
     customer_phone: fd.get('phone'),
@@ -554,14 +585,28 @@ function sendOrderEmails({ ref, cart, fd, paymentLabel, grand, subtotal, shippin
     promo:          state.promo ? state.promo.code : '',
     admin_email:    c.ADMIN_EMAIL,
   };
-
-  // Admin email — always fires
-  window.emailjs.send(c.SERVICE_ID, c.ADMIN_TEMPLATE_ID, vars)
-    .catch(err => console.warn('EmailJS admin send failed:', err));
-
-  // Customer email — only if they gave an address
-  if (vars.customer_email) {
-    window.emailjs.send(c.SERVICE_ID, c.CUSTOMER_TEMPLATE_ID, vars)
-      .catch(err => console.warn('EmailJS customer send failed:', err));
-  }
 }
+
+/* Console-only debug helper. Open F12 → paste `zone14TestEmail()` → Enter.
+   Fires a single admin-template email with hardcoded test data so you can
+   isolate EmailJS issues without going through the full checkout flow. */
+window.zone14TestEmail = function () {
+  const c = window.EMAILJS_CONFIG;
+  if (!window.emailjs || !c || c.PUBLIC_KEY.startsWith('PASTE_')) {
+    console.error('EmailJS not ready — SDK loaded:', !!window.emailjs, 'config:', !!c);
+    return Promise.reject('Not ready');
+  }
+  const vars = {
+    order_ref: 'CONSOLE-' + Date.now().toString(36).toUpperCase(),
+    customer_name: 'Console Test', customer_phone: '01700000000',
+    customer_email: c.ADMIN_EMAIL, address: 'Debug address',
+    zone: 'Inside Dhaka', items_text: '• Debug item × 1',
+    payment_method: 'COD', txn_id: '—',
+    subtotal: 'BDT 1,000', shipping: 'FREE', discount: '—', grand_total: 'BDT 1,000',
+    notes: 'Console debug ping', promo: '', admin_email: c.ADMIN_EMAIL,
+  };
+  console.log('[zone14TestEmail] firing with:', vars);
+  return window.emailjs.send(c.SERVICE_ID, c.ADMIN_TEMPLATE_ID, vars)
+    .then(r => { console.log('%c✓ SUCCESS', 'color:#0aa37f;font-weight:bold;font-size:14px;', r); return r; })
+    .catch(e => { console.error('%c✗ FAILED', 'color:#ff4040;font-weight:bold;font-size:14px;', 'status:', e.status, 'text:', e.text, 'full:', e); throw e; });
+};
