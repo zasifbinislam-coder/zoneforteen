@@ -303,12 +303,8 @@ h1, h2, h3, .display {
   pointer-events: none;
 }
 
-/* Mobile: skip the 25 MB hero video so we don't burn customer data.
-   Phones see the existing gradient + watermark + aurora setup instead. */
-@media (max-width: 768px) {
-  .hero-video { display: none; }
-  .hero-vignette { display: none; }
-}
+/* Mobile: hero video stays visible. Browsers require muted+playsinline
+   to autoplay on phones (both already set in the markup). */
 
 /* ====================================================
    PREMIUM AMBIENT LAYER — aurora orbs + twinkling stars
@@ -745,12 +741,17 @@ h1, h2, h3, .display {
 }
 
 @media (max-width: 768px) {
-  .hero-banner { aspect-ratio: 4 / 3; max-height: none; }
+  /* Show the WHOLE banner image (including 'ZONEFORTEEN' text)
+     instead of cropping. Tall aspect + object-fit:contain preserves
+     every player and the brand wordmark. Black letterbox blends with
+     the surrounding hero background. */
+  .hero-banner { aspect-ratio: 16 / 11; max-height: none; background: #050a0e; }
+  .hero-banner-art img { object-fit: contain; }
   .hero-banner-tag { font-size: 10px; letter-spacing: 0.15em; padding: 5px 12px; }
-  .hero-banner-overlay { bottom: 6%; gap: 10px; }
+  .hero-banner-overlay { bottom: 4%; gap: 10px; }
 }
 @media (max-width: 480px) {
-  .hero-banner { aspect-ratio: 1 / 1.15; }
+  .hero-banner { aspect-ratio: 16 / 13; }
   .hero-banner-overlay .btn { padding: 12px 22px; font-size: 13px; }
 }
 
