@@ -15,6 +15,11 @@
   <link rel="stylesheet" href="styles.css" />
   <link rel="icon" type="image/svg+xml" href="logo/favicon.svg" />
   <link rel="alternate icon" type="image/png" href="logo/fav.PNG" />
+
+  <!-- EmailJS — fires order email to admin + customer when "Place Order" is clicked.
+       Credentials live in emailjs-config.js so they're easy to update without touching markup. -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script src="emailjs-config.js"></script>
 </head>
 <body class="page-order">
 
@@ -123,27 +128,9 @@
             </div>
           </section>
 
-          <!-- Step 2: Customization -->
+          <!-- Step 2: Payment -->
           <section class="form-block">
-            <h2 class="block-title"><span class="step-pill">2</span> Customization <span style="font-size:11px; font-weight:500; color: var(--text-mute); letter-spacing:0.05em; margin-left:6px">(optional)</span></h2>
-
-            <div class="form-row">
-              <label>Name on Back
-                <input type="text" name="customName" maxlength="12" placeholder="e.g. MESSI" />
-                <span class="hint">Max 12 letters · uppercase</span>
-              </label>
-              <label>Number (0–99)
-                <input type="number" name="customNumber" min="0" max="99" placeholder="10" />
-              </label>
-            </div>
-            <p style="font-size:12px; color: var(--text-mute); margin-top:4px">
-              <strong style="color: var(--neon)">FREE</strong> until World Cup kick-off · Normally ৳150 per jersey.
-            </p>
-          </section>
-
-          <!-- Step 3: Payment -->
-          <section class="form-block">
-            <h2 class="block-title"><span class="step-pill">3</span> Payment Method</h2>
+            <h2 class="block-title"><span class="step-pill">2</span> Payment Method</h2>
 
             <div class="payment-options">
               <label class="opt-card">
@@ -159,7 +146,7 @@
                 <div class="opt-ico" style="background:rgba(226,0,116,0.15);color:#e20074">📱</div>
                 <div class="opt-text">
                   <span>bKash</span>
-                  <span class="opt-sub">Personal · 017XX</span>
+                  <span class="opt-sub">Send Money</span>
                 </div>
               </label>
               <label class="opt-card">
@@ -167,7 +154,7 @@
                 <div class="opt-ico" style="background:rgba(241,90,36,0.15);color:#f15a24">📱</div>
                 <div class="opt-text">
                   <span>Nagad</span>
-                  <span class="opt-sub">Personal · 017XX</span>
+                  <span class="opt-sub">Send Money</span>
                 </div>
               </label>
               <label class="opt-card">
@@ -175,7 +162,7 @@
                 <div class="opt-ico" style="background:rgba(140,38,144,0.18);color:#a93dab">📱</div>
                 <div class="opt-text">
                   <span>Rocket</span>
-                  <span class="opt-sub">Personal · 017XX</span>
+                  <span class="opt-sub">Send Money</span>
                 </div>
               </label>
               <label class="opt-card">
@@ -187,11 +174,29 @@
                 </div>
               </label>
             </div>
+
+            <!-- Mobile-banking instructions (shown only when bKash/Nagad/Rocket selected) -->
+            <div class="pay-instructions" id="payInstructions" hidden>
+              <div class="pay-num-card">
+                <span class="pay-num-label" id="payNumLabel">bKash Send Money number</span>
+                <div class="pay-num-row">
+                  <strong class="pay-num" id="payNumber">01723-360078</strong>
+                  <button type="button" class="copy-btn" id="copyPayNum" aria-label="Copy number">Copy</button>
+                </div>
+                <span class="pay-num-hint">Send the <strong id="payAmountHint">total amount</strong> to this number, then paste the Transaction ID below.</span>
+              </div>
+              <div class="form-row full" style="margin-top:14px; margin-bottom:0">
+                <label>Transaction ID<span class="req">*</span>
+                  <input type="text" name="txnId" id="txnIdInput" placeholder="e.g. 9F2A7B3C1D" autocomplete="off" />
+                  <span class="hint">After sending, paste the TrxID from your confirmation SMS.</span>
+                </label>
+              </div>
+            </div>
           </section>
 
-          <!-- Step 4: Notes -->
+          <!-- Step 3: Notes -->
           <section class="form-block">
-            <h2 class="block-title"><span class="step-pill">4</span> Order Notes <span style="font-size:11px; font-weight:500; color: var(--text-mute); letter-spacing:0.05em; margin-left:6px">(optional)</span></h2>
+            <h2 class="block-title"><span class="step-pill">3</span> Order Notes <span style="font-size:11px; font-weight:500; color: var(--text-mute); letter-spacing:0.05em; margin-left:6px">(optional)</span></h2>
             <div class="form-row full">
               <label style="margin-bottom:0">
                 <textarea name="notes" placeholder="Anything we should know? Specific delivery time, gift packaging, etc."></textarea>
@@ -223,14 +228,10 @@
             <button type="button" id="applyPromo">Apply</button>
           </div>
           <div class="promo-feedback" id="promoFeedback"></div>
-          <p class="promo-hint">
-            Try <code data-promo="WC2026">WC2026</code> <code data-promo="ZONE14">ZONE14</code> <code data-promo="FIRSTORDER">FIRSTORDER</code>
-          </p>
 
           <!-- Totals -->
           <div class="totals" id="totals">
             <div class="totals-row"><span>Subtotal</span><span id="tSubtotal">৳0</span></div>
-            <div class="totals-row" id="customRow" hidden><span>Name &amp; Number</span><span id="tCustom">FREE</span></div>
             <div class="totals-row"><span>Delivery</span><span id="tShipping">—</span></div>
             <div class="totals-row discount" id="discountRow" hidden><span id="tDiscountLabel">Discount</span><span id="tDiscount">−৳0</span></div>
             <div class="totals-row grand"><span>Total</span><span id="tGrand">৳0</span></div>

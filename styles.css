@@ -2532,8 +2532,9 @@ h1, h2, h3, .display {
     var(--bg);
   min-height: 100vh;
 }
-.order-nav { background: rgba(10, 14, 18, 0.85); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); }
+.order-nav { background: rgba(10, 14, 18, 0.85); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); height: 84px; }
 .order-nav .nav-inner { justify-content: space-between; }
+.order-nav .logo-mark { height: 76px; }
 .order-nav .back-link {
   display: inline-flex;
   align-items: center;
@@ -2545,7 +2546,7 @@ h1, h2, h3, .display {
 }
 .order-nav .back-link:hover { color: var(--neon); }
 
-.checkout { padding: 110px 0 80px; }
+.checkout { padding: 124px 0 80px; }
 .checkout-head { margin-bottom: 32px; }
 .checkout-head .section-title { font-size: clamp(36px, 4.5vw, 56px); text-align: left; }
 .breadcrumb {
@@ -2651,6 +2652,46 @@ h1, h2, h3, .display {
   gap: 10px;
 }
 .payment-options { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+
+/* Mobile-banking instructions block (bKash / Nagad / Rocket) */
+.pay-instructions {
+  margin-top: 18px;
+  padding: 16px;
+  background: rgba(94, 233, 227, 0.06);
+  border: 1px dashed rgba(94, 233, 227, 0.35);
+  border-radius: 12px;
+}
+.pay-num-card { display: flex; flex-direction: column; gap: 6px; }
+.pay-num-label {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+  font-weight: 700;
+}
+.pay-num-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.pay-num {
+  font-family: 'Courier Prime', 'Courier New', monospace;
+  font-size: 22px;
+  letter-spacing: 0.08em;
+  color: var(--neon);
+  text-shadow: 0 0 12px rgba(94, 233, 227, 0.35);
+}
+.copy-btn {
+  padding: 6px 14px;
+  background: rgba(94, 233, 227, 0.15);
+  border: 1px solid rgba(94, 233, 227, 0.4);
+  border-radius: 8px;
+  color: var(--neon);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+}
+.copy-btn:hover { background: rgba(94, 233, 227, 0.25); }
+.pay-num-hint { font-size: 12px; color: var(--text-dim); line-height: 1.5; }
+.pay-num-hint strong { color: var(--text); font-weight: 700; }
 .opt-card {
   position: relative;
   display: flex;
@@ -2999,7 +3040,7 @@ h1, h2, h3, .display {
   .delivery-options { grid-template-columns: 1fr; }
 }
 @media (max-width: 480px) {
-  .checkout { padding: 96px 0 60px; }
+  .checkout { padding: 110px 0 60px; }
   .form-block, .order-summary { padding: 20px; }
 }
 
@@ -5607,7 +5648,7 @@ h1, h2, h3, .display {
   .matchday-strip a { padding: 3px 10px; font-size: 11px; }
 
   /* Order page */
-  .checkout { padding: 100px 0 50px; }
+  .checkout { padding: 116px 0 50px; }
   .checkout-grid { gap: 20px; }
   .form-block { padding: 22px; }
   .block-title { font-size: 18px; }

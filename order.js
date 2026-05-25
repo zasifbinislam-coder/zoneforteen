@@ -4,8 +4,15 @@
    ============================================================ */
 
 const state = {
-  promo:        null,   // { code, label, type, value }
-  customPrint:  false,  // adds the printing line
+  promo: null,   // { code, label, type, value }
+};
+
+/* Mobile-banking merchant numbers shown on the order page.
+   Update these when Sir wires up real merchant accounts. */
+const PAY_NUMBERS = {
+  bkash:  { label: 'bKash Send Money number',  number: '01723-360078' },
+  nagad:  { label: 'Nagad Send Money number',  number: '01723-360078' },
+  rocket: { label: 'Rocket Send Money number', number: '01723360078-1' },
 };
 
 /* ---------- Boot ---------- */
@@ -19,21 +26,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (getJersey(id)) addToCart(id, size, qty);
   }
 
-  // Star Player pre-fill: ?customName=MESSI&customNumber=10
-  if (url.get('customName') || url.get('customNumber')) {
-    setTimeout(() => {
-      const nameInput = document.querySelector('input[name=customName]');
-      const numInput  = document.querySelector('input[name=customNumber]');
-      if (nameInput && url.get('customName'))   { nameInput.value = url.get('customName').toUpperCase(); nameInput.dispatchEvent(new Event('input')); }
-      if (numInput  && url.get('customNumber')) { numInput.value  = url.get('customNumber');             numInput.dispatchEvent(new Event('input')); }
-    }, 50);
-  }
-
   fillDivisions();
   hookForm();
   hookPromo();
-  hookCustomization();
-  hookPromoChips();
+  hookPayment();
   hookPlaceOrder();
   hookSuccessModal();
 
@@ -118,9 +114,6 @@ function renderTotals() {
   }, 0);
   const totalItems = cart.reduce((s, i) => s + i.qty, 0);
 
-  // Customization fee — currently a launch promo: FREE
-  const customFee = (state.customPrint && totalItems > 0) ? 0 : 0; // free during launch
-
   // Shipping
   const zone = (document.querySelector('input[name=zone]:checked') || {}).value || 'dhaka';
   let shipping = 0;
@@ -139,7 +132,7 @@ function renderTotals() {
       : Math.min(state.promo.value, subtotal);
   }
 
-  const grand = Math.max(0, subtotal + customFee + shipping - discount);
+  const grand = Math.max(0, subtotal + shipping - discount);
 
   document.getElementById('tSubtotal').textContent = fmtBDT(subtotal);
   document.getElementById('tShipping').textContent = totalItems === 0
@@ -155,11 +148,11 @@ function renderTotals() {
     discountRow.hidden = true;
   }
 
-  const customRow = document.getElementById('customRow');
-  customRow.hidden = !state.customPrint || totalItems === 0;
-  document.getElementById('tCustom').textContent = 'FREE';
-
   document.getElementById('tGrand').textContent = fmtBDT(grand);
+
+  // Sync the "send this amount" hint inside payment instructions
+  const amtHint = document.getElementById('payAmountHint');
+  if (amtHint) amtHint.textContent = totalItems === 0 ? 'total amount' : fmtBDT(grand);
 
   renderShipProgress(subtotal, totalItems);
 
@@ -273,23 +266,45 @@ function hookForm() {
     renderTotals();
   });
 
-  // Uppercase the custom name as the user types
-  const nameField = document.querySelector('input[name=customName]');
-  if (nameField) {
-    nameField.addEventListener('input', e => {
-      e.target.value = e.target.value.toUpperCase().replace(/[^A-Z\s]/g, '');
-    });
-  }
 }
 
-function hookCustomization() {
-  const name = document.querySelector('input[name=customName]');
-  const num  = document.querySelector('input[name=customNumber]');
+/* Show/hide the mobile-banking instructions block based on selected method */
+function hookPayment() {
+  const wrap   = document.getElementById('payInstructions');
+  const numEl  = document.getElementById('payNumber');
+  const lblEl  = document.getElementById('payNumLabel');
+  const txnEl  = document.getElementById('txnIdInput');
+  const copyBtn = document.getElementById('copyPayNum');
+
   const sync = () => {
-    state.customPrint = !!(name.value.trim() || num.value.trim());
-    renderTotals();
+    const method = (document.querySelector('input[name=payment]:checked') || {}).value;
+    const cfg = PAY_NUMBERS[method];
+    if (cfg) {
+      wrap.hidden = false;
+      lblEl.textContent = cfg.label;
+      numEl.textContent = cfg.number;
+      txnEl.required = true;
+    } else {
+      wrap.hidden = true;
+      txnEl.required = false;
+      txnEl.value = '';
+    }
   };
-  [name, num].forEach(el => el && el.addEventListener('input', sync));
+
+  document.querySelectorAll('input[name=payment]').forEach(r =>
+    r.addEventListener('change', sync)
+  );
+
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(numEl.textContent.replace(/\D/g, ''));
+      const prev = copyBtn.textContent;
+      copyBtn.textContent = 'Copied!';
+      setTimeout(() => { copyBtn.textContent = prev; }, 1400);
+    } catch { /* clipboard blocked; nothing actionable */ }
+  });
+
+  sync();
 }
 
 /* ---------- Promo ---------- */
@@ -317,15 +332,6 @@ function hookPromo() {
 
   applyBtn.addEventListener('click', apply);
   input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); apply(); } });
-}
-
-function hookPromoChips() {
-  document.querySelectorAll('.promo-hint code[data-promo]').forEach(c => {
-    c.addEventListener('click', () => {
-      document.getElementById('promoInput').value = c.dataset.promo;
-      document.getElementById('applyPromo').click();
-    });
-  });
 }
 
 /* ---------- Place order ---------- */
@@ -376,21 +382,17 @@ function hookPlaceOrder() {
     });
     lines.push(``);
 
-    if (fd.get('customName') || fd.get('customNumber')) {
-      lines.push(`✨ *Custom Print*`);
-      if (fd.get('customName'))   lines.push(`Name: ${fd.get('customName')}`);
-      if (fd.get('customNumber')) lines.push(`Number: ${fd.get('customNumber')}`);
-      lines.push(`(FREE during launch)`);
-      lines.push(``);
-    }
-
-    lines.push(`💳 *Payment*: ${({
+    const paymentLabel = ({
       cod: 'Cash on Delivery',
       bkash: 'bKash',
       nagad: 'Nagad',
       rocket: 'Rocket',
       bank: 'Bank Transfer'
-    })[fd.get('payment')]}`);
+    })[fd.get('payment')];
+    lines.push(`💳 *Payment*: ${paymentLabel}`);
+    if (fd.get('txnId')) {
+      lines.push(`Transaction ID: ${fd.get('txnId')}`);
+    }
     lines.push(``);
 
     lines.push(`💰 *Bill*`);
@@ -439,12 +441,10 @@ function hookPlaceOrder() {
         return `• ${j.country} ${j.edition} — Size ${i.size} × ${i.qty}`;
       }),
     ];
-    if (fd.get('customName') || fd.get('customNumber')) {
-      confirmLines.push(`✨ Custom print: ${fd.get('customName') || ''} ${fd.get('customNumber') || ''}`.trim());
-    }
     confirmLines.push(``);
     confirmLines.push(`💰 *Total: ${fmtBDT(grand)}*`);
-    confirmLines.push(`Payment: ${({cod:'Cash on Delivery',bkash:'bKash',nagad:'Nagad',rocket:'Rocket',bank:'Bank Transfer'})[fd.get('payment')]}`);
+    confirmLines.push(`Payment: ${paymentLabel}`);
+    if (fd.get('txnId')) confirmLines.push(`TrxID: ${fd.get('txnId')}`);
     confirmLines.push(`Delivery: ${fd.get('zone') === 'dhaka' ? 'Inside Dhaka · 24h' : 'Outside Dhaka · 2–3 days'}`);
     confirmLines.push(``);
     confirmLines.push(`We'll WhatsApp you with shipment updates.`);
@@ -479,14 +479,24 @@ function hookPlaceOrder() {
           size: i.size, qty: i.qty, price: j.price,
         };
       }),
-      custom: {
-        name:   fd.get('customName')   || '',
-        number: fd.get('customNumber') || '',
-      },
       payment: fd.get('payment'),
+      txnId:   fd.get('txnId') || '',
       notes:   fd.get('notes') || '',
       promo:   state.promo ? state.promo.code : '',
       totals:  { subtotal, shipping, discount, grand },
+    });
+
+    // 3) EmailJS — fire admin + customer emails in the background. Silently no-ops
+    //    while credentials are placeholders, so the WhatsApp flow always works.
+    sendOrderEmails({
+      ref,
+      cart,
+      fd,
+      paymentLabel,
+      grand,
+      subtotal,
+      shipping,
+      discount,
     });
 
     // Show success modal
@@ -503,4 +513,55 @@ function hookSuccessModal() {
   modal.addEventListener('click', e => {
     if (e.target === modal) modal.classList.remove('show');
   });
+}
+
+/* ---------- EmailJS dispatch ----------
+   Sends two emails (admin + customer) using the templates configured in
+   emailjs-config.js. While credentials are placeholders, the function
+   silently exits so the WhatsApp flow continues to work unchanged. */
+function sendOrderEmails({ ref, cart, fd, paymentLabel, grand, subtotal, shipping, discount }) {
+  const c = window.EMAILJS_CONFIG;
+  if (!window.emailjs || !c || c.PUBLIC_KEY.startsWith('PASTE_')) return;
+
+  const itemsText = cart.map(i => {
+    const j = getJersey(i.id);
+    return `• ${j.country} ${j.edition} — Size ${i.size} × ${i.qty} = ${fmtBDT(j.price * i.qty)}`;
+  }).join('\n');
+
+  const addressFull = [
+    fd.get('address'),
+    fd.get('thana') === '__other__' ? '' : fd.get('thana'),
+    fd.get('district'),
+    fd.get('division'),
+    fd.get('postcode'),
+  ].filter(Boolean).join(', ');
+
+  const vars = {
+    order_ref:      ref,
+    customer_name:  fd.get('name'),
+    customer_phone: fd.get('phone'),
+    customer_email: fd.get('email') || '',
+    address:        addressFull,
+    zone:           fd.get('zone') === 'dhaka' ? 'Inside Dhaka (24h)' : 'Outside Dhaka (2–3 days)',
+    items_text:     itemsText,
+    payment_method: paymentLabel,
+    txn_id:         fd.get('txnId') || '—',
+    subtotal:       fmtBDT(subtotal),
+    shipping:       shipping === 0 ? 'FREE' : fmtBDT(shipping),
+    discount:       discount > 0 ? '−' + fmtBDT(discount) : '—',
+    grand_total:    fmtBDT(grand),
+    notes:          fd.get('notes') || '',
+    promo:          state.promo ? state.promo.code : '',
+    admin_email:    c.ADMIN_EMAIL,
+  };
+
+  // Admin email — always fires
+  window.emailjs.send(c.SERVICE_ID, c.ADMIN_TEMPLATE_ID, vars)
+    .catch(err => console.warn('EmailJS admin send failed:', err));
+
+  // Customer email — only if they gave an address
+  if (vars.customer_email) {
+    window.emailjs.send(c.SERVICE_ID, c.CUSTOMER_TEMPLATE_ID, vars)
+      .catch(err => console.warn('EmailJS customer send failed:', err));
+  }
 }
