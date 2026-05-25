@@ -21,11 +21,11 @@
    ============================================================ */
 
 window.EMAILJS_CONFIG = {
-  PUBLIC_KEY:           'PASTE_YOUR_PUBLIC_KEY_HERE',
-  SERVICE_ID:           'PASTE_YOUR_SERVICE_ID_HERE',
-  ADMIN_TEMPLATE_ID:    'PASTE_YOUR_ADMIN_TEMPLATE_ID_HERE',
-  CUSTOMER_TEMPLATE_ID: 'PASTE_YOUR_CUSTOMER_TEMPLATE_ID_HERE',
-  ADMIN_EMAIL:          'zasifbinislam@gmail.com',
+  PUBLIC_KEY: 'BzoHWLrShem3kuEgu',
+  SERVICE_ID: 'service_k8dywsm',
+  ADMIN_TEMPLATE_ID: 'template_u55u4i9',
+  CUSTOMER_TEMPLATE_ID: 'template_cna7ged',
+  ADMIN_EMAIL: 'zoneforteen@gmail.com',
 };
 
 (function bootEmailJS() {
