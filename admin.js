@@ -5,7 +5,7 @@
    you'd need a backend with proper auth.
    ============================================================ */
 
-const ADMIN_PASS = 'zone14admin';
+const ADMIN_PASS = 'Brazil2002@rz';
 const AUTH_KEY   = 'zone14_admin_auth';
 
 const STATUS_META = {
@@ -63,7 +63,6 @@ function bootDashboard() {
   });
 
   document.getElementById('exportOrders').addEventListener('click', exportOrdersJson);
-  document.getElementById('seedDemo').addEventListener('click', seedDemoOrders);
   document.getElementById('clearAll').addEventListener('click', clearAllOrders);
 
   document.getElementById('orderSearch').addEventListener('input', e => {
@@ -115,7 +114,10 @@ function initMediaLibrary() {
   // Drop zone + file picker
   const drop  = document.getElementById('mediaDrop');
   const input = document.getElementById('mediaFileInput');
-  drop.addEventListener('click', () => input.click());
+  const pickBtn = document.getElementById('mediaPickBtn');
+  const openPicker = (e) => { if (e) { e.stopPropagation(); e.preventDefault(); } input.click(); };
+  drop.addEventListener('click', openPicker);
+  if (pickBtn) pickBtn.addEventListener('click', openPicker);
   drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag-over'); });
   drop.addEventListener('dragleave', () => drop.classList.remove('drag-over'));
   drop.addEventListener('drop', e => {
@@ -260,6 +262,7 @@ function initReviewsAdmin() {
 
     const fd = new FormData(form);
     const photoFile = fd.get('photo');
+    const videoFile = fd.get('video');
     const review = {
       name:     (fd.get('name') || '').toString().trim(),
       location: (fd.get('location') || '').toString().trim(),
@@ -272,16 +275,21 @@ function initReviewsAdmin() {
       showReviewMsg('err', `Photo too large (${formatBytes(photoFile.size)}). Compress under 5 MB.`);
       return;
     }
+    if (videoFile && videoFile.size > 25 * 1024 * 1024) {
+      showReviewMsg('err', `Video too large (${formatBytes(videoFile.size)}). Compress under 25 MB.`);
+      return;
+    }
 
+    const hasPhoto = photoFile && photoFile.size > 0;
+    const hasVideo = videoFile && videoFile.size > 0;
     const submitBtn = form.querySelector('button[type=submit]');
     submitBtn.disabled = true;
-    submitBtn.textContent = photoFile && photoFile.size > 0 ? 'Uploading photo…' : 'Publishing…';
+    submitBtn.textContent = hasVideo ? 'Uploading video…' : hasPhoto ? 'Uploading photo…' : 'Publishing…';
 
     try {
-      await pushReview(review, photoFile && photoFile.size > 0 ? photoFile : null);
+      await pushReview(review, hasPhoto ? photoFile : null, hasVideo ? videoFile : null);
       showReviewMsg('ok', '✓ Review published — live on the homepage now.');
       form.reset();
-      // syncFromSupabase will refresh via realtime subscription
     } catch (err) {
       console.warn(err);
       showReviewMsg('err', '✗ Failed: ' + (err.message || err));
@@ -318,9 +326,15 @@ function renderAdminReviewsList() {
   }
   wrap.innerHTML = reviews.map(r => {
     const stars = '★'.repeat(r.rating || 5);
+    let mediaHtml = '';
+    if (r.videoUrl) {
+      mediaHtml = `<video class="admin-review-tile-img" src="${r.videoUrl}" muted playsinline preload="metadata"></video>`;
+    } else if (r.photoUrl) {
+      mediaHtml = `<img class="admin-review-tile-img" src="${r.photoUrl}" alt="${escapeAttr(r.name)}" loading="lazy" />`;
+    }
     return `
-      <div class="admin-review-tile" data-id="${r.id}" data-photo-path="${r.photoPath || ''}">
-        ${r.photoUrl ? `<img class="admin-review-tile-img" src="${r.photoUrl}" alt="${escapeAttr(r.name)}" loading="lazy" />` : ''}
+      <div class="admin-review-tile" data-id="${r.id}" data-photo-path="${r.photoPath || ''}" data-video-path="${r.videoPath || ''}">
+        ${mediaHtml}
         <div class="admin-review-tile-head">
           <strong>${escapeAttr(r.name)}</strong>
           <span class="art-stars">${stars}</span>
@@ -339,8 +353,8 @@ function renderAdminReviewsList() {
       if (!confirm('Delete this review? This removes it from the homepage too.')) return;
       const id = tile.dataset.id;
       const photoPath = tile.dataset.photoPath || null;
-      await deleteReviewRemote(id, photoPath);
-      // Optimistic local update — realtime will also refresh
+      const videoPath = tile.dataset.videoPath || null;
+      await deleteReviewRemote(id, photoPath, videoPath);
       writeReviews(readReviews().filter(r => r.id !== id));
     });
   });

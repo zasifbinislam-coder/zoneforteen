@@ -369,6 +369,8 @@ async function syncFromSupabase() {
         purchaseInfo: r.purchase_info,
         photoUrl:     r.photo_url,
         photoPath:    r.photo_path,
+        videoUrl:     r.video_url,
+        videoPath:    r.video_path,
         createdAt:    r.created_at ? new Date(r.created_at).getTime() : null,
       }));
       localStorage.setItem(REVIEWS_KEY, JSON.stringify(localReviews));
@@ -732,42 +734,60 @@ function writeReviews(arr) {
   window.dispatchEvent(new CustomEvent('reviews:change'));
 }
 
-async function pushReview(review, photoFile) {
+async function pushReview(review, photoFile, videoFile) {
   const sb = getSupabase();
   if (!sb) throw new Error('Supabase client not ready');
 
-  let photo_url = null, photo_path = null;
-  if (photoFile) {
-    const ext = (photoFile.name.split('.').pop() || 'jpg').toLowerCase();
-    const path = `reviews/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const uploadOne = async (file, folderName) => {
+    const ext = (file.name.split('.').pop() || 'bin').toLowerCase();
+    const path = `${folderName}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
     const { data: up, error: upErr } = await sb.storage
       .from('media')
-      .upload(path, photoFile, { contentType: photoFile.type, upsert: false });
+      .upload(path, file, { contentType: file.type, upsert: false });
     if (upErr) throw upErr;
     const { data: pub } = sb.storage.from('media').getPublicUrl(up.path);
-    photo_url  = pub.publicUrl;
-    photo_path = up.path;
-  }
+    return { url: pub.publicUrl, path: up.path };
+  };
 
-  const { data, error } = await sb.from('customer_reviews').insert({
-    name:          review.name,
-    location:      review.location || null,
-    rating:        review.rating,
-    review_text:   review.text,
-    purchase_info: review.purchase || null,
-    photo_url, photo_path,
-  }).select().single();
-  if (error) {
-    if (photo_path) await sb.storage.from('media').remove([photo_path]).catch(() => {});
-    throw error;
+  let photo_url = null, photo_path = null;
+  let video_url = null, video_path = null;
+  const cleanup = [];
+
+  try {
+    if (photoFile) {
+      const r = await uploadOne(photoFile, 'reviews');
+      photo_url = r.url; photo_path = r.path;
+      cleanup.push(r.path);
+    }
+    if (videoFile) {
+      const r = await uploadOne(videoFile, 'reviews');
+      video_url = r.url; video_path = r.path;
+      cleanup.push(r.path);
+    }
+
+    const { data, error } = await sb.from('customer_reviews').insert({
+      name:          review.name,
+      location:      review.location || null,
+      rating:        review.rating,
+      review_text:   review.text,
+      purchase_info: review.purchase || null,
+      photo_url, photo_path,
+      video_url, video_path,
+    }).select().single();
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    // Clean up any uploaded files on row-insert failure
+    if (cleanup.length) await sb.storage.from('media').remove(cleanup).catch(() => {});
+    throw err;
   }
-  return data;
 }
 
-async function deleteReviewRemote(id, photoPath) {
+async function deleteReviewRemote(id, photoPath, videoPath) {
   const sb = getSupabase();
   if (!sb) return;
-  if (photoPath) await sb.storage.from('media').remove([photoPath]).catch(() => {});
+  const toRemove = [photoPath, videoPath].filter(Boolean);
+  if (toRemove.length) await sb.storage.from('media').remove(toRemove).catch(() => {});
   await sb.from('customer_reviews').delete().eq('id', id).catch(() => {});
 }
 

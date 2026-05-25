@@ -24,7 +24,7 @@
       <p>Enter the admin passcode to view orders.</p>
       <input type="password" id="adminPass" placeholder="Passcode" autocomplete="off" autofocus />
       <button type="submit" class="btn btn-primary btn-lg">Sign In</button>
-      <p class="gate-hint">Default passcode: <code>zone14admin</code></p>
+      <p class="gate-hint">Authorized staff only</p>
     </form>
   </div>
 
@@ -82,7 +82,6 @@
             <option value="delivered">Delivered</option>
             <option value="cancelled">Cancelled</option>
           </select>
-          <button id="seedDemo" class="btn btn-ghost" title="Insert sample orders to demo the dashboard">+ Seed Demo Data</button>
           <button id="clearAll"  class="btn btn-ghost" style="color:#ff6b6b">Clear All</button>
         </div>
       </section>
@@ -102,9 +101,12 @@
           <div class="media-drop" id="mediaDrop">
             <input type="file" id="mediaFileInput" accept="image/*,video/*" multiple hidden />
             <div class="media-drop-inner">
-              <svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"><path d="M19 13v6H5v-6H3v8h18v-8h-2zm-7-9L6 10h4v6h4v-6h4l-6-6z"/></svg>
-              <p><strong>Click or drop files here</strong></p>
-              <p class="media-drop-hint">Photos (JPG/PNG/WebP) and videos (MP4). Multiple files OK.</p>
+              <svg viewBox="0 0 24 24" width="42" height="42" fill="currentColor"><path d="M19 13v6H5v-6H3v8h18v-8h-2zm-7-9L6 10h4v6h4v-6h4l-6-6z"/></svg>
+              <button type="button" class="btn btn-primary media-pick-btn" id="mediaPickBtn">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+                Choose Files to Upload
+              </button>
+              <p class="media-drop-hint">…or drop them anywhere in this box. Photos (JPG/PNG/WebP) and videos (MP4). Multiple OK.</p>
               <p class="media-drop-warn" id="mediaSizeWarn" hidden></p>
             </div>
           </div>
@@ -149,10 +151,14 @@
               <textarea name="text" required maxlength="500" rows="3" placeholder="Their actual words — paste from WhatsApp or type yourself..."></textarea>
             </label>
           </div>
-          <div class="form-row full">
+          <div class="form-row">
             <label>Customer photo (optional)
               <input type="file" name="photo" accept="image/*" />
-              <span class="hint">JPG/PNG. Phone photo of customer wearing the jersey works great. Max 5 MB.</span>
+              <span class="hint">JPG/PNG. Customer wearing the jersey. Max 5 MB.</span>
+            </label>
+            <label>Customer video (optional)
+              <input type="file" name="video" accept="video/*" />
+              <span class="hint">MP4 short clip (unboxing, wearing it). Max 25 MB.</span>
             </label>
           </div>
           <button type="submit" class="btn btn-primary">Publish Review</button>

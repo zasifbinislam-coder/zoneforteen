@@ -4164,10 +4164,19 @@ h1, h2, h3, .display {
   background: rgba(94, 233, 227, 0.08);
   border-color: var(--neon);
 }
-.media-drop-inner { pointer-events: none; }
-.media-drop-inner svg { color: var(--neon); margin-bottom: 8px; }
-.media-drop-inner p { color: var(--text-dim); font-size: 13px; margin-bottom: 4px; }
+.media-drop-inner { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.media-drop-inner > svg { color: var(--neon); margin-bottom: 4px; pointer-events: none; }
+.media-drop-inner p { color: var(--text-dim); font-size: 13px; margin: 0; pointer-events: none; }
 .media-drop-inner p strong { color: var(--text); }
+.media-pick-btn {
+  pointer-events: auto;
+  padding: 11px 22px;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
 .media-drop-hint { color: var(--text-mute); font-size: 12px; }
 .media-drop-warn {
   margin-top: 10px;
@@ -5301,20 +5310,22 @@ h1, h2, h3, .display {
 .admin-review-empty .icon { font-size: 32px; display: block; margin-bottom: 8px; opacity: 0.6; }
 .admin-review-empty p { color: var(--text-mute); font-size: 13px; margin: 0; }
 
-/* Landing-page review card with customer photo */
-.review-card.has-photo .rv-photo {
+/* Landing-page review card with customer photo or video */
+.review-card.has-media .rv-media {
   margin: -28px -28px 14px;
   height: 220px;
   overflow: hidden;
   border-radius: var(--radius) var(--radius) 0 0;
+  background: #050a0e;
 }
-.review-card.has-photo .rv-photo img {
+.review-card.has-media .rv-media img,
+.review-card.has-media .rv-media video {
   width: 100%; height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform 0.5s var(--ease-out);
 }
-.review-card.has-photo:hover .rv-photo img { transform: scale(1.05); }
+.review-card.has-photo:hover .rv-media img { transform: scale(1.04); transition: transform 0.5s var(--ease-out); }
+.review-card.has-media video { background: #000; }
 
 /* Admin results section */
 .admin-results {

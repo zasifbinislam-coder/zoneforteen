@@ -467,9 +467,21 @@ function renderDynamicReviews() {
     const avatarColors = ['#5ee9e3','#fbe10d','#c60b1e','#75aadb','#1e3a8a','#ffd700','#7a1f2b','#1d6b3a'];
     const color = avatarColors[Math.abs(hashStr(r.name)) % avatarColors.length];
     const fg = ['#fbe10d','#c60b1e','#75aadb'].includes(color) ? '#0a1414' : '#052424';
+
+    // Media — video wins if both are set (richer content)
+    let mediaHtml = '';
+    let mediaClass = '';
+    if (r.videoUrl) {
+      mediaHtml = `<div class="rv-media"><video src="${r.videoUrl}" controls muted playsinline preload="metadata" ${r.photoUrl ? `poster="${r.photoUrl}"` : ''}></video></div>`;
+      mediaClass = ' has-media';
+    } else if (r.photoUrl) {
+      mediaHtml = `<div class="rv-media rv-photo"><img src="${r.photoUrl}" alt="" loading="lazy" /></div>`;
+      mediaClass = ' has-photo has-media';
+    }
+
     return `
-      <article class="review-card${r.photoUrl ? ' has-photo' : ''}">
-        ${r.photoUrl ? `<div class="rv-photo"><img src="${r.photoUrl}" alt="" loading="lazy" /></div>` : ''}
+      <article class="review-card${mediaClass}">
+        ${mediaHtml}
         <header class="rv-head">
           <span class="rv-avatar" style="background:${color};color:${fg}">${escapeHtml(initials)}</span>
           <div class="rv-meta">
