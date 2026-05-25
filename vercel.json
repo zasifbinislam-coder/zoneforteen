@@ -1,0 +1,15 @@
+{
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "redirects": [
+    { "source": "/admin",   "destination": "/admin.html",   "permanent": false },
+    { "source": "/order",   "destination": "/order.html",   "permanent": false },
+    { "source": "/track",   "destination": "/track.html",   "permanent": false },
+    { "source": "/about",   "destination": "/about.html",   "permanent": true },
+    { "source": "/contact", "destination": "/contact.html", "permanent": true },
+    { "source": "/privacy", "destination": "/privacy.html", "permanent": true },
+    { "source": "/terms",   "destination": "/terms.html",   "permanent": true },
+    { "source": "/shipping","destination": "/shipping.html","permanent": true },
+    { "source": "/refund",  "destination": "/refund.html",  "permanent": true }
+  ]
+}
