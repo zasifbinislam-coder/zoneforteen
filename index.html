@@ -169,10 +169,15 @@
 
   <!-- ============ HERO ============ -->
   <section id="home" class="hero">
-    <!-- Cinematic background video. preload="none" so the 25 MB file doesn't
-         block initial paint — autoplay triggers download once the page is
-         interactive. Poster image (cheap PNG) covers the gap. -->
-    <video class="hero-video" autoplay muted loop playsinline preload="none" poster="logo/main.png" aria-hidden="true">
+    <!-- Brand poster shown while the video downloads. Same logo + same filter
+         as the video so when the video fades in on top, the swap is invisible —
+         the user just perceives "the bg has always been here". -->
+    <img class="hero-poster" id="heroPoster" src="logo/main.png" alt="" aria-hidden="true" />
+
+    <!-- Cinematic background video. preload="auto" so the 4.7 MB file starts
+         downloading at parse time (gives ~5s head start). Opacity starts at 0
+         and JS fades it in on the 'playing' event for a seamless cross-fade. -->
+    <video class="hero-video" id="heroVideo" autoplay muted loop playsinline preload="auto" poster="logo/main.png" aria-hidden="true">
       <source src="videos/hero.mp4" type="video/mp4" />
     </video>
     <div class="hero-vignette" aria-hidden="true"></div>

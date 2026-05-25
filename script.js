@@ -1521,8 +1521,50 @@ function initNewsletter() {
   });
 }
 
+/* ---------- HERO VIDEO SMOOTH SWAP ----------
+   Hero video starts at opacity 0 (set in CSS). We don't reveal it until the
+   browser is actually playing frames — at that moment we briefly dim the
+   logo poster so the eye reads a soft "lighting shift", then fade the video
+   in over it. End effect: the load delay (~3-5s on slow links) is invisible. */
+function initHeroVideo() {
+  const video  = document.getElementById('heroVideo');
+  const poster = document.getElementById('heroPoster');
+  if (!video || !poster) return;
+
+  let revealed = false;
+  const reveal = () => {
+    if (revealed) return;
+    revealed = true;
+    // Step 1: dim the poster slightly (300ms)
+    poster.classList.add('dimming');
+    // Step 2: cross-fade video in on top of it
+    setTimeout(() => {
+      video.classList.add('is-ready');
+      // Step 3: once the video is fully visible, drop the poster from the paint
+      // tree so it isn't quietly compositing forever.
+      setTimeout(() => poster.classList.add('fade-out'), 1300);
+    }, 300);
+  };
+
+  // 'playing' fires the moment a frame is rendered — most reliable cue
+  video.addEventListener('playing', reveal, { once: true });
+  // Safety nets: some browsers fire canplay/loadeddata before playing
+  video.addEventListener('canplay', () => {
+    // give the playback engine ~200ms to actually start, then reveal anyway
+    setTimeout(reveal, 200);
+  }, { once: true });
+
+  // Nudge autoplay along — some browsers stall preload="auto" until interacted
+  const tryPlay = () => video.play().catch(() => {});
+  tryPlay();
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) tryPlay();
+  });
+}
+
 /* ---------- INIT ---------- */
 document.addEventListener('DOMContentLoaded', () => {
+  initHeroVideo();
   renderJerseys();
   initFilters();
   initNav();

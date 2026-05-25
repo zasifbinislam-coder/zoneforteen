@@ -276,7 +276,26 @@ h1, h2, h3, .display {
   isolation: isolate;          /* keeps the video layered correctly */
 }
 
-/* Cinematic background video — sits below every other hero layer */
+/* Brand poster — visible until the video has buffered and starts playing.
+   Same filter as the video so the cross-fade is imperceptible.
+   `.dimming` darkens it just before the video appears so the eye registers a
+   subtle "lighting change" instead of a hard cut — masks the swap entirely. */
+.hero-poster {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  z-index: 0;
+  filter: saturate(0.95) brightness(0.7);
+  transition: filter 0.5s ease, opacity 1.2s ease;
+  pointer-events: none;
+}
+.hero-poster.dimming { filter: saturate(0.85) brightness(0.45); }
+.hero-poster.fade-out { opacity: 0; }
+
+/* Cinematic background video — sits above the poster, fades in once ready */
 .hero-video {
   position: absolute;
   inset: 0;
@@ -286,7 +305,10 @@ h1, h2, h3, .display {
   z-index: 0;
   /* Slight desaturation + dim so the brand colors still pop on top */
   filter: saturate(0.95) brightness(0.7);
+  opacity: 0;
+  transition: opacity 1.2s ease;
 }
+.hero-video.is-ready { opacity: 1; }
 
 /* Dark gradient vignette so the headline stays crisp over the video */
 .hero-vignette {
