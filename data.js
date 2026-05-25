@@ -346,14 +346,34 @@ async function syncFromSupabase() {
       { data: preds,   error: e1 },
       { data: results, error: e2 },
       { data: media,   error: e3 },
+      { data: reviews, error: e4 },
     ] = await Promise.all([
       sb.from('predictions').select('*'),
       sb.from('match_results').select('*'),
       sb.from('jersey_media').select('*').order('sort_order').order('uploaded_at'),
+      sb.from('customer_reviews').select('*').eq('approved', true)
+        .order('sort_order', { ascending: false })
+        .order('created_at', { ascending: false }),
     ]);
     if (e1) throw e1;
     if (e2) throw e2;
     if (e3) throw e3;
+    // reviews error is non-fatal — table may not exist yet on first deploy
+    if (!e4 && reviews) {
+      const localReviews = reviews.map(r => ({
+        id:           r.id,
+        name:         r.name,
+        location:     r.location,
+        rating:       r.rating,
+        text:         r.review_text,
+        purchaseInfo: r.purchase_info,
+        photoUrl:     r.photo_url,
+        photoPath:    r.photo_path,
+        createdAt:    r.created_at ? new Date(r.created_at).getTime() : null,
+      }));
+      localStorage.setItem(REVIEWS_KEY, JSON.stringify(localReviews));
+      window.dispatchEvent(new CustomEvent('reviews:change'));
+    }
 
     // jersey_media → group by jersey_id into local cache shape
     const mediaByJersey = {};
@@ -418,6 +438,10 @@ function subscribeToSupabaseChanges() {
     .subscribe();
   sb.channel('zone14-jersey-media')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'jersey_media' },
+        () => syncFromSupabase())
+    .subscribe();
+  sb.channel('zone14-customer-reviews')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'customer_reviews' },
         () => syncFromSupabase())
     .subscribe();
 }
@@ -690,6 +714,61 @@ function fileToDataUrl(file) {
 function mediaStorageBytes() {
   try { return new Blob([localStorage.getItem(MEDIA_KEY) || '']).size; }
   catch (_) { return 0; }
+}
+
+/* ============================================================
+   CUSTOMER REVIEWS — admin-posted real reviews with optional photo
+   Stored in Supabase customer_reviews table + media bucket for photos.
+   localStorage acts as a sync cache so the carousel renders instantly.
+   ============================================================ */
+const REVIEWS_KEY = 'zone14_reviews_v1';
+
+function readReviews() {
+  try { return JSON.parse(localStorage.getItem(REVIEWS_KEY)) || []; }
+  catch (_) { return []; }
+}
+function writeReviews(arr) {
+  localStorage.setItem(REVIEWS_KEY, JSON.stringify(arr));
+  window.dispatchEvent(new CustomEvent('reviews:change'));
+}
+
+async function pushReview(review, photoFile) {
+  const sb = getSupabase();
+  if (!sb) throw new Error('Supabase client not ready');
+
+  let photo_url = null, photo_path = null;
+  if (photoFile) {
+    const ext = (photoFile.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = `reviews/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { data: up, error: upErr } = await sb.storage
+      .from('media')
+      .upload(path, photoFile, { contentType: photoFile.type, upsert: false });
+    if (upErr) throw upErr;
+    const { data: pub } = sb.storage.from('media').getPublicUrl(up.path);
+    photo_url  = pub.publicUrl;
+    photo_path = up.path;
+  }
+
+  const { data, error } = await sb.from('customer_reviews').insert({
+    name:          review.name,
+    location:      review.location || null,
+    rating:        review.rating,
+    review_text:   review.text,
+    purchase_info: review.purchase || null,
+    photo_url, photo_path,
+  }).select().single();
+  if (error) {
+    if (photo_path) await sb.storage.from('media').remove([photo_path]).catch(() => {});
+    throw error;
+  }
+  return data;
+}
+
+async function deleteReviewRemote(id, photoPath) {
+  const sb = getSupabase();
+  if (!sb) return;
+  if (photoPath) await sb.storage.from('media').remove([photoPath]).catch(() => {});
+  await sb.from('customer_reviews').delete().eq('id', id).catch(() => {});
 }
 
 /* ============================================================

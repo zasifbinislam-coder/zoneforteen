@@ -78,10 +78,12 @@ function bootDashboard() {
   render();
   renderResults();
   initMediaLibrary();
-  window.addEventListener('storage', () => { render(); renderResults(); renderMediaGallery(); });
+  initReviewsAdmin();
+  window.addEventListener('storage', () => { render(); renderResults(); renderMediaGallery(); renderAdminReviewsList(); });
   window.addEventListener('predictions:change', renderResults);
   window.addEventListener('results:change',     renderResults);
   window.addEventListener('media:change',       renderMediaGallery);
+  window.addEventListener('reviews:change',     renderAdminReviewsList);
 
   // Pull latest shared predictions + results from Supabase, then subscribe
   // for realtime updates so admin sees customer activity live.
@@ -242,6 +244,111 @@ function formatBytes(n) {
   if (n < 1024) return n + ' B';
   if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
   return (n / 1024 / 1024).toFixed(2) + ' MB';
+}
+
+/* ============================================================
+   CUSTOMER REVIEWS — admin form + list
+   ============================================================ */
+function initReviewsAdmin() {
+  const form = document.getElementById('reviewForm');
+  const msg  = document.getElementById('reviewFormMsg');
+  if (!form) return;
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!form.checkValidity()) { form.reportValidity(); return; }
+
+    const fd = new FormData(form);
+    const photoFile = fd.get('photo');
+    const review = {
+      name:     (fd.get('name') || '').toString().trim(),
+      location: (fd.get('location') || '').toString().trim(),
+      rating:   parseInt(fd.get('rating'), 10),
+      text:     (fd.get('text') || '').toString().trim(),
+      purchase: (fd.get('purchase') || '').toString().trim(),
+    };
+
+    if (photoFile && photoFile.size > 5 * 1024 * 1024) {
+      showReviewMsg('err', `Photo too large (${formatBytes(photoFile.size)}). Compress under 5 MB.`);
+      return;
+    }
+
+    const submitBtn = form.querySelector('button[type=submit]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = photoFile && photoFile.size > 0 ? 'Uploading photo…' : 'Publishing…';
+
+    try {
+      await pushReview(review, photoFile && photoFile.size > 0 ? photoFile : null);
+      showReviewMsg('ok', '✓ Review published — live on the homepage now.');
+      form.reset();
+      // syncFromSupabase will refresh via realtime subscription
+    } catch (err) {
+      console.warn(err);
+      showReviewMsg('err', '✗ Failed: ' + (err.message || err));
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Publish Review';
+    }
+  });
+
+  renderAdminReviewsList();
+  window.addEventListener('reviews:change', renderAdminReviewsList);
+}
+
+function showReviewMsg(kind, text) {
+  const msg = document.getElementById('reviewFormMsg');
+  if (!msg) return;
+  msg.hidden = false;
+  msg.className = 'review-form-msg ' + kind;
+  msg.textContent = text;
+  setTimeout(() => { msg.hidden = true; }, 6000);
+}
+
+function renderAdminReviewsList() {
+  const wrap = document.getElementById('adminReviewsList');
+  if (!wrap) return;
+  const reviews = readReviews();
+  if (reviews.length === 0) {
+    wrap.innerHTML = `
+      <div class="admin-review-empty">
+        <span class="icon">📝</span>
+        <p>No customer reviews yet. Post your first one above — it'll appear on the homepage within a second.</p>
+      </div>`;
+    return;
+  }
+  wrap.innerHTML = reviews.map(r => {
+    const stars = '★'.repeat(r.rating || 5);
+    return `
+      <div class="admin-review-tile" data-id="${r.id}" data-photo-path="${r.photoPath || ''}">
+        ${r.photoUrl ? `<img class="admin-review-tile-img" src="${r.photoUrl}" alt="${escapeAttr(r.name)}" loading="lazy" />` : ''}
+        <div class="admin-review-tile-head">
+          <strong>${escapeAttr(r.name)}</strong>
+          <span class="art-stars">${stars}</span>
+        </div>
+        <p class="art-text">${escapeAttr(r.text)}</p>
+        ${r.purchaseInfo ? `<p class="art-buy">${escapeAttr(r.purchaseInfo)}</p>` : ''}
+        ${r.location ? `<p class="art-loc">📍 ${escapeAttr(r.location)}</p>` : ''}
+        <button type="button" class="admin-review-tile-del" data-del title="Delete review">×</button>
+      </div>
+    `;
+  }).join('');
+
+  wrap.querySelectorAll('[data-del]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const tile = btn.closest('.admin-review-tile');
+      if (!confirm('Delete this review? This removes it from the homepage too.')) return;
+      const id = tile.dataset.id;
+      const photoPath = tile.dataset.photoPath || null;
+      await deleteReviewRemote(id, photoPath);
+      // Optimistic local update — realtime will also refresh
+      writeReviews(readReviews().filter(r => r.id !== id));
+    });
+  });
+}
+
+function escapeAttr(s) {
+  return String(s || '').replace(/[&<>"']/g, ch =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 }
 
 /* ---------- Match results entry ---------- */

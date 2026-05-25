@@ -98,3 +98,37 @@ create policy "media_update" on storage.objects for update using (bucket_id = 'm
 create policy "media_delete" on storage.objects for delete using (bucket_id = 'media');
 
 alter publication supabase_realtime add table public.jersey_media;
+
+-- ============================================================
+-- 8. CUSTOMER REVIEWS — admin-curated real reviews with photo/video
+-- ============================================================
+create table if not exists public.customer_reviews (
+  id            uuid primary key default gen_random_uuid(),
+  name          text not null,
+  location      text,
+  rating        integer not null check (rating between 1 and 5),
+  review_text   text not null,
+  purchase_info text,
+  photo_url     text,
+  photo_path    text,
+  video_url     text,
+  video_path    text,
+  approved      boolean default true,
+  sort_order    integer default 0,
+  created_at    timestamptz default now()
+);
+create index if not exists customer_reviews_approved_idx
+  on public.customer_reviews (approved, sort_order desc, created_at desc);
+
+alter table public.customer_reviews enable row level security;
+
+drop policy if exists "reviews_read"   on public.customer_reviews;
+drop policy if exists "reviews_insert" on public.customer_reviews;
+drop policy if exists "reviews_update" on public.customer_reviews;
+drop policy if exists "reviews_delete" on public.customer_reviews;
+create policy "reviews_read"   on public.customer_reviews for select using (approved = true);
+create policy "reviews_insert" on public.customer_reviews for insert with check (true);
+create policy "reviews_update" on public.customer_reviews for update using (true) with check (true);
+create policy "reviews_delete" on public.customer_reviews for delete using (true);
+
+alter publication supabase_realtime add table public.customer_reviews;

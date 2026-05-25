@@ -114,6 +114,56 @@
         <div class="media-gallery" id="mediaGallery"><!-- populated --></div>
       </section>
 
+      <!-- Customer Reviews — post real customer reviews + optional photo -->
+      <section class="admin-reviews">
+        <header class="admin-section-head">
+          <h2>⭐ Customer Reviews</h2>
+          <p>Post a real customer review with optional photo. Shows live on the homepage instantly via Supabase.</p>
+        </header>
+
+        <form id="reviewForm" class="review-form" novalidate>
+          <div class="form-row">
+            <label>Customer name<span class="req">*</span>
+              <input type="text" name="name" required maxlength="60" placeholder="e.g. Rakib Hossain" />
+            </label>
+            <label>Location
+              <input type="text" name="location" maxlength="60" placeholder="e.g. Dhanmondi, Dhaka" />
+            </label>
+          </div>
+          <div class="form-row">
+            <label>Rating<span class="req">*</span>
+              <select name="rating" required>
+                <option value="5">★★★★★ Excellent (5)</option>
+                <option value="4">★★★★☆ Great (4)</option>
+                <option value="3">★★★☆☆ OK (3)</option>
+                <option value="2">★★☆☆☆ Poor (2)</option>
+                <option value="1">★☆☆☆☆ Terrible (1)</option>
+              </select>
+            </label>
+            <label>Purchase info
+              <input type="text" name="purchase" maxlength="80" placeholder="e.g. Argentina Home · L · MESSI 10" />
+            </label>
+          </div>
+          <div class="form-row full">
+            <label>Review text<span class="req">*</span>
+              <textarea name="text" required maxlength="500" rows="3" placeholder="Their actual words — paste from WhatsApp or type yourself..."></textarea>
+            </label>
+          </div>
+          <div class="form-row full">
+            <label>Customer photo (optional)
+              <input type="file" name="photo" accept="image/*" />
+              <span class="hint">JPG/PNG. Phone photo of customer wearing the jersey works great. Max 5 MB.</span>
+            </label>
+          </div>
+          <button type="submit" class="btn btn-primary">Publish Review</button>
+          <p class="review-form-msg" id="reviewFormMsg" hidden></p>
+        </form>
+
+        <div class="admin-reviews-list" id="adminReviewsList">
+          <!-- populated by admin.js -->
+        </div>
+      </section>
+
       <!-- Match Results entry (drives the prediction leaderboard) -->
       <section class="admin-results">
         <header class="admin-section-head">

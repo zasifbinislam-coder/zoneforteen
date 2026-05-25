@@ -450,6 +450,65 @@ function initCartPill() {
 }
 
 /* ============================================================
+   DYNAMIC REVIEWS — replace static reviews with Supabase-backed
+   admin-posted reviews when any exist.
+   ============================================================ */
+function renderDynamicReviews() {
+  const reviews = readReviews();
+  if (!reviews || reviews.length === 0) return;   // keep static fallback
+
+  const track = document.getElementById('reviewsTrack');
+  if (!track) return;
+
+  track.innerHTML = reviews.map(r => {
+    const initials = (r.name || '?').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+    const filled = '★'.repeat(r.rating || 5);
+    const empty  = '<span style="color:#444">' + '★'.repeat(5 - (r.rating || 5)) + '</span>';
+    const avatarColors = ['#5ee9e3','#fbe10d','#c60b1e','#75aadb','#1e3a8a','#ffd700','#7a1f2b','#1d6b3a'];
+    const color = avatarColors[Math.abs(hashStr(r.name)) % avatarColors.length];
+    const fg = ['#fbe10d','#c60b1e','#75aadb'].includes(color) ? '#0a1414' : '#052424';
+    return `
+      <article class="review-card${r.photoUrl ? ' has-photo' : ''}">
+        ${r.photoUrl ? `<div class="rv-photo"><img src="${r.photoUrl}" alt="" loading="lazy" /></div>` : ''}
+        <header class="rv-head">
+          <span class="rv-avatar" style="background:${color};color:${fg}">${escapeHtml(initials)}</span>
+          <div class="rv-meta">
+            <strong>${escapeHtml(r.name)}</strong>
+            <span class="rv-sub"><span class="rv-verified">✓ Verified</span>${r.createdAt ? ' · ' + relTime(r.createdAt) : ''}</span>
+          </div>
+          <span class="stars">${filled}${empty}</span>
+        </header>
+        <p class="rv-body">"${escapeHtml(r.text || '')}"</p>
+        ${(r.purchaseInfo || r.location) ? `<footer class="rv-foot">
+          ${r.purchaseInfo ? `<span class="rv-buy">${escapeHtml(r.purchaseInfo)}</span>` : ''}
+          ${r.location ? `<span class="rv-loc">📍 ${escapeHtml(r.location)}</span>` : ''}
+        </footer>` : ''}
+      </article>
+    `;
+  }).join('');
+}
+
+function hashStr(s) {
+  let h = 0;
+  for (let i = 0; i < (s || '').length; i++) {
+    h = ((h << 5) - h) + s.charCodeAt(i);
+    h |= 0;
+  }
+  return h;
+}
+function relTime(ms) {
+  const diff = Math.max(0, Date.now() - ms);
+  const m = Math.floor(diff / 60000);
+  const h = Math.floor(m / 60);
+  const d = Math.floor(h / 24);
+  if (d > 7) return new Date(ms).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' });
+  if (d > 0) return d + ' day' + (d === 1 ? '' : 's') + ' ago';
+  if (h > 0) return h + 'h ago';
+  if (m > 0) return m + 'm ago';
+  return 'just now';
+}
+
+/* ============================================================
    VIDEO SHOWCASE — landing-page grid + modal player
    ============================================================ */
 function renderVideoShowcase() {
@@ -1499,8 +1558,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Supabase: pull latest shared data on load, then subscribe for realtime updates.
   // Cache-first design means the UI shows localStorage instantly, then refreshes
   // when Supabase responds (typically <300ms).
+  renderDynamicReviews();   // from cache immediately
   syncFromSupabase().then(ok => {
-    if (ok) { renderMatchGrid(); renderLeaderboard(); renderFeatured(); }
+    if (ok) { renderMatchGrid(); renderLeaderboard(); renderFeatured(); renderDynamicReviews(); }
   });
   subscribeToSupabaseChanges();
+  window.addEventListener('reviews:change', renderDynamicReviews);
 });
