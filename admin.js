@@ -1032,21 +1032,24 @@ function openJerseyEditor(jersey) {
 
   form.reset();
   if (jersey) {
-    form.id.value           = jersey.id;
-    form.country.value      = jersey.country;
-    form.edition.value      = jersey.edition;
-    form.tag.value          = jersey.tag || 'home';
-    form.price.value        = jersey.price;
-    form.stockLeft.value    = jersey.stockLeft || 0;
-    form.inStock.checked    = !!jersey.inStock;
-    form.primary.value      = (jersey.palette || {}).primary   || '#cccccc';
-    form.secondary.value    = (jersey.palette || {}).secondary || '#ffffff';
-    form.accent.value       = (jersey.palette || {}).accent    || '#000000';
-    form.stripes.checked    = !!(jersey.palette || {}).stripes;
-    form.crest.value        = jersey.crest || '';
-    form.shirtNumber.value  = jersey.number || '';
-    form.sortOrder.value    = jersey.sortOrder || 0;
-    form.hidden.checked     = !!jersey.hidden;
+    setFieldValue(form, 'id',          jersey.id);
+    setFieldValue(form, 'country',     jersey.country);
+    setFieldValue(form, 'edition',     jersey.edition);
+    setFieldValue(form, 'tag',         jersey.tag || 'home');
+    setFieldValue(form, 'price',       jersey.price);
+    setFieldValue(form, 'stockLeft',   jersey.stockLeft || 0);
+    setFieldValue(form, 'primary',     (jersey.palette || {}).primary   || '#cccccc');
+    setFieldValue(form, 'secondary',   (jersey.palette || {}).secondary || '#ffffff');
+    setFieldValue(form, 'accent',      (jersey.palette || {}).accent    || '#000000');
+    setFieldValue(form, 'crest',       jersey.crest || '');
+    setFieldValue(form, 'shirtNumber', jersey.number || '');
+    setFieldValue(form, 'sortOrder',   jersey.sortOrder || 0);
+    const inStockEl = $field(form, 'inStock');
+    const stripesEl = $field(form, 'stripes');
+    const hiddenEl  = $field(form, 'hidden');
+    if (inStockEl) inStockEl.checked = !!jersey.inStock;
+    if (stripesEl) stripesEl.checked = !!(jersey.palette || {}).stripes;
+    if (hiddenEl)  hiddenEl.checked  = !!jersey.hidden;
   }
 
   modal.hidden = false;
@@ -1086,19 +1089,19 @@ async function handleJerseySubmit(e) {
     edition,
     tag:        fd.get('tag') || 'home',
     price:      parseInt(fd.get('price'), 10) || 0,
-    inStock:    form.inStock.checked,
+    inStock:    !!($field(form, 'inStock') && $field(form, 'inStock').checked),
     stockLeft:  parseInt(fd.get('stockLeft'), 10) || 0,
     comingSoon: (fd.get('tag') === 'coming'),
     palette: {
       primary:   fd.get('primary'),
       secondary: fd.get('secondary'),
       accent:    fd.get('accent'),
-      stripes:   form.stripes.checked,
+      stripes:   !!($field(form, 'stripes') && $field(form, 'stripes').checked),
     },
     crest:     (fd.get('crest') || '').toString().trim(),
     number:    (fd.get('shirtNumber') || '10').toString().trim(),
     sortOrder: parseInt(fd.get('sortOrder'), 10) || 0,
-    hidden:    form.hidden.checked,
+    hidden:    !!($field(form, 'hidden') && $field(form, 'hidden').checked),
   };
 
   const msg = document.getElementById('jerseyFormMsg');
@@ -1341,7 +1344,7 @@ function initOffersAdmin() {
       priceLine:   (fd.get('priceLine') || '').toString().trim(),
       ctaText:     (fd.get('ctaText') || 'Claim').toString().trim(),
       ctaUrl:      (fd.get('ctaUrl') || '#').toString().trim(),
-      featured:    form.featured.checked,
+      featured:    !!($field(form, 'featured') && $field(form, 'featured').checked),
     };
     const next = [...OFFERS, offer];
     try {
@@ -1419,43 +1422,58 @@ function showSettingsMsg(formEl, kind, text) {
   setTimeout(() => { msg.textContent = ''; msg.className = 'settings-msg'; }, 4000);
 }
 
+/* Safe form field accessor — uses form.elements.namedItem(name) which works
+   in all browsers + jsdom (form[name] direct access is a legacy quirk that
+   fails for built-in attribute names like 'title', 'hidden', 'id', and
+   isn't supported uniformly across all environments). */
+function $field(form, name) {
+  if (!form || !form.elements) return null;
+  return form.elements.namedItem ? form.elements.namedItem(name) : form.elements[name];
+}
+function setFieldValue(form, name, val) {
+  const el = $field(form, name);
+  if (el && 'value' in el) el.value = val == null ? '' : val;
+}
+
 function fillSettingsForms() {
   const pay = document.getElementById('paymentSettingsForm');
   if (pay) {
-    pay.bkash.value  = PAY_NUMBERS.bkash.number;
-    pay.nagad.value  = PAY_NUMBERS.nagad.number;
-    pay.rocket.value = PAY_NUMBERS.rocket.number;
+    setFieldValue(pay, 'bkash',  PAY_NUMBERS.bkash.number);
+    setFieldValue(pay, 'nagad',  PAY_NUMBERS.nagad.number);
+    setFieldValue(pay, 'rocket', PAY_NUMBERS.rocket.number);
   }
   const contact = document.getElementById('contactSettingsForm');
   if (contact) {
-    contact.address.value      = CONTACT.address;
-    contact.phone.value        = CONTACT.phone;
-    contact.phoneDisplay.value = CONTACT.phoneDisplay;
-    contact.email.value        = CONTACT.email;
-    contact.hours.value        = CONTACT.hours;
-    contact.brandDesc.value    = CONTACT.brandDesc;
+    setFieldValue(contact, 'address',      CONTACT.address);
+    setFieldValue(contact, 'phone',        CONTACT.phone);
+    setFieldValue(contact, 'phoneDisplay', CONTACT.phoneDisplay);
+    setFieldValue(contact, 'email',        CONTACT.email);
+    setFieldValue(contact, 'hours',        CONTACT.hours);
+    setFieldValue(contact, 'brandDesc',    CONTACT.brandDesc);
   }
   const social = document.getElementById('socialSettingsForm');
   if (social) {
-    social.facebook.value  = SOCIAL.facebook;
-    social.instagram.value = SOCIAL.instagram;
-    social.messenger.value = SOCIAL.messenger;
-    social.tiktok.value    = SOCIAL.tiktok || '';
-    social.youtube.value   = SOCIAL.youtube || '';
+    setFieldValue(social, 'facebook',  SOCIAL.facebook);
+    setFieldValue(social, 'instagram', SOCIAL.instagram);
+    setFieldValue(social, 'messenger', SOCIAL.messenger);
+    setFieldValue(social, 'tiktok',    SOCIAL.tiktok || '');
+    setFieldValue(social, 'youtube',   SOCIAL.youtube || '');
   }
   const del = document.getElementById('deliverySettingsForm');
   if (del) {
-    del.dhaka.value     = DELIVERY.dhaka;
-    del.outside.value   = DELIVERY.outside;
-    del.freeAbove.value = DELIVERY.freeAbove;
+    setFieldValue(del, 'dhaka',     DELIVERY.dhaka);
+    setFieldValue(del, 'outside',   DELIVERY.outside);
+    setFieldValue(del, 'freeAbove', DELIVERY.freeAbove);
   }
   const brand = document.getElementById('brandSettingsForm');
   if (brand) {
-    brand.whatsapp.value = WHATSAPP;
-    brand.kickoff.value  = KICKOFF.toISOString();
-    brand.title.value    = HERO.title;
-    brand.accent.value   = HERO.accent;
-    brand.subtitle.value = HERO.subtitle;
+    let kickoffIso = '';
+    try { kickoffIso = KICKOFF instanceof Date && !isNaN(KICKOFF) ? KICKOFF.toISOString() : ''; } catch (_) {}
+    setFieldValue(brand, 'whatsapp', WHATSAPP);
+    setFieldValue(brand, 'kickoff',  kickoffIso);
+    setFieldValue(brand, 'title',    HERO.title);
+    setFieldValue(brand, 'accent',   HERO.accent);
+    setFieldValue(brand, 'subtitle', HERO.subtitle);
   }
   renderPromosList();
 }
