@@ -1658,8 +1658,15 @@ function initHeroVideo() {
     setTimeout(reveal, 200);
   }, { once: true });
 
-  // Nudge autoplay along — some browsers stall preload="auto" until interacted
-  const tryPlay = () => video.play().catch(() => {});
+  // Nudge autoplay along — some browsers stall preload="auto" until interacted.
+  // Wrap in Promise.resolve because old browsers had video.play() return void
+  // instead of a Promise (which makes `.catch` throw).
+  const tryPlay = () => {
+    try {
+      const p = video.play();
+      if (p && typeof p.catch === 'function') p.catch(() => {});
+    } catch (_) {}
+  };
   tryPlay();
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) tryPlay();

@@ -769,20 +769,23 @@ async function cloudUpload(jerseyId, file) {
   }).select().single();
   if (rowErr) {
     // Clean up the orphaned storage object so we don't leak files
-    await sb.storage.from('media').remove([up.path]).catch(() => {});
+    try { await sb.storage.from('media').remove([up.path]); } catch (_) {}
     throw rowErr;
   }
   return row;
 }
 
-/* Delete both the row and the underlying storage object */
+/* Delete both the row and the underlying storage object.
+   Each step is independently try/caught — Supabase's PostgrestFilterBuilder
+   is awaitable but doesn't implement .catch(), so chaining .catch() on
+   .eq(...) throws TypeError and silently breaks every delete button. */
 async function cloudDelete(asset) {
   const sb = getSupabase();
   if (!sb) return;
   if (asset.storagePath) {
-    await sb.storage.from('media').remove([asset.storagePath]).catch(() => {});
+    try { await sb.storage.from('media').remove([asset.storagePath]); } catch (_) {}
   }
-  await sb.from('jersey_media').delete().eq('id', asset.id).catch(() => {});
+  try { await sb.from('jersey_media').delete().eq('id', asset.id); } catch (_) {}
 }
 
 const MEDIA_KEY = 'zone14_media_v1';
@@ -910,7 +913,9 @@ async function pushReview(review, photoFile, videoFile) {
     return data;
   } catch (err) {
     // Clean up any uploaded files on row-insert failure
-    if (cleanup.length) await sb.storage.from('media').remove(cleanup).catch(() => {});
+    if (cleanup.length) {
+      try { await sb.storage.from('media').remove(cleanup); } catch (_) {}
+    }
     throw err;
   }
 }
@@ -919,8 +924,10 @@ async function deleteReviewRemote(id, photoPath, videoPath) {
   const sb = getSupabase();
   if (!sb) return;
   const toRemove = [photoPath, videoPath].filter(Boolean);
-  if (toRemove.length) await sb.storage.from('media').remove(toRemove).catch(() => {});
-  await sb.from('customer_reviews').delete().eq('id', id).catch(() => {});
+  if (toRemove.length) {
+    try { await sb.storage.from('media').remove(toRemove); } catch (_) {}
+  }
+  try { await sb.from('customer_reviews').delete().eq('id', id); } catch (_) {}
 }
 
 /* ============================================================
@@ -981,7 +988,9 @@ async function pushShowcaseVideo(meta, videoFile, posterFile) {
     if (error) throw error;
     return data;
   } catch (err) {
-    if (cleanup.length) await sb.storage.from('media').remove(cleanup).catch(() => {});
+    if (cleanup.length) {
+      try { await sb.storage.from('media').remove(cleanup); } catch (_) {}
+    }
     throw err;
   }
 }
@@ -990,8 +999,10 @@ async function deleteShowcaseRemote(id, videoPath, posterPath) {
   const sb = getSupabase();
   if (!sb) return;
   const toRemove = [videoPath, posterPath].filter(Boolean);
-  if (toRemove.length) await sb.storage.from('media').remove(toRemove).catch(() => {});
-  await sb.from('showcase_videos').delete().eq('id', id).catch(() => {});
+  if (toRemove.length) {
+    try { await sb.storage.from('media').remove(toRemove); } catch (_) {}
+  }
+  try { await sb.from('showcase_videos').delete().eq('id', id); } catch (_) {}
 }
 
 /* ============================================================
@@ -1078,7 +1089,8 @@ async function pushJersey(jersey) {
 async function deleteJerseyRemote(id) {
   const sb = getSupabase();
   if (!sb) return;
-  await sb.from('jerseys').delete().eq('id', id).catch(() => {});
+  // try/catch — Supabase query builders don't expose .catch() directly
+  try { await sb.from('jerseys').delete().eq('id', id); } catch (_) {}
 }
 
 /* ============================================================
