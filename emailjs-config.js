@@ -22,7 +22,7 @@
 
 window.EMAILJS_CONFIG = {
   PUBLIC_KEY: 'BzoHWLrShem3kuEgu',
-  SERVICE_ID: 'service_k8dywsm',
+  SERVICE_ID: 'service_gi99taq',
   ADMIN_TEMPLATE_ID: 'template_u55u4i9',
   CUSTOMER_TEMPLATE_ID: 'template_cna7ged',
   ADMIN_EMAIL: 'zoneforteen@gmail.com',
