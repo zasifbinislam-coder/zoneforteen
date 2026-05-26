@@ -192,6 +192,27 @@
                 </label>
               </div>
             </div>
+
+            <!-- Bank Transfer details (shown only when Bank Transfer selected) -->
+            <div class="pay-instructions" id="bankInstructions" hidden>
+              <div class="pay-num-card">
+                <span class="pay-num-label">Bank Transfer details</span>
+                <div class="bank-grid">
+                  <div class="bank-row"><span>Bank</span><strong id="bankName">—</strong><button type="button" class="copy-btn" data-bank-copy="bankName">Copy</button></div>
+                  <div class="bank-row"><span>Branch</span><strong id="bankBranch">—</strong><button type="button" class="copy-btn" data-bank-copy="bankBranch">Copy</button></div>
+                  <div class="bank-row"><span>Account name</span><strong id="bankAccountName">—</strong><button type="button" class="copy-btn" data-bank-copy="bankAccountName">Copy</button></div>
+                  <div class="bank-row"><span>Account number</span><strong id="bankAccountNumber">—</strong><button type="button" class="copy-btn" data-bank-copy="bankAccountNumber">Copy</button></div>
+                  <div class="bank-row" id="bankRoutingRow"><span>Routing number</span><strong id="bankRoutingNumber">—</strong><button type="button" class="copy-btn" data-bank-copy="bankRoutingNumber">Copy</button></div>
+                </div>
+                <span class="pay-num-hint">Transfer <strong id="bankAmountHint">total amount</strong>, then paste the Transaction Reference below.</span>
+              </div>
+              <div class="form-row full" style="margin-top:14px; margin-bottom:0">
+                <label>Transaction Reference<span class="req">*</span>
+                  <input type="text" name="bankTxnId" id="bankTxnIdInput" placeholder="e.g. NEFT123456789" autocomplete="off" />
+                  <span class="hint">From your bank confirmation SMS or receipt.</span>
+                </label>
+              </div>
+            </div>
           </section>
 
           <!-- Step 3: Notes -->

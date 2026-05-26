@@ -115,6 +115,36 @@
             </div>
           </form>
 
+          <!-- Bank Transfer details -->
+          <form id="bankSettingsForm" class="settings-card">
+            <h3>🏦 Bank Transfer Details</h3>
+            <div class="form-row">
+              <label>Bank name
+                <input type="text" name="bankName" maxlength="80" placeholder="e.g. Dutch-Bangla Bank Limited" />
+              </label>
+              <label>Branch
+                <input type="text" name="branch" maxlength="80" placeholder="e.g. Dhanmondi Branch" />
+              </label>
+            </div>
+            <div class="form-row">
+              <label>Account name
+                <input type="text" name="accountName" maxlength="80" placeholder="e.g. Zone14" />
+              </label>
+              <label>Account number
+                <input type="text" name="accountNumber" maxlength="40" placeholder="e.g. 1234567890" />
+              </label>
+            </div>
+            <div class="form-row full">
+              <label>Routing number (optional)
+                <input type="text" name="routingNumber" maxlength="40" placeholder="e.g. 090260439" />
+              </label>
+            </div>
+            <div class="settings-actions">
+              <button type="submit" class="btn btn-primary">Save Bank Details</button>
+              <span class="settings-msg" data-msg></span>
+            </div>
+          </form>
+
           <!-- Delivery rates -->
           <form id="deliverySettingsForm" class="settings-card">
             <h3>🚚 Delivery Charges</h3>

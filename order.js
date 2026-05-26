@@ -146,8 +146,11 @@ function renderTotals() {
   document.getElementById('tGrand').textContent = fmtBDT(grand);
 
   // Sync the "send this amount" hint inside payment instructions
+  const amtText = totalItems === 0 ? 'total amount' : fmtBDT(grand);
   const amtHint = document.getElementById('payAmountHint');
-  if (amtHint) amtHint.textContent = totalItems === 0 ? 'total amount' : fmtBDT(grand);
+  if (amtHint) amtHint.textContent = amtText;
+  const bankAmtHint = document.getElementById('bankAmountHint');
+  if (bankAmtHint) bankAmtHint.textContent = amtText;
 
   renderShipProgress(subtotal, totalItems);
 
@@ -271,6 +274,21 @@ function hookPayment() {
   const txnEl  = document.getElementById('txnIdInput');
   const copyBtn = document.getElementById('copyPayNum');
 
+  const bankWrap   = document.getElementById('bankInstructions');
+  const bankTxnEl  = document.getElementById('bankTxnIdInput');
+
+  const fillBank = () => {
+    const cfg = (typeof BANK_TRANSFER !== 'undefined') ? BANK_TRANSFER : {};
+    const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val || '—'; };
+    setText('bankName',          cfg.bankName);
+    setText('bankBranch',        cfg.branch);
+    setText('bankAccountName',   cfg.accountName);
+    setText('bankAccountNumber', cfg.accountNumber);
+    setText('bankRoutingNumber', cfg.routingNumber);
+    const routingRow = document.getElementById('bankRoutingRow');
+    if (routingRow) routingRow.style.display = cfg.routingNumber ? '' : 'none';
+  };
+
   const sync = () => {
     const method = (document.querySelector('input[name=payment]:checked') || {}).value;
     const cfg = PAY_NUMBERS[method];
@@ -283,6 +301,15 @@ function hookPayment() {
       wrap.hidden = true;
       txnEl.required = false;
       txnEl.value = '';
+    }
+    if (method === 'bank') {
+      fillBank();
+      bankWrap.hidden = false;
+      bankTxnEl.required = true;
+    } else {
+      bankWrap.hidden = true;
+      bankTxnEl.required = false;
+      bankTxnEl.value = '';
     }
   };
 
@@ -298,6 +325,23 @@ function hookPayment() {
       setTimeout(() => { copyBtn.textContent = prev; }, 1400);
     } catch { /* clipboard blocked; nothing actionable */ }
   });
+
+  // Wire every bank-detail copy button
+  document.querySelectorAll('[data-bank-copy]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const target = document.getElementById(btn.dataset.bankCopy);
+      if (!target) return;
+      try {
+        await navigator.clipboard.writeText(target.textContent.trim());
+        const prev = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = prev; }, 1400);
+      } catch { /* clipboard blocked */ }
+    });
+  });
+
+  // Settings may change after boot (admin edits bank details in another tab)
+  window.addEventListener('settings:applied', fillBank);
 
   sync();
 }
@@ -388,6 +432,9 @@ function hookPlaceOrder() {
     if (fd.get('txnId')) {
       lines.push(`Transaction ID: ${fd.get('txnId')}`);
     }
+    if (fd.get('bankTxnId')) {
+      lines.push(`Bank Reference: ${fd.get('bankTxnId')}`);
+    }
     lines.push(``);
 
     lines.push(`💰 *Bill*`);
@@ -439,7 +486,8 @@ function hookPlaceOrder() {
     confirmLines.push(``);
     confirmLines.push(`💰 *Total: ${fmtBDT(grand)}*`);
     confirmLines.push(`Payment: ${paymentLabel}`);
-    if (fd.get('txnId')) confirmLines.push(`TrxID: ${fd.get('txnId')}`);
+    if (fd.get('txnId'))     confirmLines.push(`TrxID: ${fd.get('txnId')}`);
+    if (fd.get('bankTxnId')) confirmLines.push(`Bank Ref: ${fd.get('bankTxnId')}`);
     confirmLines.push(`Delivery: ${fd.get('zone') === 'dhaka' ? 'Inside Dhaka · 24h' : 'Outside Dhaka · 2–3 days'}`);
     confirmLines.push(``);
     confirmLines.push(`We'll WhatsApp you with shipment updates.`);
@@ -475,7 +523,8 @@ function hookPlaceOrder() {
         };
       }),
       payment: fd.get('payment'),
-      txnId:   fd.get('txnId') || '',
+      txnId:     fd.get('txnId')     || '',
+      bankTxnId: fd.get('bankTxnId') || '',
       notes:   fd.get('notes') || '',
       promo:   state.promo ? state.promo.code : '',
       totals:  { subtotal, shipping, discount, grand },
@@ -571,7 +620,7 @@ function buildEmailVars({ ref, cart, fd, paymentLabel, grand, subtotal, shipping
     zone:           fd.get('zone') === 'dhaka' ? 'Inside Dhaka (24h)' : 'Outside Dhaka (2–3 days)',
     items_text:     itemsText,
     payment_method: paymentLabel,
-    txn_id:         fd.get('txnId') || '—',
+    txn_id:         fd.get('txnId') || fd.get('bankTxnId') || '—',
     subtotal:       fmtBDT(subtotal),
     shipping:       shipping === 0 ? 'FREE' : fmtBDT(shipping),
     discount:       discount > 0 ? '−' + fmtBDT(discount) : '—',

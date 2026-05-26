@@ -1178,6 +1178,20 @@ function initSettingsAdmin() {
     await saveSetting('payment_numbers', value, e.target);
   });
 
+  const bankForm = document.getElementById('bankSettingsForm');
+  if (bankForm) bankForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const value = {
+      bankName:      (fd.get('bankName') || '').toString().trim(),
+      branch:        (fd.get('branch') || '').toString().trim(),
+      accountName:   (fd.get('accountName') || '').toString().trim(),
+      accountNumber: (fd.get('accountNumber') || '').toString().trim(),
+      routingNumber: (fd.get('routingNumber') || '').toString().trim(),
+    };
+    await saveSetting('bank_transfer', value, e.target);
+  });
+
   document.getElementById('deliverySettingsForm').addEventListener('submit', async e => {
     e.preventDefault();
     const fd = new FormData(e.target);
@@ -1468,6 +1482,14 @@ function fillSettingsForms() {
     setFieldValue(pay, 'bkash',  PAY_NUMBERS.bkash.number);
     setFieldValue(pay, 'nagad',  PAY_NUMBERS.nagad.number);
     setFieldValue(pay, 'rocket', PAY_NUMBERS.rocket.number);
+  }
+  const bank = document.getElementById('bankSettingsForm');
+  if (bank && typeof BANK_TRANSFER !== 'undefined') {
+    setFieldValue(bank, 'bankName',      BANK_TRANSFER.bankName);
+    setFieldValue(bank, 'branch',        BANK_TRANSFER.branch);
+    setFieldValue(bank, 'accountName',   BANK_TRANSFER.accountName);
+    setFieldValue(bank, 'accountNumber', BANK_TRANSFER.accountNumber);
+    setFieldValue(bank, 'routingNumber', BANK_TRANSFER.routingNumber);
   }
   const contact = document.getElementById('contactSettingsForm');
   if (contact) {

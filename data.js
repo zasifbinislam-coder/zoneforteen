@@ -35,6 +35,15 @@ let PAY_NUMBERS = {
   rocket: { label: 'Rocket Send Money number', number: '01723360078-1' },
 };
 
+/* Bank account details for the Bank Transfer payment option. */
+let BANK_TRANSFER = {
+  bankName:      'Dutch-Bangla Bank Limited',
+  branch:        'Dhanmondi Branch',
+  accountName:   'Zone14',
+  accountNumber: '000-000-00000',
+  routingNumber: '090260439',
+};
+
 /* Hero section copy — overridable from admin */
 let HERO = {
   title:    'GEAR UP FOR THE',
@@ -1118,6 +1127,7 @@ function applySettings(settings) {
   if (settings.delivery)        DELIVERY    = { ...DELIVERY, ...settings.delivery };
   if (settings.promos)          PROMOS      = { ...settings.promos };
   if (settings.payment_numbers) PAY_NUMBERS = { ...PAY_NUMBERS, ...settings.payment_numbers };
+  if (settings.bank_transfer)   BANK_TRANSFER = { ...BANK_TRANSFER, ...settings.bank_transfer };
   if (settings.hero)            HERO        = { ...HERO, ...settings.hero };
   if (Array.isArray(settings.offers)  && settings.offers.length  > 0) OFFERS  = settings.offers;
   if (Array.isArray(settings.players) && settings.players.length > 0) PLAYERS = settings.players;

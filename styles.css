@@ -2735,6 +2735,43 @@ h1, h2, h3, .display {
 .copy-btn:hover { background: rgba(94, 233, 227, 0.25); }
 .pay-num-hint { font-size: 12px; color: var(--text-dim); line-height: 1.5; }
 .pay-num-hint strong { color: var(--text); font-weight: 700; }
+
+/* Bank Transfer details grid */
+.bank-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 6px 0 10px;
+}
+.bank-row {
+  display: grid;
+  grid-template-columns: 130px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 8px;
+  font-size: 13px;
+}
+.bank-row > span {
+  color: var(--text-mute);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.bank-row > strong {
+  font-family: 'Courier Prime', 'Courier New', monospace;
+  color: var(--text);
+  letter-spacing: 0.04em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 600px) {
+  .bank-row { grid-template-columns: 1fr auto; }
+  .bank-row > span { grid-column: 1 / -1; padding-bottom: 0; }
+}
 .opt-card {
   position: relative;
   display: flex;
