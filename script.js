@@ -1540,6 +1540,30 @@ function initNewsletter() {
    browser is actually playing frames — at that moment we briefly dim the
    logo poster so the eye reads a soft "lighting shift", then fade the video
    in over it. End effect: the load delay (~3-5s on slow links) is invisible. */
+/* Render the homepage Offers grid from the OFFERS array (overridable by admin) */
+function renderOffers() {
+  const grid = document.getElementById('offersGrid');
+  if (!grid || typeof OFFERS === 'undefined') return;
+  if (!OFFERS.length) { grid.innerHTML = ''; return; }
+  grid.innerHTML = OFFERS.map((o, i) => {
+    const cls    = o.featured ? 'offer-card reveal offer-featured' : 'offer-card reveal';
+    const btnCls = (i === 0 || o.featured) ? 'btn btn-primary' : 'btn btn-ghost';
+    const isExt  = /^https?:\/\//.test(o.ctaUrl || '');
+    return `
+      <article class="${cls}">
+        <div class="offer-tag">${o.tag || ''}</div>
+        <h3>${o.title || ''} ${o.accent ? `<span class="accent">${o.accent}</span>` : ''}</h3>
+        <p>${o.description || ''}</p>
+        <div class="offer-price">${o.priceLine || ''}</div>
+        <a href="${o.ctaUrl || '#'}" ${isExt ? 'target="_blank" rel="noopener"' : ''} class="${btnCls}">${o.ctaText || 'Claim'}</a>
+      </article>
+    `;
+  }).join('');
+  if (typeof revealObserver !== 'undefined') {
+    grid.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+  }
+}
+
 /* Sync the hero title/accent/subtitle DOM with the HERO settings object.
    Fired on boot and whenever admin saves the brand settings form. */
 function applyHeroToDOM() {
@@ -1597,6 +1621,7 @@ function initHeroVideo() {
 /* ---------- INIT ---------- */
 document.addEventListener('DOMContentLoaded', () => {
   applyHeroToDOM();
+  renderOffers();
   initHeroVideo();
   renderJerseys();
   initFilters();
@@ -1624,6 +1649,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   window.addEventListener('settings:applied', () => {
     applyHeroToDOM();
+    renderOffers();
     updateCountdown();
   });
   window.addEventListener('storage', e => {

@@ -168,6 +168,45 @@
 
         </div>
 
+        <!-- Offers — separate card spanning full width -->
+        <div class="settings-card" style="margin-top:16px">
+          <h3>🎯 Homepage Offer Cards</h3>
+          <p class="settings-card-hint">The "Special Offers" section on the homepage. First card is highlighted as featured.</p>
+
+          <div class="offers-list" id="offersAdminList">
+            <!-- populated by admin.js -->
+          </div>
+
+          <form id="offerAddForm" class="offer-add-form">
+            <div class="form-row">
+              <label>Tag <input type="text" name="tag" required maxlength="40" placeholder="e.g. Most Popular" /></label>
+              <label>Title <input type="text" name="title" required maxlength="40" placeholder="Buy 2 Get 1" /></label>
+              <label>Accent (cyan) <input type="text" name="accent" maxlength="20" placeholder="FREE" /></label>
+            </div>
+            <div class="form-row full">
+              <label>Description <input type="text" name="description" required maxlength="200" placeholder="What the customer gets..." /></label>
+            </div>
+            <div class="form-row">
+              <label>Price line (supports HTML)
+                <input type="text" name="priceLine" maxlength="200" placeholder="<span class=&quot;strike&quot;>৳4,497</span> ৳4,000" />
+              </label>
+              <label>Button text <input type="text" name="ctaText" maxlength="30" placeholder="Claim Offer" /></label>
+            </div>
+            <div class="form-row">
+              <label>Button URL
+                <input type="text" name="ctaUrl" placeholder="https://wa.me/... or #jerseys" maxlength="300" />
+                <span class="hint">External URL opens new tab; # links scroll on the same page</span>
+              </label>
+              <label class="opt-card" style="margin-top:24px">
+                <input type="checkbox" name="featured" />
+                <span>Featured (highlighted card)</span>
+              </label>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">Add Offer</button>
+            <p class="settings-msg" id="offerMsg"></p>
+          </form>
+        </div>
+
         <!-- Promo codes — separate card spanning full width -->
         <div class="settings-card" style="margin-top:16px">
           <h3>🏷 Promo Codes</h3>

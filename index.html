@@ -379,30 +379,9 @@
         <p class="section-sub">Bundle and save. The bigger the squad, the bigger the discount.</p>
       </header>
 
-      <div class="offers-grid">
-        <article class="offer-card reveal offer-featured">
-          <div class="offer-tag">Most Popular</div>
-          <h3>Buy 2 Get 1 <span class="accent">FREE</span></h3>
-          <p>Pick any three jerseys. Pay for two. Cheapest one is on us.</p>
-          <div class="offer-price"><span class="strike">৳4,497</span> ৳4,000</div>
-          <a href="https://wa.me/8801723360078?text=Hi%20Zone14%2C%20I%20want%20the%20Buy%202%20Get%201%20Free%20offer." target="_blank" rel="noopener" class="btn btn-primary">Claim Offer</a>
-        </article>
-
-        <article class="offer-card reveal">
-          <div class="offer-tag">Squad Goals</div>
-          <h3>Full Team Set <span class="accent">−25%</span></h3>
-          <p>Buy 5 or more jerseys in one order. Perfect for clubs and friends.</p>
-          <div class="offer-price"><span class="strike">৳7,495</span> ৳6,500</div>
-          <a href="https://wa.me/8801723360078?text=Hi%20Zone14%2C%20I%20want%20the%20Full%20Team%20Set%20discount." target="_blank" rel="noopener" class="btn btn-ghost">Order Team Set</a>
-        </article>
-
-        <article class="offer-card reveal">
-          <div class="offer-tag">Limited Time</div>
-          <h3>World Cup <span class="accent">10% OFF</span></h3>
-          <p>Every kit, no minimum. Use code at checkout — only until kick-off on 11 June.</p>
-          <div class="offer-price">Code · <span class="accent" style="font-family:'Courier New',monospace;letter-spacing:0.1em">WC2026</span></div>
-          <a href="#jerseys" class="btn btn-ghost">Shop With Code</a>
-        </article>
+      <div class="offers-grid" id="offersGrid">
+        <!-- Populated by renderOffers() in script.js from data.js OFFERS_DEFAULT
+             or settings.offers if admin has overridden -->
       </div>
     </div>
   </section>

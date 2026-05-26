@@ -42,6 +42,31 @@ let HERO = {
   subtitle: 'Premium World Cup 2026 jerseys, handcrafted in Bangladesh. Worn by champions, built for fans.',
 };
 
+/* Homepage Offers section cards — overridable from admin */
+let OFFERS = [
+  {
+    tag: 'Most Popular', title: 'Buy 2 Get 1', accent: 'FREE', featured: true,
+    description: 'Pick any three jerseys. Pay for two. Cheapest one is on us.',
+    priceLine: '<span class="strike">৳4,497</span> ৳4,000',
+    ctaText: 'Claim Offer',
+    ctaUrl: 'https://wa.me/8801723360078?text=Hi%20Zone14%2C%20I%20want%20the%20Buy%202%20Get%201%20Free%20offer.',
+  },
+  {
+    tag: 'Squad Goals', title: 'Full Team Set', accent: '−25%', featured: false,
+    description: 'Buy 5 or more jerseys in one order. Perfect for clubs and friends.',
+    priceLine: '<span class="strike">৳7,495</span> ৳6,500',
+    ctaText: 'Order Team Set',
+    ctaUrl: 'https://wa.me/8801723360078?text=Hi%20Zone14%2C%20I%20want%20the%20Full%20Team%20Set%20discount.',
+  },
+  {
+    tag: 'Limited Time', title: 'World Cup', accent: '10% OFF', featured: false,
+    description: 'Every kit, no minimum. Use code at checkout — only until kick-off on 11 June.',
+    priceLine: 'Code · <span class="accent" style="font-family:\'Courier New\',monospace;letter-spacing:0.1em">WC2026</span>',
+    ctaText: 'Shop With Code',
+    ctaUrl: '#jerseys',
+  },
+];
+
 /* ---------- WORLD CUP 2026 MATCH HUB ---------- */
 /* Plausible group-stage fixtures for the teams we sell (Brazil, Argentina,
    France, Spain). All dates use real WC 2026 venue locales. */
@@ -1063,6 +1088,7 @@ function applySettings(settings) {
   if (settings.promos)          PROMOS      = { ...settings.promos };
   if (settings.payment_numbers) PAY_NUMBERS = { ...PAY_NUMBERS, ...settings.payment_numbers };
   if (settings.hero)            HERO        = { ...HERO, ...settings.hero };
+  if (Array.isArray(settings.offers) && settings.offers.length > 0) OFFERS = settings.offers;
   window.dispatchEvent(new CustomEvent('settings:applied'));
 }
 

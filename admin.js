@@ -92,7 +92,7 @@ function bootDashboard() {
     refreshJerseyDropdowns();
   });
   window.addEventListener('settings:change',    fillSettingsForms);
-  window.addEventListener('settings:applied',   fillSettingsForms);
+  window.addEventListener('settings:applied',   () => { fillSettingsForms(); renderOffersList(); });
 
   // Pull latest shared predictions + results from Supabase, then subscribe
   // for realtime updates so admin sees customer activity live.
@@ -1199,6 +1199,81 @@ function initSettingsAdmin() {
   });
 
   renderPromosList();
+  initOffersAdmin();
+}
+
+function initOffersAdmin() {
+  const form = document.getElementById('offerAddForm');
+  if (!form) return;
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!form.checkValidity()) { form.reportValidity(); return; }
+    const fd = new FormData(form);
+    const offer = {
+      tag:         (fd.get('tag') || '').toString().trim(),
+      title:       (fd.get('title') || '').toString().trim(),
+      accent:      (fd.get('accent') || '').toString().trim(),
+      description: (fd.get('description') || '').toString().trim(),
+      priceLine:   (fd.get('priceLine') || '').toString().trim(),
+      ctaText:     (fd.get('ctaText') || 'Claim').toString().trim(),
+      ctaUrl:      (fd.get('ctaUrl') || '#').toString().trim(),
+      featured:    form.featured.checked,
+    };
+    const next = [...OFFERS, offer];
+    try {
+      await pushSetting('offers', next);
+      OFFERS = next;
+      writeSettings({ ...readSettings(), offers: next });
+      form.reset();
+      renderOffersList();
+      const msg = document.getElementById('offerMsg');
+      msg.textContent = '✓ Added';
+      msg.className = 'settings-msg ok';
+      setTimeout(() => { msg.textContent = ''; msg.className = 'settings-msg'; }, 3000);
+    } catch (err) {
+      const msg = document.getElementById('offerMsg');
+      msg.textContent = '✗ ' + (err.message || err);
+      msg.className = 'settings-msg err';
+    }
+  });
+
+  renderOffersList();
+}
+
+function renderOffersList() {
+  const wrap = document.getElementById('offersAdminList');
+  if (!wrap) return;
+  if (OFFERS.length === 0) {
+    wrap.innerHTML = '<p style="color:var(--text-mute);font-size:13px">No offers yet — add one below.</p>';
+    return;
+  }
+  wrap.innerHTML = OFFERS.map((o, i) => `
+    <div class="offer-row" data-idx="${i}">
+      <span class="offer-row-tag">${escapeAttr(o.tag)}</span>
+      <strong>${escapeAttr(o.title)} ${o.accent ? `<span style="color:var(--neon)">${escapeAttr(o.accent)}</span>` : ''}</strong>
+      <span class="offer-row-desc">${escapeAttr(o.description)}</span>
+      ${o.featured ? '<span class="offer-row-star">★</span>' : ''}
+      <button type="button" class="qi-remove" data-del-offer title="Remove">×</button>
+    </div>
+  `).join('');
+
+  wrap.querySelectorAll('[data-del-offer]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const idx = parseInt(btn.closest('.offer-row').dataset.idx, 10);
+      const o = OFFERS[idx];
+      if (!confirm(`Remove offer "${o.title}"?`)) return;
+      const next = OFFERS.filter((_, i) => i !== idx);
+      try {
+        await pushSetting('offers', next);
+        OFFERS = next;
+        writeSettings({ ...readSettings(), offers: next });
+        renderOffersList();
+      } catch (err) {
+        alert('Delete failed: ' + (err.message || err));
+      }
+    });
+  });
 }
 
 async function saveSetting(key, value, formEl) {
