@@ -5415,18 +5415,30 @@ h1, h2, h3, .display {
 .admin-review-tile-del {
   position: absolute;
   top: 6px; right: 6px;
-  width: 26px; height: 26px;
-  background: rgba(0,0,0,0.75);
+  width: 32px; height: 32px;       /* bigger tap target for mobile */
+  background: rgba(0,0,0,0.85);
   color: #fff;
+  border: 1px solid rgba(255,255,255,0.15);
   border-radius: 50%;
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1;
   display: grid;
   place-items: center;
   cursor: pointer;
+  z-index: 5;                       /* must beat the video element */
   transition: background 0.2s var(--ease);
+  -webkit-tap-highlight-color: rgba(255, 107, 107, 0.3);
+  padding: 0;
 }
-.admin-review-tile-del:hover { background: #ff6b6b; }
+.admin-review-tile-del:hover,
+.admin-review-tile-del:active { background: #ff6b6b; }
+
+/* Block the video element inside admin tiles from eating clicks meant
+   for the × delete button (iOS Safari especially treats inline video as
+   a click-grabbing region even without controls=true). */
+.admin-review-tile > video.admin-review-tile-img {
+  pointer-events: none;
+}
 
 .admin-review-empty {
   grid-column: 1 / -1;
