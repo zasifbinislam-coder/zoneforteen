@@ -4246,6 +4246,55 @@ h1, h2, h3, .display {
   font-size: 12px;
   display: inline-block;
 }
+/* Upload queue panel — appears after files are picked, before Upload click */
+.media-queue {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+}
+.media-queue-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.media-queue-head strong { font-size: 13px; color: var(--neon); letter-spacing: 0.05em; }
+.media-queue-actions { display: flex; gap: 8px; }
+.media-queue-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.media-queue-item {
+  display: grid;
+  grid-template-columns: 22px 1fr auto auto 22px;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  font-size: 13px;
+}
+.media-queue-item.q-uploading { background: rgba(94, 233, 227, 0.08); }
+.media-queue-item.q-done      { background: rgba(10, 163, 127, 0.10); }
+.media-queue-item.q-failed    { background: rgba(255, 64, 64, 0.10); }
+.qi-ico    { font-size: 14px; }
+.qi-name   { color: var(--text); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qi-size   { color: var(--text-mute); font-size: 11px; }
+.qi-status { color: var(--text-dim); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; }
+.qi-remove {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-mute);
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+}
+.qi-remove:hover { color: #ff4040; border-color: #ff4040; }
+
 .media-stats {
   grid-column: 1 / -1;
   font-size: 11px;

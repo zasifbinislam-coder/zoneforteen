@@ -123,31 +123,103 @@ function initMediaLibrary() {
   drop.addEventListener('drop', e => {
     e.preventDefault();
     drop.classList.remove('drag-over');
-    handleFiles(e.dataTransfer.files);
+    enqueueFiles(e.dataTransfer.files);
   });
-  input.addEventListener('change', () => handleFiles(input.files));
+  input.addEventListener('change', () => {
+    enqueueFiles(input.files);
+    input.value = ''; // reset so re-selecting the same file re-fires change
+  });
+
+  // Queue panel actions
+  document.getElementById('mediaQueueClear').addEventListener('click', () => {
+    mediaQueue = [];
+    renderQueue();
+  });
+  document.getElementById('mediaQueueUpload').addEventListener('click', startQueueUpload);
 
   renderMediaGallery();
 }
 
-async function handleFiles(fileList) {
+/* ---------- Upload queue ---------- */
+let mediaQueue = [];   // [{ file, status: 'queued'|'uploading'|'done'|'failed', error?: string }]
+let queueRunning = false;
+
+function enqueueFiles(fileList) {
+  Array.from(fileList).forEach(file => {
+    mediaQueue.push({ file, status: 'queued' });
+  });
+  renderQueue();
+}
+
+function renderQueue() {
+  const wrap   = document.getElementById('mediaQueue');
+  const list   = document.getElementById('mediaQueueList');
+  const count  = document.getElementById('mediaQueueCount');
+  const upBtn  = document.getElementById('mediaQueueUpload');
+  const upLbl  = document.getElementById('mediaQueueUploadLabel');
+
+  if (mediaQueue.length === 0) { wrap.hidden = true; return; }
+  wrap.hidden = false;
+
+  const pending = mediaQueue.filter(q => q.status === 'queued' || q.status === 'uploading').length;
+  count.textContent = `${mediaQueue.length} file${mediaQueue.length === 1 ? '' : 's'} · ${pending} pending`;
+  upBtn.disabled = pending === 0 || queueRunning;
+  upLbl.textContent = queueRunning ? 'Uploading…' : (pending > 0 ? `Upload ${pending}` : 'All done');
+
+  list.innerHTML = mediaQueue.map((q, i) => {
+    const ico = q.status === 'done'      ? '✓'
+              : q.status === 'failed'    ? '✗'
+              : q.status === 'uploading' ? '⏳'
+              : '•';
+    const cls = `q-${q.status}`;
+    return `
+      <li class="media-queue-item ${cls}">
+        <span class="qi-ico">${ico}</span>
+        <span class="qi-name">${q.file.name}</span>
+        <span class="qi-size">${formatBytes(q.file.size)}</span>
+        <span class="qi-status">${q.status}${q.error ? ` — ${q.error}` : ''}</span>
+        ${q.status === 'queued' ? `<button type="button" class="qi-remove" data-idx="${i}" aria-label="Remove">×</button>` : ''}
+      </li>
+    `;
+  }).join('');
+
+  list.querySelectorAll('.qi-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      mediaQueue.splice(Number(btn.dataset.idx), 1);
+      renderQueue();
+    });
+  });
+}
+
+async function startQueueUpload() {
   const sel = document.getElementById('mediaJerseySelect');
   const jerseyId = sel.value;
-  if (!jerseyId) return;
+  if (!jerseyId) {
+    alert('Pick a jersey first (top-left dropdown).');
+    return;
+  }
+  if (queueRunning) return;
 
+  queueRunning = true;
   const warn = document.getElementById('mediaSizeWarn');
   warn.hidden = true;
 
-  const files = Array.from(fileList);
-  for (const file of files) {
+  for (const q of mediaQueue) {
+    if (q.status !== 'queued') continue;
+    q.status = 'uploading';
+    renderQueue();
     try {
-      await uploadOne(jerseyId, file, warn);
+      await uploadOne(jerseyId, q.file, warn);
+      q.status = 'done';
     } catch (err) {
-      warn.hidden = false;
-      warn.textContent = `✗ ${file.name}: ${err.message}`;
-      console.warn(err);
+      q.status = 'failed';
+      q.error  = err.message || String(err);
+      console.warn('Upload failed:', err);
     }
+    renderQueue();
   }
+  queueRunning = false;
+  renderQueue();
   renderMediaGallery();
 }
 

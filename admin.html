@@ -113,6 +113,22 @@
           <div class="media-stats" id="mediaStats"></div>
         </div>
 
+        <!-- Upload queue — appears after files are picked / dropped.
+             Sir picks files → reviews the list → clicks the green Upload button. -->
+        <div class="media-queue" id="mediaQueue" hidden>
+          <div class="media-queue-head">
+            <strong id="mediaQueueCount">0 files ready</strong>
+            <div class="media-queue-actions">
+              <button type="button" class="btn btn-ghost btn-sm" id="mediaQueueClear">Clear</button>
+              <button type="button" class="btn btn-primary btn-sm" id="mediaQueueUpload">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+                <span id="mediaQueueUploadLabel">Upload</span>
+              </button>
+            </div>
+          </div>
+          <ul class="media-queue-list" id="mediaQueueList"></ul>
+        </div>
+
         <div class="media-gallery" id="mediaGallery"><!-- populated --></div>
       </section>
 
