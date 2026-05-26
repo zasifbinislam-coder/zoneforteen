@@ -5658,7 +5658,14 @@ h1, h2, h3, .display {
 .ajr-stock-bad  { color: #ff6b6b; }
 .ajr-actions { display: flex; gap: 6px; }
 
-/* Jersey editor modal */
+/* Jersey editor modal.
+   IMPORTANT: the [hidden] attribute drives visibility. `display:flex` would
+   normally override the browser's user-agent `[hidden]{display:none}`, leaving
+   an invisible (opacity:0) but fully clickable overlay covering the entire
+   page — which silently swallows EVERY click on the admin dashboard. The
+   `[hidden]{display:none !important}` rule + pointer-events guard prevents
+   that classic bug. */
+.jersey-editor[hidden] { display: none !important; }
 .jersey-editor {
   position: fixed;
   inset: 0;
@@ -5670,10 +5677,11 @@ h1, h2, h3, .display {
   justify-content: center;
   padding: 20px;
   opacity: 0;
+  pointer-events: none;
   transition: opacity 0.25s ease;
   overflow-y: auto;
 }
-.jersey-editor.show { opacity: 1; }
+.jersey-editor.show { opacity: 1; pointer-events: auto; }
 .jersey-editor-card {
   background: var(--panel);
   border: 1px solid var(--border);
