@@ -444,42 +444,36 @@
           <p id="mediaModeBanner">Local-only mode · Uploads visible on this browser. <a href="#" id="mediaCloudHint">How to enable cloud uploads →</a></p>
         </header>
 
-        <div class="media-controls">
-          <label class="media-jersey-pick">
-            <span>Upload for jersey</span>
-            <select id="mediaJerseySelect"></select>
-          </label>
-          <div class="media-drop" id="mediaDrop">
-            <input type="file" id="mediaFileInput" accept="image/*,video/*" multiple hidden />
-            <div class="media-drop-inner">
-              <svg viewBox="0 0 24 24" width="42" height="42" fill="currentColor"><path d="M19 13v6H5v-6H3v8h18v-8h-2zm-7-9L6 10h4v6h4v-6h4l-6-6z"/></svg>
-              <button type="button" class="btn btn-primary media-pick-btn" id="mediaPickBtn">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
-                Choose Files to Upload
-              </button>
-              <p class="media-drop-hint">…or drop them anywhere in this box. Photos (JPG/PNG/WebP) and videos (MP4). Multiple OK.</p>
-              <p class="media-drop-warn" id="mediaSizeWarn" hidden></p>
-            </div>
+        <form id="mediaForm" class="review-form" novalidate>
+          <div class="form-row full">
+            <label>Upload for jersey<span class="req">*</span>
+              <select name="jersey" id="mediaJerseySelect" required></select>
+            </label>
           </div>
-          <div class="media-stats" id="mediaStats"></div>
-        </div>
-
-        <!-- Upload queue — appears after files are picked / dropped.
-             Sir picks files → reviews the list → clicks the green Upload button. -->
-        <div class="media-queue" id="mediaQueue" hidden>
-          <div class="media-queue-head">
-            <strong id="mediaQueueCount">0 files ready</strong>
-            <div class="media-queue-actions">
-              <button type="button" class="btn btn-ghost btn-sm" id="mediaQueueClear">Clear</button>
-              <button type="button" class="btn btn-primary btn-sm" id="mediaQueueUpload">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
-                <span id="mediaQueueUploadLabel">Upload</span>
-              </button>
-            </div>
+          <div class="form-row">
+            <label>Photos (multiple OK)
+              <input type="file" name="photos" accept="image/*" multiple />
+              <span class="hint">JPG/PNG/WebP · Max 5 MB each · Recommended 800×800 or larger</span>
+            </label>
+            <label>Videos (multiple OK)
+              <input type="file" name="videos" accept="video/*" multiple />
+              <span class="hint">MP4 recommended · Max 50 MB each · Compress with handbrake.fr if larger</span>
+            </label>
           </div>
-          <ul class="media-queue-list" id="mediaQueueList"></ul>
-        </div>
+          <div class="settings-actions">
+            <button type="submit" class="btn btn-primary" id="mediaUploadBtn">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+              Upload
+            </button>
+            <span class="settings-msg" id="mediaUploadMsg"></span>
+          </div>
+          <p class="media-drop-warn" id="mediaSizeWarn" hidden></p>
+        </form>
 
+        <!-- Per-file progress list — appears during/after upload -->
+        <ul class="media-queue-list" id="mediaQueueList"></ul>
+
+        <div class="media-stats" id="mediaStats"></div>
         <div class="media-gallery" id="mediaGallery"><!-- populated --></div>
       </section>
 

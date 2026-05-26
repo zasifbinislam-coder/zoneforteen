@@ -106,131 +106,126 @@ function bootDashboard() {
 const MAX_LOCAL_FILE_BYTES = 3 * 1024 * 1024;        // 3 MB per file in local mode
 const MAX_LOCAL_TOTAL_BYTES = 4.5 * 1024 * 1024;     // ~5 MB localStorage budget
 
+/* Media Library — same UX as Customer Reviews form: pick jersey, attach
+   photo(s) + video(s) via two separate file inputs, click Upload. Per-file
+   progress shows in the list below. */
 function initMediaLibrary() {
-  // Mode banner — Supabase Storage is always on now
+  const form = document.getElementById('mediaForm');
+  if (!form) return;
+
   const banner = document.getElementById('mediaModeBanner');
   if (banner) {
     banner.innerHTML = `☁️ <strong style="color:var(--neon)">Cloud mode (Supabase)</strong> · Uploads visible to every customer worldwide via CDN`;
   }
-  const hint = document.getElementById('mediaCloudHint');
-  if (hint) hint.style.display = 'none';
 
-  // Populate jersey selector
-  const sel = document.getElementById('mediaJerseySelect');
-  sel.innerHTML = JERSEYS.map(j =>
-    `<option value="${j.id}">${j.country} — ${j.edition}</option>`
-  ).join('');
+  // Populate jersey dropdown (and re-populate on jerseys:change handled in boot)
+  refreshMediaJerseyDropdown();
 
-  // Drop zone + file picker
-  const drop  = document.getElementById('mediaDrop');
-  const input = document.getElementById('mediaFileInput');
-  const pickBtn = document.getElementById('mediaPickBtn');
-  const openPicker = (e) => { if (e) { e.stopPropagation(); e.preventDefault(); } input.click(); };
-  drop.addEventListener('click', openPicker);
-  if (pickBtn) pickBtn.addEventListener('click', openPicker);
-  drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag-over'); });
-  drop.addEventListener('dragleave', () => drop.classList.remove('drag-over'));
-  drop.addEventListener('drop', e => {
-    e.preventDefault();
-    drop.classList.remove('drag-over');
-    enqueueFiles(e.dataTransfer.files);
-  });
-  input.addEventListener('change', () => {
-    enqueueFiles(input.files);
-    input.value = ''; // reset so re-selecting the same file re-fires change
-  });
-
-  // Queue panel actions
-  document.getElementById('mediaQueueClear').addEventListener('click', () => {
-    mediaQueue = [];
-    renderQueue();
-  });
-  document.getElementById('mediaQueueUpload').addEventListener('click', startQueueUpload);
-
+  form.addEventListener('submit', handleMediaSubmit);
   renderMediaGallery();
 }
 
-/* ---------- Upload queue ---------- */
-let mediaQueue = [];   // [{ file, status: 'queued'|'uploading'|'done'|'failed', error?: string }]
-let queueRunning = false;
-
-function enqueueFiles(fileList) {
-  Array.from(fileList).forEach(file => {
-    mediaQueue.push({ file, status: 'queued' });
-  });
-  renderQueue();
+function refreshMediaJerseyDropdown() {
+  const sel = document.getElementById('mediaJerseySelect');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">— Pick jersey —</option>' + JERSEYS.map(j =>
+    `<option value="${j.id}">${escapeAttr(j.country)} — ${escapeAttr(j.edition)}</option>`
+  ).join('');
+  if (current) sel.value = current;
 }
 
-function renderQueue() {
-  const wrap   = document.getElementById('mediaQueue');
-  const list   = document.getElementById('mediaQueueList');
-  const count  = document.getElementById('mediaQueueCount');
-  const upBtn  = document.getElementById('mediaQueueUpload');
-  const upLbl  = document.getElementById('mediaQueueUploadLabel');
+let mediaUploading = false;
 
-  if (mediaQueue.length === 0) { wrap.hidden = true; return; }
-  wrap.hidden = false;
+async function handleMediaSubmit(e) {
+  e.preventDefault();
+  if (mediaUploading) return;
 
-  const pending = mediaQueue.filter(q => q.status === 'queued' || q.status === 'uploading').length;
-  count.textContent = `${mediaQueue.length} file${mediaQueue.length === 1 ? '' : 's'} · ${pending} pending`;
-  upBtn.disabled = pending === 0 || queueRunning;
-  upLbl.textContent = queueRunning ? 'Uploading…' : (pending > 0 ? `Upload ${pending}` : 'All done');
+  const form = e.target;
+  const fd = new FormData(form);
+  const jerseyId = (fd.get('jersey') || '').toString();
 
-  list.innerHTML = mediaQueue.map((q, i) => {
+  const photos = $field(form, 'photos');
+  const videos = $field(form, 'videos');
+  const photoFiles = photos && photos.files ? Array.from(photos.files) : [];
+  const videoFiles = videos && videos.files ? Array.from(videos.files) : [];
+  const allFiles   = [...photoFiles, ...videoFiles];
+
+  const msg  = document.getElementById('mediaUploadMsg');
+  const warn = document.getElementById('mediaSizeWarn');
+  warn.hidden = true;
+  msg.textContent = '';
+  msg.className = 'settings-msg';
+
+  if (!jerseyId) {
+    msg.textContent = '✗ Pick a jersey first.';
+    msg.className = 'settings-msg err';
+    return;
+  }
+  if (allFiles.length === 0) {
+    msg.textContent = '✗ Choose at least one photo or video.';
+    msg.className = 'settings-msg err';
+    return;
+  }
+
+  mediaUploading = true;
+  const btn = document.getElementById('mediaUploadBtn');
+  btn.disabled = true;
+  btn.textContent = 'Uploading…';
+
+  // Build the per-file progress queue
+  const queue = allFiles.map(file => ({ file, status: 'queued', error: '' }));
+  renderMediaQueueList(queue);
+
+  let okCount = 0, failCount = 0;
+  for (const q of queue) {
+    q.status = 'uploading';
+    renderMediaQueueList(queue);
+    try {
+      await uploadOne(jerseyId, q.file, warn);
+      q.status = 'done'; okCount++;
+    } catch (err) {
+      q.status = 'failed';
+      q.error  = err.message || String(err);
+      failCount++;
+      console.warn('Upload failed:', err);
+    }
+    renderMediaQueueList(queue);
+  }
+
+  mediaUploading = false;
+  btn.disabled = false;
+  btn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg> Upload';
+
+  msg.textContent = failCount === 0
+    ? `✓ ${okCount} file${okCount === 1 ? '' : 's'} uploaded.`
+    : `✓ ${okCount} uploaded · ✗ ${failCount} failed (see list below)`;
+  msg.className = 'settings-msg ' + (failCount === 0 ? 'ok' : 'err');
+
+  // Reset file inputs so re-selecting the same files works
+  if (photos) photos.value = '';
+  if (videos) videos.value = '';
+  renderMediaGallery();
+}
+
+function renderMediaQueueList(queue) {
+  const list = document.getElementById('mediaQueueList');
+  if (!list) return;
+  if (queue.length === 0) { list.innerHTML = ''; return; }
+  list.innerHTML = queue.map(q => {
     const ico = q.status === 'done'      ? '✓'
               : q.status === 'failed'    ? '✗'
               : q.status === 'uploading' ? '⏳'
               : '•';
-    const cls = `q-${q.status}`;
     return `
-      <li class="media-queue-item ${cls}">
+      <li class="media-queue-item q-${q.status}">
         <span class="qi-ico">${ico}</span>
-        <span class="qi-name">${q.file.name}</span>
+        <span class="qi-name">${escapeAttr(q.file.name)}</span>
         <span class="qi-size">${formatBytes(q.file.size)}</span>
-        <span class="qi-status">${q.status}${q.error ? ` — ${q.error}` : ''}</span>
-        ${q.status === 'queued' ? `<button type="button" class="qi-remove" data-idx="${i}" aria-label="Remove">×</button>` : ''}
+        <span class="qi-status">${q.status}${q.error ? ` — ${escapeAttr(q.error)}` : ''}</span>
       </li>
     `;
   }).join('');
-
-  list.querySelectorAll('.qi-remove').forEach(btn => {
-    btn.addEventListener('click', () => {
-      mediaQueue.splice(Number(btn.dataset.idx), 1);
-      renderQueue();
-    });
-  });
-}
-
-async function startQueueUpload() {
-  const sel = document.getElementById('mediaJerseySelect');
-  const jerseyId = sel.value;
-  if (!jerseyId) {
-    alert('Pick a jersey first (top-left dropdown).');
-    return;
-  }
-  if (queueRunning) return;
-
-  queueRunning = true;
-  const warn = document.getElementById('mediaSizeWarn');
-  warn.hidden = true;
-
-  for (const q of mediaQueue) {
-    if (q.status !== 'queued') continue;
-    q.status = 'uploading';
-    renderQueue();
-    try {
-      await uploadOne(jerseyId, q.file, warn);
-      q.status = 'done';
-    } catch (err) {
-      q.status = 'failed';
-      q.error  = err.message || String(err);
-      console.warn('Upload failed:', err);
-    }
-    renderQueue();
-  }
-  queueRunning = false;
-  renderQueue();
-  renderMediaGallery();
 }
 
 async function uploadOne(jerseyId, file, warnEl) {
@@ -1007,15 +1002,43 @@ function renderAdminJerseysList() {
     });
   });
   wrap.querySelectorAll('[data-del]').forEach(btn => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', async (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
       const row = btn.closest('.admin-jersey-row');
-      const id = row.dataset.id;
-      const j = JERSEYS.find(x => x.id === id);
+      const id  = row.dataset.id;
+      const j   = JERSEYS.find(x => x.id === id);
       if (!j) return;
-      if (!confirm(`Delete "${j.country} ${j.edition}"? This removes it from the homepage too.`)) return;
-      await deleteJerseyRemote(id);
-      // Optimistic local removal — realtime sync will confirm
-      setJerseys(JERSEYS.filter(x => x.id !== id));
+
+      // Two-click delete instead of confirm() — some browsers auto-dismiss
+      // native confirm dialogs, which made delete silently no-op for Sir.
+      if (btn.dataset.confirming === '1') {
+        btn.disabled = true;
+        btn.textContent = 'Deleting…';
+        try {
+          await deleteJerseyRemote(id);
+          // Optimistic local removal — realtime sync will confirm
+          setJerseys(JERSEYS.filter(x => x.id !== id));
+        } catch (err) {
+          alert('Delete failed: ' + (err.message || err));
+          btn.disabled = false;
+          btn.textContent = 'Delete';
+          delete btn.dataset.confirming;
+        }
+        return;
+      }
+      btn.dataset.confirming = '1';
+      btn.textContent = 'Click again to confirm';
+      btn.style.background = 'rgba(255,107,107,0.2)';
+      btn.style.borderColor = '#ff6b6b';
+      setTimeout(() => {
+        if (btn.dataset.confirming === '1') {
+          delete btn.dataset.confirming;
+          btn.textContent = 'Delete';
+          btn.style.background = '';
+          btn.style.borderColor = '';
+        }
+      }, 3500);
     });
   });
 }
@@ -1519,29 +1542,21 @@ function renderPromosList() {
 
 /* Refresh any dropdown that lists jerseys (Media Library, Showcase form, etc.) */
 function refreshJerseyDropdowns() {
-  ['mediaJerseySelect', 'showcaseForm'].forEach(sel => {
-    if (sel === 'showcaseForm') {
-      const select = document.querySelector('#showcaseForm select[name=jerseyId]');
-      if (!select) return;
-      const current = select.value;
-      select.innerHTML = '<option value="">— None —</option>';
-      JERSEYS.forEach(j => {
-        const opt = document.createElement('option');
-        opt.value = j.id; opt.textContent = `${j.country} — ${j.edition}`;
-        select.appendChild(opt);
-      });
-      if (current) select.value = current;
-    } else {
-      const select = document.getElementById(sel);
-      if (!select) return;
-      const current = select.value;
-      select.innerHTML = '';
-      JERSEYS.forEach(j => {
-        const opt = document.createElement('option');
-        opt.value = j.id; opt.textContent = `${j.country} — ${j.edition}`;
-        select.appendChild(opt);
-      });
-      if (current && JERSEYS.find(j => j.id === current)) select.value = current;
-    }
-  });
+  refreshMediaJerseyDropdown();
+  const showSel = document.querySelector('#showcaseForm select[name=jerseyId]');
+  if (showSel) {
+    const current = showSel.value;
+    showSel.innerHTML = '<option value="">— None —</option>' + JERSEYS.map(j =>
+      `<option value="${j.id}">${escapeAttr(j.country)} — ${escapeAttr(j.edition)}</option>`
+    ).join('');
+    if (current) showSel.value = current;
+  }
+  const playerSel = document.getElementById('playerJerseySelect');
+  if (playerSel) {
+    const current = playerSel.value;
+    playerSel.innerHTML = '<option value="">— Pick jersey —</option>' + JERSEYS.map(j =>
+      `<option value="${j.id}">${escapeAttr(j.country)} — ${escapeAttr(j.edition)}</option>`
+    ).join('');
+    if (current) playerSel.value = current;
+  }
 }
