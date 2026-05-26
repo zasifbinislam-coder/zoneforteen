@@ -132,3 +132,37 @@ create policy "reviews_update" on public.customer_reviews for update using (true
 create policy "reviews_delete" on public.customer_reviews for delete using (true);
 
 alter publication supabase_realtime add table public.customer_reviews;
+
+-- ============================================================
+-- 9. SHOWCASE VIDEOS — landing-page "Jersey Videos" grid
+-- ============================================================
+-- Independent of jersey_media (those are per-jersey gallery uploads).
+-- These are curated marketing videos shown in the homepage Videos section.
+create table if not exists public.showcase_videos (
+  id          uuid primary key default gen_random_uuid(),
+  title       text not null,
+  subtitle    text,
+  duration    text,                -- "0:42" style, optional
+  video_url   text not null,
+  video_path  text not null,
+  poster_url  text,
+  poster_path text,
+  jersey_id   text,                -- optional link to a JERSEYS[] id (e.g. 'arg-home')
+  sort_order  integer default 0,
+  created_at  timestamptz default now()
+);
+create index if not exists showcase_videos_sort_idx
+  on public.showcase_videos (sort_order desc, created_at desc);
+
+alter table public.showcase_videos enable row level security;
+
+drop policy if exists "showcase_read"   on public.showcase_videos;
+drop policy if exists "showcase_insert" on public.showcase_videos;
+drop policy if exists "showcase_update" on public.showcase_videos;
+drop policy if exists "showcase_delete" on public.showcase_videos;
+create policy "showcase_read"   on public.showcase_videos for select using (true);
+create policy "showcase_insert" on public.showcase_videos for insert with check (true);
+create policy "showcase_update" on public.showcase_videos for update using (true) with check (true);
+create policy "showcase_delete" on public.showcase_videos for delete using (true);
+
+alter publication supabase_realtime add table public.showcase_videos;

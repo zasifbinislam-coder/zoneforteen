@@ -527,8 +527,20 @@ function renderVideoShowcase() {
   const grid = document.getElementById('videoGrid');
   if (!grid) return;
 
-  // Build a list combining admin-uploaded videos (per jersey) with the
-  // declarative VIDEO_SHOWCASE cards. Admin uploads come first if present.
+  // Priority order:
+  // 1. Admin-uploaded SHOWCASE videos (new dedicated table) — these are curated
+  // 2. Admin-uploaded per-jersey videos (jersey_media)
+  // 3. Hardcoded VIDEO_SHOWCASE fallback cards (only if both above are empty)
+  const showcaseVideos = (typeof readShowcase === 'function' ? readShowcase() : []).map(v => ({
+    id:       'showcase-' + v.id,
+    jerseyId: v.jerseyId || null,
+    title:    v.title,
+    subtitle: v.subtitle || '',
+    duration: v.duration || '',
+    url:      v.videoUrl,
+    poster:   v.posterUrl || '',
+  }));
+
   const adminVideos = [];
   JERSEYS.forEach(j => {
     const media = getJerseyMedia(j.id);
@@ -545,7 +557,9 @@ function renderVideoShowcase() {
     });
   });
 
-  const declared = VIDEO_SHOWCASE.map(v => {
+  // Only show the hardcoded VIDEO_SHOWCASE cards when there's nothing real to show
+  const hasReal = showcaseVideos.length > 0 || adminVideos.length > 0;
+  const declared = hasReal ? [] : VIDEO_SHOWCASE.map(v => {
     const jersey = getJersey(v.jerseyId);
     const media = jersey ? getJerseyMedia(jersey.id) : null;
     const jerseyVid = media && media.videos[0];
@@ -557,7 +571,7 @@ function renderVideoShowcase() {
     };
   });
 
-  const list = [...adminVideos, ...declared].slice(0, 8);
+  const list = [...showcaseVideos, ...adminVideos, ...declared].slice(0, 8);
 
   if (list.length === 0) {
     grid.innerHTML = `

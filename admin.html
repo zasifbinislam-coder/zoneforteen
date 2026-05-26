@@ -186,6 +186,59 @@
         </div>
       </section>
 
+      <!-- Jersey Videos showcase — videos for the homepage "Jersey Videos" grid -->
+      <section class="admin-showcase">
+        <header class="admin-section-head">
+          <h2>🎬 Jersey Videos</h2>
+          <p>Upload product videos for the homepage "Jersey Videos" section. Title, subtitle, optional poster image, optional linked jersey.</p>
+        </header>
+
+        <form id="showcaseForm" class="review-form" novalidate>
+          <div class="form-row">
+            <label>Title<span class="req">*</span>
+              <input type="text" name="title" required maxlength="80" placeholder="e.g. Argentina Home · Unboxing" />
+            </label>
+            <label>Duration (optional)
+              <input type="text" name="duration" maxlength="10" placeholder="auto-detected" />
+              <span class="hint">Leave empty — auto-fills from video metadata</span>
+            </label>
+          </div>
+          <div class="form-row full">
+            <label>Subtitle (optional)
+              <input type="text" name="subtitle" maxlength="120" placeholder="e.g. Hand-stitched crest, premium mesh — close-up review" />
+            </label>
+          </div>
+          <div class="form-row">
+            <label>Linked jersey (optional)
+              <select name="jerseyId">
+                <option value="">— None —</option>
+              </select>
+              <span class="hint">Adds a "Shop this kit" button in the player</span>
+            </label>
+            <label>Sort priority
+              <input type="number" name="sortOrder" value="0" min="0" max="999" />
+              <span class="hint">Higher = shows first</span>
+            </label>
+          </div>
+          <div class="form-row">
+            <label>Video file<span class="req">*</span>
+              <input type="file" name="video" accept="video/*" required />
+              <span class="hint">MP4 recommended. Max 50 MB. Compress with handbrake.fr if larger.</span>
+            </label>
+            <label>Poster image (optional)
+              <input type="file" name="poster" accept="image/*" />
+              <span class="hint">JPG/PNG thumbnail. Defaults to first video frame if empty.</span>
+            </label>
+          </div>
+          <button type="submit" class="btn btn-primary">Publish Video</button>
+          <p class="review-form-msg" id="showcaseFormMsg" hidden></p>
+        </form>
+
+        <div class="admin-reviews-list" id="adminShowcaseList">
+          <!-- populated by admin.js -->
+        </div>
+      </section>
+
       <!-- Match Results entry (drives the prediction leaderboard) -->
       <section class="admin-results">
         <header class="admin-section-head">

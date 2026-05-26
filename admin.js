@@ -78,11 +78,13 @@ function bootDashboard() {
   renderResults();
   initMediaLibrary();
   initReviewsAdmin();
-  window.addEventListener('storage', () => { render(); renderResults(); renderMediaGallery(); renderAdminReviewsList(); });
+  initShowcaseAdmin();
+  window.addEventListener('storage', () => { render(); renderResults(); renderMediaGallery(); renderAdminReviewsList(); renderAdminShowcaseList(); });
   window.addEventListener('predictions:change', renderResults);
   window.addEventListener('results:change',     renderResults);
   window.addEventListener('media:change',       renderMediaGallery);
   window.addEventListener('reviews:change',     renderAdminReviewsList);
+  window.addEventListener('showcase:change',    renderAdminShowcaseList);
 
   // Pull latest shared predictions + results from Supabase, then subscribe
   // for realtime updates so admin sees customer activity live.
@@ -435,6 +437,133 @@ function renderAdminReviewsList() {
 function escapeAttr(s) {
   return String(s || '').replace(/[&<>"']/g, ch =>
     ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+/* ---------- Jersey Videos showcase ---------- */
+function initShowcaseAdmin() {
+  const form = document.getElementById('showcaseForm');
+  if (!form) return;
+
+  // Populate the linked-jersey dropdown
+  const sel = form.querySelector('select[name=jerseyId]');
+  JERSEYS.forEach(j => {
+    const opt = document.createElement('option');
+    opt.value = j.id;
+    opt.textContent = `${j.country} — ${j.edition}`;
+    sel.appendChild(opt);
+  });
+
+  // Auto-fill duration from picked video metadata
+  const videoInput = form.querySelector('input[name=video]');
+  const durationInput = form.querySelector('input[name=duration]');
+  videoInput.addEventListener('change', () => {
+    const f = videoInput.files[0];
+    if (!f) return;
+    const url = URL.createObjectURL(f);
+    const v = document.createElement('video');
+    v.preload = 'metadata';
+    v.onloadedmetadata = () => {
+      if (!isFinite(v.duration)) return;
+      const m = Math.floor(v.duration / 60);
+      const s = Math.floor(v.duration % 60).toString().padStart(2, '0');
+      if (!durationInput.value) durationInput.value = `${m}:${s}`;
+      URL.revokeObjectURL(url);
+    };
+    v.src = url;
+  });
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!form.checkValidity()) { form.reportValidity(); return; }
+
+    const fd = new FormData(form);
+    const videoFile = fd.get('video');
+    const posterFile = fd.get('poster');
+
+    if (!videoFile || videoFile.size === 0) {
+      showShowcaseMsg('err', 'Video file required.'); return;
+    }
+    if (videoFile.size > 50 * 1024 * 1024) {
+      showShowcaseMsg('err', `Video too large (${formatBytes(videoFile.size)}). Max 50 MB.`); return;
+    }
+    if (posterFile && posterFile.size > 5 * 1024 * 1024) {
+      showShowcaseMsg('err', `Poster too large (${formatBytes(posterFile.size)}). Max 5 MB.`); return;
+    }
+
+    const meta = {
+      title:     (fd.get('title') || '').toString().trim(),
+      subtitle:  (fd.get('subtitle') || '').toString().trim(),
+      duration:  (fd.get('duration') || '').toString().trim(),
+      jerseyId:  (fd.get('jerseyId') || '').toString().trim(),
+      sortOrder: parseInt(fd.get('sortOrder'), 10) || 0,
+    };
+
+    const btn = form.querySelector('button[type=submit]');
+    btn.disabled = true;
+    btn.textContent = 'Uploading video…';
+
+    try {
+      await pushShowcaseVideo(meta, videoFile, posterFile && posterFile.size > 0 ? posterFile : null);
+      showShowcaseMsg('ok', '✓ Video published — live on homepage now.');
+      form.reset();
+    } catch (err) {
+      console.warn(err);
+      showShowcaseMsg('err', '✗ Failed: ' + (err.message || err));
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Publish Video';
+    }
+  });
+
+  renderAdminShowcaseList();
+  window.addEventListener('showcase:change', renderAdminShowcaseList);
+}
+
+function showShowcaseMsg(kind, text) {
+  const msg = document.getElementById('showcaseFormMsg');
+  if (!msg) return;
+  msg.hidden = false;
+  msg.className = 'review-form-msg ' + kind;
+  msg.textContent = text;
+  setTimeout(() => { msg.hidden = true; }, 6000);
+}
+
+function renderAdminShowcaseList() {
+  const wrap = document.getElementById('adminShowcaseList');
+  if (!wrap) return;
+  const videos = readShowcase();
+  if (videos.length === 0) {
+    wrap.innerHTML = `
+      <div class="admin-review-empty">
+        <span class="icon">🎬</span>
+        <p>No showcase videos yet. Upload one above — it'll appear in the "Jersey Videos" section on the homepage.</p>
+      </div>`;
+    return;
+  }
+  wrap.innerHTML = videos.map(v => `
+    <div class="admin-review-tile" data-id="${v.id}" data-video-path="${v.videoPath || ''}" data-poster-path="${v.posterPath || ''}">
+      <video class="admin-review-tile-img" src="${v.videoUrl}" muted playsinline preload="metadata" ${v.posterUrl ? `poster="${v.posterUrl}"` : ''}></video>
+      <div class="admin-review-tile-head">
+        <strong>${escapeAttr(v.title)}</strong>
+        ${v.duration ? `<span class="art-stars">${escapeAttr(v.duration)}</span>` : ''}
+      </div>
+      ${v.subtitle ? `<p class="art-text">${escapeAttr(v.subtitle)}</p>` : ''}
+      ${v.jerseyId ? `<p class="art-buy">↳ ${escapeAttr(v.jerseyId)}</p>` : ''}
+      <button type="button" class="admin-review-tile-del" data-del title="Delete video">×</button>
+    </div>
+  `).join('');
+
+  wrap.querySelectorAll('[data-del]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const tile = btn.closest('.admin-review-tile');
+      if (!confirm('Delete this showcase video? It will disappear from the homepage too.')) return;
+      const id = tile.dataset.id;
+      const videoPath = tile.dataset.videoPath || null;
+      const posterPath = tile.dataset.posterPath || null;
+      await deleteShowcaseRemote(id, videoPath, posterPath);
+      writeShowcase(readShowcase().filter(v => v.id !== id));
+    });
+  });
 }
 
 /* ---------- Match results entry ---------- */

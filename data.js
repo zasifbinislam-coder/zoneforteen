@@ -347,6 +347,7 @@ async function syncFromSupabase() {
       { data: results, error: e2 },
       { data: media,   error: e3 },
       { data: reviews, error: e4 },
+      { data: showcase, error: e5 },
     ] = await Promise.all([
       sb.from('predictions').select('*'),
       sb.from('match_results').select('*'),
@@ -354,10 +355,31 @@ async function syncFromSupabase() {
       sb.from('customer_reviews').select('*').eq('approved', true)
         .order('sort_order', { ascending: false })
         .order('created_at', { ascending: false }),
+      sb.from('showcase_videos').select('*')
+        .order('sort_order', { ascending: false })
+        .order('created_at', { ascending: false }),
     ]);
     if (e1) throw e1;
     if (e2) throw e2;
     if (e3) throw e3;
+    // showcase error non-fatal — table may not exist yet on first deploy
+    if (!e5 && showcase) {
+      const localShowcase = showcase.map(r => ({
+        id:         r.id,
+        title:      r.title,
+        subtitle:   r.subtitle,
+        duration:   r.duration,
+        videoUrl:   r.video_url,
+        videoPath:  r.video_path,
+        posterUrl:  r.poster_url,
+        posterPath: r.poster_path,
+        jerseyId:   r.jersey_id,
+        sortOrder:  r.sort_order,
+        createdAt:  r.created_at ? new Date(r.created_at).getTime() : null,
+      }));
+      localStorage.setItem(SHOWCASE_KEY, JSON.stringify(localShowcase));
+      window.dispatchEvent(new CustomEvent('showcase:change'));
+    }
     // reviews error is non-fatal — table may not exist yet on first deploy
     if (!e4 && reviews) {
       const localReviews = reviews.map(r => ({
@@ -444,6 +466,10 @@ function subscribeToSupabaseChanges() {
     .subscribe();
   sb.channel('zone14-customer-reviews')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'customer_reviews' },
+        () => syncFromSupabase())
+    .subscribe();
+  sb.channel('zone14-showcase-videos')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'showcase_videos' },
         () => syncFromSupabase())
     .subscribe();
 }
@@ -792,7 +818,79 @@ async function deleteReviewRemote(id, photoPath, videoPath) {
 }
 
 /* ============================================================
-   VIDEO SHOWCASE — landing-page video grid (above Reviews)
+   SHOWCASE VIDEOS — admin-uploaded curated "Jersey Videos" grid
+   Independent of jersey_media. Stored in showcase_videos table
+   + media bucket (folder: 'showcase/'). Cache-first read pattern. */
+const SHOWCASE_KEY = 'zone14_showcase_v1';
+
+function readShowcase() {
+  try { return JSON.parse(localStorage.getItem(SHOWCASE_KEY)) || []; }
+  catch (_) { return []; }
+}
+function writeShowcase(arr) {
+  localStorage.setItem(SHOWCASE_KEY, JSON.stringify(arr));
+  window.dispatchEvent(new CustomEvent('showcase:change'));
+}
+
+async function pushShowcaseVideo(meta, videoFile, posterFile) {
+  const sb = getSupabase();
+  if (!sb) throw new Error('Supabase client not ready');
+
+  const uploadOne = async (file) => {
+    const ext = (file.name.split('.').pop() || 'bin').toLowerCase();
+    const path = `showcase/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { data: up, error: upErr } = await sb.storage
+      .from('media')
+      .upload(path, file, { contentType: file.type, upsert: false });
+    if (upErr) throw upErr;
+    const { data: pub } = sb.storage.from('media').getPublicUrl(up.path);
+    return { url: pub.publicUrl, path: up.path };
+  };
+
+  if (!videoFile) throw new Error('Video file is required');
+
+  const cleanup = [];
+  try {
+    const vid = await uploadOne(videoFile);
+    cleanup.push(vid.path);
+
+    let posterUrl = null, posterPath = null;
+    if (posterFile) {
+      const p = await uploadOne(posterFile);
+      posterUrl = p.url; posterPath = p.path;
+      cleanup.push(p.path);
+    }
+
+    const { data, error } = await sb.from('showcase_videos').insert({
+      title:       meta.title,
+      subtitle:    meta.subtitle || null,
+      duration:    meta.duration || null,
+      jersey_id:   meta.jerseyId || null,
+      sort_order:  meta.sortOrder || 0,
+      video_url:   vid.url,
+      video_path:  vid.path,
+      poster_url:  posterUrl,
+      poster_path: posterPath,
+    }).select().single();
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    if (cleanup.length) await sb.storage.from('media').remove(cleanup).catch(() => {});
+    throw err;
+  }
+}
+
+async function deleteShowcaseRemote(id, videoPath, posterPath) {
+  const sb = getSupabase();
+  if (!sb) return;
+  const toRemove = [videoPath, posterPath].filter(Boolean);
+  if (toRemove.length) await sb.storage.from('media').remove(toRemove).catch(() => {});
+  await sb.from('showcase_videos').delete().eq('id', id).catch(() => {});
+}
+
+/* ============================================================
+   VIDEO SHOWCASE — declarative fallback cards (used only when the admin
+   hasn't uploaded any showcase videos yet — keeps the section non-empty)
    ============================================================ */
 const VIDEO_SHOWCASE = [
   {
