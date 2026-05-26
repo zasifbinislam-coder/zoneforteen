@@ -247,6 +247,13 @@ function initBackToTop() {
 /* ---------- REVEAL ON SCROLL ---------- */
 let revealObserver;
 function initReveal() {
+  // Old browsers / jsdom don't have IntersectionObserver — fall back to
+  // showing everything immediately. (Throwing here would kill every init
+  // that runs after it in DOMContentLoaded.)
+  if (typeof IntersectionObserver === 'undefined') {
+    document.querySelectorAll('.reveal').forEach(el => el.classList.add('in-view'));
+    return;
+  }
   revealObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
