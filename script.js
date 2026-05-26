@@ -1650,6 +1650,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('settings:applied', () => {
     applyHeroToDOM();
     renderOffers();
+    if (typeof renderPlayers === 'function') renderPlayers();
     updateCountdown();
   });
   window.addEventListener('storage', e => {

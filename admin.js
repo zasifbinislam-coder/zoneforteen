@@ -92,7 +92,7 @@ function bootDashboard() {
     refreshJerseyDropdowns();
   });
   window.addEventListener('settings:change',    fillSettingsForms);
-  window.addEventListener('settings:applied',   () => { fillSettingsForms(); renderOffersList(); });
+  window.addEventListener('settings:applied',   () => { fillSettingsForms(); renderOffersList(); renderPlayersList(); });
 
   // Pull latest shared predictions + results from Supabase, then subscribe
   // for realtime updates so admin sees customer activity live.
@@ -1200,6 +1200,100 @@ function initSettingsAdmin() {
 
   renderPromosList();
   initOffersAdmin();
+  initPlayersAdmin();
+}
+
+function initPlayersAdmin() {
+  const form = document.getElementById('playerAddForm');
+  if (!form) return;
+
+  // Populate jersey dropdown
+  const sel = document.getElementById('playerJerseySelect');
+  const refreshOpts = () => {
+    const current = sel.value;
+    sel.innerHTML = '<option value="">— Pick jersey —</option>';
+    JERSEYS.forEach(j => {
+      const opt = document.createElement('option');
+      opt.value = j.id; opt.textContent = `${j.country} — ${j.edition}`;
+      sel.appendChild(opt);
+    });
+    if (current) sel.value = current;
+  };
+  refreshOpts();
+  window.addEventListener('jerseys:change', refreshOpts);
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!form.checkValidity()) { form.reportValidity(); return; }
+    const fd = new FormData(form);
+    const player = {
+      id:       (fd.get('name') || '').toString().trim().toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 16) + '-' + Math.random().toString(36).slice(2, 5),
+      name:     (fd.get('name') || '').toString().trim().toUpperCase(),
+      number:   parseInt(fd.get('number'), 10) || 0,
+      country:  (fd.get('country') || '').toString().trim().toUpperCase().slice(0, 3),
+      jersey:   (fd.get('jersey') || '').toString().trim(),
+      position: (fd.get('position') || '').toString().trim(),
+      blurb:    (fd.get('blurb') || '').toString().trim(),
+    };
+    const next = [...PLAYERS, player];
+    try {
+      await pushSetting('players', next);
+      PLAYERS = next;
+      writeSettings({ ...readSettings(), players: next });
+      form.reset();
+      renderPlayersList();
+      const msg = document.getElementById('playerMsg');
+      msg.textContent = '✓ Added';
+      msg.className = 'settings-msg ok';
+      setTimeout(() => { msg.textContent = ''; msg.className = 'settings-msg'; }, 3000);
+    } catch (err) {
+      const msg = document.getElementById('playerMsg');
+      msg.textContent = '✗ ' + (err.message || err);
+      msg.className = 'settings-msg err';
+    }
+  });
+
+  renderPlayersList();
+}
+
+function renderPlayersList() {
+  const wrap = document.getElementById('playersAdminList');
+  if (!wrap) return;
+  if (PLAYERS.length === 0) {
+    wrap.innerHTML = '<p style="color:var(--text-mute);font-size:13px">No players yet — add one below.</p>';
+    return;
+  }
+  wrap.innerHTML = PLAYERS.map((p, i) => {
+    const j = JERSEYS.find(x => x.id === p.jersey);
+    const jerseyLabel = j ? `${j.country} ${j.edition}` : p.jersey;
+    return `
+      <div class="player-row" data-idx="${i}">
+        <span class="player-row-number">${p.number}</span>
+        <strong>${escapeAttr(p.name)}</strong>
+        <span class="player-row-country">${escapeAttr(p.country)}</span>
+        <span class="player-row-pos">${escapeAttr(p.position || '')}</span>
+        <span class="player-row-jersey">↳ ${escapeAttr(jerseyLabel)}</span>
+        <button type="button" class="qi-remove" data-del-player title="Remove">×</button>
+      </div>
+    `;
+  }).join('');
+
+  wrap.querySelectorAll('[data-del-player]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const idx = parseInt(btn.closest('.player-row').dataset.idx, 10);
+      const p = PLAYERS[idx];
+      if (!confirm(`Remove player "${p.name}"?`)) return;
+      const next = PLAYERS.filter((_, i) => i !== idx);
+      try {
+        await pushSetting('players', next);
+        PLAYERS = next;
+        writeSettings({ ...readSettings(), players: next });
+        renderPlayersList();
+      } catch (err) {
+        alert('Delete failed: ' + (err.message || err));
+      }
+    });
+  });
 }
 
 function initOffersAdmin() {

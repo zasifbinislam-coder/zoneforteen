@@ -178,7 +178,7 @@ const COUNTRY_TO_JERSEY = {
 };
 
 /* ---------- STAR PLAYERS — drive custom-print upsell ---------- */
-const PLAYERS = [
+let PLAYERS = [
   { id:'messi',    name:'MESSI',    number:10, country:'ARG', jersey:'arg-home', position:'Forward',    blurb:'Captain · 8× Ballon d\'Or' },
   { id:'mac',      name:'MAC ALL.', number:20, country:'ARG', jersey:'arg-home', position:'Midfielder', blurb:'2022 WC Final scorer' },
   { id:'vini',     name:'VINI JR',  number:7,  country:'BRA', jersey:'bra-home', position:'Forward',    blurb:'Real Madrid · Samba magic' },
@@ -1088,7 +1088,8 @@ function applySettings(settings) {
   if (settings.promos)          PROMOS      = { ...settings.promos };
   if (settings.payment_numbers) PAY_NUMBERS = { ...PAY_NUMBERS, ...settings.payment_numbers };
   if (settings.hero)            HERO        = { ...HERO, ...settings.hero };
-  if (Array.isArray(settings.offers) && settings.offers.length > 0) OFFERS = settings.offers;
+  if (Array.isArray(settings.offers)  && settings.offers.length  > 0) OFFERS  = settings.offers;
+  if (Array.isArray(settings.players) && settings.players.length > 0) PLAYERS = settings.players;
   window.dispatchEvent(new CustomEvent('settings:applied'));
 }
 

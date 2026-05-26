@@ -207,6 +207,46 @@
           </form>
         </div>
 
+        <!-- Star Players — separate card spanning full width -->
+        <div class="settings-card" style="margin-top:16px">
+          <h3>⭐ Star Players</h3>
+          <p class="settings-card-hint">Players shown in the "Star Players · Star Kits" section. Each player links to a jersey for one-tap shopping.</p>
+
+          <div class="players-list" id="playersAdminList">
+            <!-- populated by admin.js -->
+          </div>
+
+          <form id="playerAddForm" class="player-add-form">
+            <div class="form-row">
+              <label>Player name<span class="req">*</span>
+                <input type="text" name="name" required maxlength="20" placeholder="MESSI" />
+              </label>
+              <label>Shirt number<span class="req">*</span>
+                <input type="number" name="number" required min="0" max="99" placeholder="10" />
+              </label>
+              <label>Country code<span class="req">*</span>
+                <input type="text" name="country" required maxlength="3" placeholder="ARG" style="text-transform:uppercase" />
+                <span class="hint">3 letters: ARG, BRA, FRA, ESP, GER, etc.</span>
+              </label>
+              <label>Position
+                <input type="text" name="position" maxlength="20" placeholder="Forward" />
+              </label>
+            </div>
+            <div class="form-row">
+              <label>Linked jersey<span class="req">*</span>
+                <select name="jersey" required id="playerJerseySelect">
+                  <option value="">— Pick jersey —</option>
+                </select>
+              </label>
+              <label>Blurb (one-liner)
+                <input type="text" name="blurb" maxlength="80" placeholder="Captain · 8× Ballon d'Or" />
+              </label>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">Add Player</button>
+            <p class="settings-msg" id="playerMsg"></p>
+          </form>
+        </div>
+
         <!-- Promo codes — separate card spanning full width -->
         <div class="settings-card" style="margin-top:16px">
           <h3>🏷 Promo Codes</h3>
