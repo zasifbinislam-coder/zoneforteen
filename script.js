@@ -1564,6 +1564,41 @@ function renderOffers() {
   }
 }
 
+/* Sync footer Contact + Social link DOM with CONTACT/SOCIAL settings objects */
+function applyContactToDOM() {
+  if (typeof CONTACT !== 'undefined') {
+    const setText = (id, val) => { const el = document.getElementById(id); if (el && val) el.textContent = val; };
+    const setHref = (id, val) => { const el = document.getElementById(id); if (el && val) el.href = val; };
+    setText('footerBrandDesc', CONTACT.brandDesc);
+    setText('footerAddress',   CONTACT.address);
+    setText('footerHours',     CONTACT.hours);
+    const phoneEl = document.getElementById('footerPhone');
+    if (phoneEl && CONTACT.phone) {
+      phoneEl.href = 'tel:' + CONTACT.phone.replace(/[^+\d]/g, '');
+      phoneEl.textContent = CONTACT.phoneDisplay || CONTACT.phone;
+    }
+    const emailEl = document.getElementById('footerEmail');
+    if (emailEl && CONTACT.email) {
+      emailEl.href = 'mailto:' + CONTACT.email;
+      emailEl.textContent = CONTACT.email;
+    }
+  }
+  if (typeof SOCIAL !== 'undefined') {
+    const setHref = (id, val) => { const el = document.getElementById(id); if (el && val) el.href = val; };
+    setHref('socialFacebook',  SOCIAL.facebook);
+    setHref('socialInstagram', SOCIAL.instagram);
+    setHref('floatMessenger',  SOCIAL.messenger);
+    setHref('floatInstagram',  SOCIAL.instagram);
+  }
+  // WhatsApp links use the WHATSAPP constant (also settings-driven)
+  if (typeof WHATSAPP !== 'undefined') {
+    const wa = `https://wa.me/${WHATSAPP}`;
+    const sw = document.getElementById('socialWhatsapp'); if (sw) sw.href = wa;
+    const fw = document.getElementById('floatWhatsapp');
+    if (fw) fw.href = wa + '?text=Hi%20Zone14%2C%20I%20want%20to%20order%20a%20jersey.';
+  }
+}
+
 /* Sync the hero title/accent/subtitle DOM with the HERO settings object.
    Fired on boot and whenever admin saves the brand settings form. */
 function applyHeroToDOM() {
@@ -1621,6 +1656,7 @@ function initHeroVideo() {
 /* ---------- INIT ---------- */
 document.addEventListener('DOMContentLoaded', () => {
   applyHeroToDOM();
+  applyContactToDOM();
   renderOffers();
   initHeroVideo();
   renderJerseys();
@@ -1649,6 +1685,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   window.addEventListener('settings:applied', () => {
     applyHeroToDOM();
+    applyContactToDOM();
     renderOffers();
     if (typeof renderPlayers === 'function') renderPlayers();
     updateCountdown();

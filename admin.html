@@ -135,6 +135,71 @@
             </div>
           </form>
 
+          <!-- Contact info -->
+          <form id="contactSettingsForm" class="settings-card">
+            <h3>📍 Contact Info (footer)</h3>
+            <div class="form-row full">
+              <label>Address
+                <input type="text" name="address" maxlength="160" placeholder="Lalmatia Block D, Dhanmondi, Dhaka" />
+              </label>
+            </div>
+            <div class="form-row">
+              <label>Phone (raw, for tel: link)
+                <input type="text" name="phone" maxlength="20" placeholder="+8801723360078" />
+              </label>
+              <label>Phone (display)
+                <input type="text" name="phoneDisplay" maxlength="20" placeholder="+880 1723-360078" />
+              </label>
+            </div>
+            <div class="form-row">
+              <label>Email
+                <input type="email" name="email" maxlength="80" placeholder="zoneforteen@gmail.com" />
+              </label>
+              <label>Business hours
+                <input type="text" name="hours" maxlength="60" placeholder="Open daily · 10am – 10pm" />
+              </label>
+            </div>
+            <div class="form-row full">
+              <label>Brand description (footer)
+                <textarea name="brandDesc" rows="2" maxlength="160" placeholder="Premium football jerseys..."></textarea>
+              </label>
+            </div>
+            <div class="settings-actions">
+              <button type="submit" class="btn btn-primary">Save Contact</button>
+              <span class="settings-msg" data-msg></span>
+            </div>
+          </form>
+
+          <!-- Social links -->
+          <form id="socialSettingsForm" class="settings-card">
+            <h3>🔗 Social Links</h3>
+            <div class="form-row">
+              <label>Facebook URL
+                <input type="url" name="facebook" maxlength="200" placeholder="https://facebook.com/zone14bd" />
+              </label>
+              <label>Instagram URL
+                <input type="url" name="instagram" maxlength="200" placeholder="https://instagram.com/zone14bd" />
+              </label>
+            </div>
+            <div class="form-row">
+              <label>Messenger URL (m.me/...)
+                <input type="url" name="messenger" maxlength="200" placeholder="https://m.me/zone14bd" />
+              </label>
+              <label>TikTok URL (optional)
+                <input type="url" name="tiktok" maxlength="200" placeholder="https://tiktok.com/@..." />
+              </label>
+            </div>
+            <div class="form-row full">
+              <label>YouTube URL (optional)
+                <input type="url" name="youtube" maxlength="200" placeholder="https://youtube.com/@..." />
+              </label>
+            </div>
+            <div class="settings-actions">
+              <button type="submit" class="btn btn-primary">Save Socials</button>
+              <span class="settings-msg" data-msg></span>
+            </div>
+          </form>
+
           <!-- WhatsApp + Hero text -->
           <form id="brandSettingsForm" class="settings-card">
             <h3>🎬 Brand &amp; Hero</h3>

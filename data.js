@@ -42,6 +42,25 @@ let HERO = {
   subtitle: 'Premium World Cup 2026 jerseys, handcrafted in Bangladesh. Worn by champions, built for fans.',
 };
 
+/* Contact info shown in footer + uses across the site — overridable from admin */
+let CONTACT = {
+  address:     'Lalmatia Block D, Dhanmondi, Dhaka, Bangladesh',
+  phone:       '+8801723360078',
+  phoneDisplay:'+880 1723-360078',
+  email:       'zoneforteen@gmail.com',
+  hours:       'Open daily · 10am – 10pm',
+  brandDesc:   'Premium football jerseys for the true fan. Built in Bangladesh, worn worldwide.',
+};
+
+/* Social links — overridable from admin */
+let SOCIAL = {
+  facebook:  'https://facebook.com/zone14bd',
+  instagram: 'https://instagram.com/zone14bd',
+  messenger: 'https://m.me/zone14bd',
+  tiktok:    '',
+  youtube:   '',
+};
+
 /* Homepage Offers section cards — overridable from admin */
 let OFFERS = [
   {
@@ -1090,6 +1109,8 @@ function applySettings(settings) {
   if (settings.hero)            HERO        = { ...HERO, ...settings.hero };
   if (Array.isArray(settings.offers)  && settings.offers.length  > 0) OFFERS  = settings.offers;
   if (Array.isArray(settings.players) && settings.players.length > 0) PLAYERS = settings.players;
+  if (settings.contact) CONTACT = { ...CONTACT, ...settings.contact };
+  if (settings.social)  SOCIAL  = { ...SOCIAL,  ...settings.social };
   window.dispatchEvent(new CustomEvent('settings:applied'));
 }
 

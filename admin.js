@@ -1155,6 +1155,35 @@ function initSettingsAdmin() {
     await saveSetting('delivery', value, e.target);
   });
 
+  const contactForm = document.getElementById('contactSettingsForm');
+  if (contactForm) contactForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const value = {
+      address:      (fd.get('address') || '').toString().trim(),
+      phone:        (fd.get('phone') || '').toString().trim(),
+      phoneDisplay: (fd.get('phoneDisplay') || '').toString().trim(),
+      email:        (fd.get('email') || '').toString().trim(),
+      hours:        (fd.get('hours') || '').toString().trim(),
+      brandDesc:    (fd.get('brandDesc') || '').toString().trim(),
+    };
+    await saveSetting('contact', value, e.target);
+  });
+
+  const socialForm = document.getElementById('socialSettingsForm');
+  if (socialForm) socialForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const value = {
+      facebook:  (fd.get('facebook') || '').toString().trim(),
+      instagram: (fd.get('instagram') || '').toString().trim(),
+      messenger: (fd.get('messenger') || '').toString().trim(),
+      tiktok:    (fd.get('tiktok') || '').toString().trim(),
+      youtube:   (fd.get('youtube') || '').toString().trim(),
+    };
+    await saveSetting('social', value, e.target);
+  });
+
   document.getElementById('brandSettingsForm').addEventListener('submit', async e => {
     e.preventDefault();
     const fd = new FormData(e.target);
@@ -1396,6 +1425,23 @@ function fillSettingsForms() {
     pay.bkash.value  = PAY_NUMBERS.bkash.number;
     pay.nagad.value  = PAY_NUMBERS.nagad.number;
     pay.rocket.value = PAY_NUMBERS.rocket.number;
+  }
+  const contact = document.getElementById('contactSettingsForm');
+  if (contact) {
+    contact.address.value      = CONTACT.address;
+    contact.phone.value        = CONTACT.phone;
+    contact.phoneDisplay.value = CONTACT.phoneDisplay;
+    contact.email.value        = CONTACT.email;
+    contact.hours.value        = CONTACT.hours;
+    contact.brandDesc.value    = CONTACT.brandDesc;
+  }
+  const social = document.getElementById('socialSettingsForm');
+  if (social) {
+    social.facebook.value  = SOCIAL.facebook;
+    social.instagram.value = SOCIAL.instagram;
+    social.messenger.value = SOCIAL.messenger;
+    social.tiktok.value    = SOCIAL.tiktok || '';
+    social.youtube.value   = SOCIAL.youtube || '';
   }
   const del = document.getElementById('deliverySettingsForm');
   if (del) {
