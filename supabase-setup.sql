@@ -52,8 +52,8 @@ create policy "results_delete" on public.match_results for delete using (true);
 
 -- 6. Enable realtime broadcasts so the landing page leaderboard updates
 --    instantly when anyone (anywhere in the world) submits a prediction.
-alter publication supabase_realtime add table public.predictions;
-alter publication supabase_realtime add table public.match_results;
+do $$ begin alter publication supabase_realtime add table public.predictions; exception when duplicate_object then null; end $$;
+do $$ begin alter publication supabase_realtime add table public.match_results; exception when duplicate_object then null; end $$;
 
 -- ============================================================
 -- 7. JERSEY MEDIA — admin photo/video uploads
@@ -97,7 +97,7 @@ create policy "media_insert" on storage.objects for insert with check (bucket_id
 create policy "media_update" on storage.objects for update using (bucket_id = 'media') with check (bucket_id = 'media');
 create policy "media_delete" on storage.objects for delete using (bucket_id = 'media');
 
-alter publication supabase_realtime add table public.jersey_media;
+do $$ begin alter publication supabase_realtime add table public.jersey_media; exception when duplicate_object then null; end $$;
 
 -- ============================================================
 -- 8. CUSTOMER REVIEWS — admin-curated real reviews with photo/video
@@ -131,7 +131,7 @@ create policy "reviews_insert" on public.customer_reviews for insert with check 
 create policy "reviews_update" on public.customer_reviews for update using (true) with check (true);
 create policy "reviews_delete" on public.customer_reviews for delete using (true);
 
-alter publication supabase_realtime add table public.customer_reviews;
+do $$ begin alter publication supabase_realtime add table public.customer_reviews; exception when duplicate_object then null; end $$;
 
 -- ============================================================
 -- 9. SHOWCASE VIDEOS — landing-page "Jersey Videos" grid
@@ -165,7 +165,7 @@ create policy "showcase_insert" on public.showcase_videos for insert with check 
 create policy "showcase_update" on public.showcase_videos for update using (true) with check (true);
 create policy "showcase_delete" on public.showcase_videos for delete using (true);
 
-alter publication supabase_realtime add table public.showcase_videos;
+do $$ begin alter publication supabase_realtime add table public.showcase_videos; exception when duplicate_object then null; end $$;
 
 -- ============================================================
 -- 10. JERSEYS — admin-controlled catalog override
@@ -210,7 +210,7 @@ create policy "jerseys_insert" on public.jerseys for insert with check (true);
 create policy "jerseys_update" on public.jerseys for update using (true) with check (true);
 create policy "jerseys_delete" on public.jerseys for delete using (true);
 
-alter publication supabase_realtime add table public.jerseys;
+do $$ begin alter publication supabase_realtime add table public.jerseys; exception when duplicate_object then null; end $$;
 
 -- ============================================================
 -- 11. SITE SETTINGS — key/value config (hero text, payment numbers,
@@ -233,4 +233,4 @@ create policy "settings_insert" on public.site_settings for insert with check (t
 create policy "settings_update" on public.site_settings for update using (true) with check (true);
 create policy "settings_delete" on public.site_settings for delete using (true);
 
-alter publication supabase_realtime add table public.site_settings;
+do $$ begin alter publication supabase_realtime add table public.site_settings; exception when duplicate_object then null; end $$;
