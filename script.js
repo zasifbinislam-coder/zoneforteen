@@ -1598,8 +1598,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Re-render gallery + cards when admin uploads media (cross-tab sync)
   window.addEventListener('media:change', () => { renderJerseys(); renderVideoShowcase(); });
+  window.addEventListener('showcase:change', renderVideoShowcase);
+  window.addEventListener('jerseys:change', () => {
+    renderJerseys();
+    if (typeof renderFilters === 'function') renderFilters();
+  });
   window.addEventListener('storage', e => {
     if (e.key === MEDIA_KEY) { renderJerseys(); renderVideoShowcase(); }
+    if (e.key === JERSEYS_KEY) { /* hydrate handled by data.js */ }
   });
 
   // Match Hub

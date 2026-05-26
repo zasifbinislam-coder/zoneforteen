@@ -166,3 +166,48 @@ create policy "showcase_update" on public.showcase_videos for update using (true
 create policy "showcase_delete" on public.showcase_videos for delete using (true);
 
 alter publication supabase_realtime add table public.showcase_videos;
+
+-- ============================================================
+-- 10. JERSEYS — admin-controlled catalog override
+-- ============================================================
+-- When this table has rows, the static JERSEYS[] in data.js is replaced
+-- by these. Empty table = fallback to the static seed catalog.
+create table if not exists public.jerseys (
+  id                text primary key,
+  country           text not null,
+  edition           text not null,
+  tag               text not null default 'home',   -- 'home' | 'away' | 'third' | 'coming'
+  price             integer not null,
+  in_stock          boolean default true,
+  stock_left        integer default 0,
+  coming_soon       boolean default false,
+  palette_primary   text,
+  palette_secondary text,
+  palette_accent    text,
+  palette_stripes   boolean default false,
+  crest             text,
+  shirt_number      text,
+  fabric            text,
+  fit               text,
+  care              text,
+  origin            text,
+  sort_order        integer default 0,
+  hidden            boolean default false,
+  created_at        timestamptz default now(),
+  updated_at        timestamptz default now()
+);
+create index if not exists jerseys_sort_idx
+  on public.jerseys (hidden, sort_order desc, created_at);
+
+alter table public.jerseys enable row level security;
+
+drop policy if exists "jerseys_read"   on public.jerseys;
+drop policy if exists "jerseys_insert" on public.jerseys;
+drop policy if exists "jerseys_update" on public.jerseys;
+drop policy if exists "jerseys_delete" on public.jerseys;
+create policy "jerseys_read"   on public.jerseys for select using (true);
+create policy "jerseys_insert" on public.jerseys for insert with check (true);
+create policy "jerseys_update" on public.jerseys for update using (true) with check (true);
+create policy "jerseys_delete" on public.jerseys for delete using (true);
+
+alter publication supabase_realtime add table public.jerseys;

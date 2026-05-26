@@ -79,12 +79,17 @@ function bootDashboard() {
   initMediaLibrary();
   initReviewsAdmin();
   initShowcaseAdmin();
-  window.addEventListener('storage', () => { render(); renderResults(); renderMediaGallery(); renderAdminReviewsList(); renderAdminShowcaseList(); });
+  initJerseysAdmin();
+  window.addEventListener('storage', () => { render(); renderResults(); renderMediaGallery(); renderAdminReviewsList(); renderAdminShowcaseList(); renderAdminJerseysList(); });
   window.addEventListener('predictions:change', renderResults);
   window.addEventListener('results:change',     renderResults);
   window.addEventListener('media:change',       renderMediaGallery);
   window.addEventListener('reviews:change',     renderAdminReviewsList);
   window.addEventListener('showcase:change',    renderAdminShowcaseList);
+  window.addEventListener('jerseys:change',     () => {
+    renderAdminJerseysList();
+    refreshJerseyDropdowns();
+  });
 
   // Pull latest shared predictions + results from Supabase, then subscribe
   // for realtime updates so admin sees customer activity live.
@@ -913,4 +918,235 @@ function seedDemoOrders() {
   ];
   demos.forEach(o => saveOrder(o));
   render();
+}
+
+/* ============================================================
+   JERSEYS CATALOG — admin CRUD
+   ============================================================ */
+function initJerseysAdmin() {
+  const list = document.getElementById('adminJerseysList');
+  if (!list) return;
+
+  document.getElementById('addJerseyBtn').addEventListener('click', () => openJerseyEditor(null));
+  document.getElementById('seedJerseysBtn').addEventListener('click', handleSeedJerseys);
+  document.getElementById('jerseyEditorClose').addEventListener('click', closeJerseyEditor);
+  document.getElementById('jerseyFormCancel').addEventListener('click', closeJerseyEditor);
+
+  // Backdrop click closes
+  document.getElementById('jerseyEditor').addEventListener('click', e => {
+    if (e.target.id === 'jerseyEditor') closeJerseyEditor();
+  });
+
+  document.getElementById('jerseyForm').addEventListener('submit', handleJerseySubmit);
+
+  renderAdminJerseysList();
+}
+
+async function handleSeedJerseys() {
+  if (!confirm('Copy the 12 default jerseys into your database? You\'ll then be able to edit any of them. Existing rows will be overwritten with the static defaults.')) return;
+  const btn = document.getElementById('seedJerseysBtn');
+  btn.disabled = true; btn.textContent = 'Seeding…';
+  try {
+    await seedJerseysFromStatic();
+    alert('✓ Catalog seeded. Refresh to see changes if needed.');
+  } catch (err) {
+    alert('✗ Seed failed: ' + (err.message || err));
+  } finally {
+    btn.disabled = false; btn.textContent = 'Seed Catalog from Defaults';
+  }
+}
+
+function renderAdminJerseysList() {
+  const wrap  = document.getElementById('adminJerseysList');
+  const count = document.getElementById('jerseysCount');
+  if (!wrap) return;
+
+  count.textContent = `${JERSEYS.length} jersey${JERSEYS.length === 1 ? '' : 's'}`;
+
+  if (JERSEYS.length === 0) {
+    wrap.innerHTML = `
+      <div class="admin-review-empty">
+        <span class="icon">🎽</span>
+        <p>No jerseys yet. Click "Add New Jersey" or "Seed Catalog from Defaults" to start.</p>
+      </div>`;
+    return;
+  }
+
+  wrap.innerHTML = JERSEYS.map(j => {
+    const stock  = j.inStock ? `${j.stockLeft} in stock` : (j.comingSoon ? 'Coming Soon' : 'Out of stock');
+    const stockCls = j.inStock ? 'ok' : (j.comingSoon ? 'warn' : 'bad');
+    return `
+      <div class="admin-jersey-row" data-id="${j.id}">
+        <div class="ajr-swatch" style="background:${j.palette.primary};border-color:${j.palette.accent}">
+          <span style="color:${j.palette.secondary}">${escapeAttr(j.number || '10')}</span>
+        </div>
+        <div class="ajr-info">
+          <strong>${escapeAttr(j.country)} <span style="color:var(--text-mute);font-weight:400">— ${escapeAttr(j.edition)}</span></strong>
+          <span class="ajr-meta">
+            ৳${j.price}
+            · <span class="ajr-tag tag-${j.tag}">${escapeAttr(j.tag)}</span>
+            · <span class="ajr-stock ajr-stock-${stockCls}">${stock}</span>
+          </span>
+        </div>
+        <div class="ajr-actions">
+          <button type="button" class="btn btn-ghost btn-sm" data-edit>Edit</button>
+          <button type="button" class="btn btn-ghost btn-sm" data-del style="color:#ff6b6b">Delete</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  wrap.querySelectorAll('[data-edit]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const row = btn.closest('.admin-jersey-row');
+      const j = JERSEYS.find(x => x.id === row.dataset.id);
+      if (j) openJerseyEditor(j);
+    });
+  });
+  wrap.querySelectorAll('[data-del]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const row = btn.closest('.admin-jersey-row');
+      const id = row.dataset.id;
+      const j = JERSEYS.find(x => x.id === id);
+      if (!j) return;
+      if (!confirm(`Delete "${j.country} ${j.edition}"? This removes it from the homepage too.`)) return;
+      await deleteJerseyRemote(id);
+      // Optimistic local removal — realtime sync will confirm
+      setJerseys(JERSEYS.filter(x => x.id !== id));
+    });
+  });
+}
+
+let jerseyEditorMode = 'add'; // 'add' | 'edit'
+
+function openJerseyEditor(jersey) {
+  const modal = document.getElementById('jerseyEditor');
+  const form  = document.getElementById('jerseyForm');
+  const title = document.getElementById('jerseyEditorTitle');
+
+  jerseyEditorMode = jersey ? 'edit' : 'add';
+  title.textContent = jersey ? `Edit Jersey · ${jersey.country} ${jersey.edition}` : 'Add New Jersey';
+
+  form.reset();
+  if (jersey) {
+    form.id.value           = jersey.id;
+    form.country.value      = jersey.country;
+    form.edition.value      = jersey.edition;
+    form.tag.value          = jersey.tag || 'home';
+    form.price.value        = jersey.price;
+    form.stockLeft.value    = jersey.stockLeft || 0;
+    form.inStock.checked    = !!jersey.inStock;
+    form.primary.value      = (jersey.palette || {}).primary   || '#cccccc';
+    form.secondary.value    = (jersey.palette || {}).secondary || '#ffffff';
+    form.accent.value       = (jersey.palette || {}).accent    || '#000000';
+    form.stripes.checked    = !!(jersey.palette || {}).stripes;
+    form.crest.value        = jersey.crest || '';
+    form.shirtNumber.value  = jersey.number || '';
+    form.sortOrder.value    = jersey.sortOrder || 0;
+    form.hidden.checked     = !!jersey.hidden;
+  }
+
+  modal.hidden = false;
+  requestAnimationFrame(() => modal.classList.add('show'));
+  document.body.style.overflow = 'hidden';
+}
+
+function closeJerseyEditor() {
+  const modal = document.getElementById('jerseyEditor');
+  modal.classList.remove('show');
+  setTimeout(() => { modal.hidden = true; }, 250);
+  document.body.style.overflow = '';
+}
+
+async function handleJerseySubmit(e) {
+  e.preventDefault();
+  const form = e.target;
+  if (!form.checkValidity()) { form.reportValidity(); return; }
+
+  const fd = new FormData(form);
+  const country = (fd.get('country') || '').toString().trim();
+  const edition = (fd.get('edition') || '').toString().trim();
+
+  // ID strategy: existing rows keep their id; new rows get a slug
+  let id = (fd.get('id') || '').toString().trim();
+  if (!id) {
+    const slug = (country + '-' + edition).toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 40);
+    id = slug + '-' + Math.random().toString(36).slice(2, 6);
+  }
+
+  const jersey = {
+    id,
+    country,
+    edition,
+    tag:        fd.get('tag') || 'home',
+    price:      parseInt(fd.get('price'), 10) || 0,
+    inStock:    form.inStock.checked,
+    stockLeft:  parseInt(fd.get('stockLeft'), 10) || 0,
+    comingSoon: (fd.get('tag') === 'coming'),
+    palette: {
+      primary:   fd.get('primary'),
+      secondary: fd.get('secondary'),
+      accent:    fd.get('accent'),
+      stripes:   form.stripes.checked,
+    },
+    crest:     (fd.get('crest') || '').toString().trim(),
+    number:    (fd.get('shirtNumber') || '10').toString().trim(),
+    sortOrder: parseInt(fd.get('sortOrder'), 10) || 0,
+    hidden:    form.hidden.checked,
+  };
+
+  const msg = document.getElementById('jerseyFormMsg');
+  const btn = document.getElementById('jerseyFormSave');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  try {
+    await pushJersey(jersey);
+    msg.hidden = false; msg.className = 'review-form-msg ok'; msg.textContent = '✓ Saved.';
+
+    // Optimistic local update — replace or insert
+    const existing = JERSEYS.findIndex(x => x.id === id);
+    const next = [...JERSEYS];
+    if (existing >= 0) next[existing] = { ...JERSEYS[existing], ...jersey };
+    else next.push(jersey);
+    setJerseys(next);
+
+    setTimeout(closeJerseyEditor, 600);
+  } catch (err) {
+    console.warn(err);
+    msg.hidden = false; msg.className = 'review-form-msg err'; msg.textContent = '✗ ' + (err.message || err);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Save Jersey';
+  }
+}
+
+/* Refresh any dropdown that lists jerseys (Media Library, Showcase form, etc.) */
+function refreshJerseyDropdowns() {
+  ['mediaJerseySelect', 'showcaseForm'].forEach(sel => {
+    if (sel === 'showcaseForm') {
+      const select = document.querySelector('#showcaseForm select[name=jerseyId]');
+      if (!select) return;
+      const current = select.value;
+      select.innerHTML = '<option value="">— None —</option>';
+      JERSEYS.forEach(j => {
+        const opt = document.createElement('option');
+        opt.value = j.id; opt.textContent = `${j.country} — ${j.edition}`;
+        select.appendChild(opt);
+      });
+      if (current) select.value = current;
+    } else {
+      const select = document.getElementById(sel);
+      if (!select) return;
+      const current = select.value;
+      select.innerHTML = '';
+      JERSEYS.forEach(j => {
+        const opt = document.createElement('option');
+        opt.value = j.id; opt.textContent = `${j.country} — ${j.edition}`;
+        select.appendChild(opt);
+      });
+      if (current && JERSEYS.find(j => j.id === current)) select.value = current;
+    }
+  });
 }

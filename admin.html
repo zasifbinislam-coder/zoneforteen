@@ -86,6 +86,108 @@
         </div>
       </section>
 
+      <!-- Jerseys catalog — add/edit/delete jerseys -->
+      <section class="admin-jerseys">
+        <header class="admin-section-head">
+          <h2>🎽 Jerseys Catalog</h2>
+          <p>Add new jerseys, edit prices, toggle in-stock, change colors. Changes appear on the homepage instantly.</p>
+        </header>
+
+        <div class="jerseys-toolbar">
+          <button type="button" class="btn btn-primary" id="addJerseyBtn">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"/></svg>
+            Add New Jersey
+          </button>
+          <button type="button" class="btn btn-ghost" id="seedJerseysBtn" title="Copy the static catalog into your database so you can edit any jersey">
+            Seed Catalog from Defaults
+          </button>
+          <span class="jerseys-count" id="jerseysCount"></span>
+        </div>
+
+        <div class="admin-jerseys-list" id="adminJerseysList">
+          <!-- populated by admin.js -->
+        </div>
+      </section>
+
+      <!-- Jersey editor modal -->
+      <div id="jerseyEditor" class="jersey-editor" role="dialog" aria-modal="true" hidden>
+        <div class="jersey-editor-card">
+          <button type="button" class="jersey-editor-close" id="jerseyEditorClose" aria-label="Close">×</button>
+          <h3 id="jerseyEditorTitle">Add Jersey</h3>
+          <form id="jerseyForm" class="review-form" novalidate>
+            <input type="hidden" name="id" />
+            <div class="form-row">
+              <label>Country<span class="req">*</span>
+                <input type="text" name="country" required maxlength="40" placeholder="e.g. Brazil" />
+              </label>
+              <label>Edition<span class="req">*</span>
+                <input type="text" name="edition" required maxlength="40" placeholder="e.g. Home Kit" />
+              </label>
+            </div>
+            <div class="form-row">
+              <label>Tag
+                <select name="tag">
+                  <option value="home">Home</option>
+                  <option value="away">Away</option>
+                  <option value="third">Third</option>
+                  <option value="coming">Coming Soon</option>
+                </select>
+              </label>
+              <label>Price (BDT)<span class="req">*</span>
+                <input type="number" name="price" required min="0" max="99999" placeholder="1499" />
+              </label>
+            </div>
+            <div class="form-row">
+              <label>Stock left
+                <input type="number" name="stockLeft" min="0" max="9999" value="0" />
+              </label>
+              <label class="opt-card" style="margin-top:24px">
+                <input type="checkbox" name="inStock" checked />
+                <span>In Stock (orderable)</span>
+              </label>
+            </div>
+            <div class="form-row">
+              <label>Primary color<span class="req">*</span>
+                <input type="color" name="primary" required value="#cccccc" />
+              </label>
+              <label>Secondary color
+                <input type="color" name="secondary" value="#ffffff" />
+              </label>
+              <label>Accent color
+                <input type="color" name="accent" value="#000000" />
+              </label>
+              <label class="opt-card" style="margin-top:24px">
+                <input type="checkbox" name="stripes" />
+                <span>Stripes</span>
+              </label>
+            </div>
+            <div class="form-row">
+              <label>Crest text
+                <input type="text" name="crest" maxlength="8" placeholder="CBF" />
+              </label>
+              <label>Default number
+                <input type="text" name="shirtNumber" maxlength="3" placeholder="10" />
+              </label>
+            </div>
+            <div class="form-row">
+              <label>Sort priority
+                <input type="number" name="sortOrder" value="0" min="0" max="9999" />
+                <span class="hint">Higher = appears first</span>
+              </label>
+              <label class="opt-card" style="margin-top:24px">
+                <input type="checkbox" name="hidden" />
+                <span>Hidden (don't show)</span>
+              </label>
+            </div>
+            <p class="review-form-msg" id="jerseyFormMsg" hidden></p>
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+              <button type="button" class="btn btn-ghost" id="jerseyFormCancel">Cancel</button>
+              <button type="submit" class="btn btn-primary" id="jerseyFormSave">Save Jersey</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
       <!-- Media Library — admin uploads jersey photos & videos -->
       <section class="admin-media">
         <header class="admin-section-head">

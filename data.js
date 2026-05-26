@@ -348,6 +348,7 @@ async function syncFromSupabase() {
       { data: media,   error: e3 },
       { data: reviews, error: e4 },
       { data: showcase, error: e5 },
+      { data: jerseys,  error: e6 },
     ] = await Promise.all([
       sb.from('predictions').select('*'),
       sb.from('match_results').select('*'),
@@ -358,10 +359,20 @@ async function syncFromSupabase() {
       sb.from('showcase_videos').select('*')
         .order('sort_order', { ascending: false })
         .order('created_at', { ascending: false }),
+      sb.from('jerseys').select('*').eq('hidden', false)
+        .order('sort_order', { ascending: false })
+        .order('created_at', { ascending: true }),
     ]);
     if (e1) throw e1;
     if (e2) throw e2;
     if (e3) throw e3;
+    // jerseys override — when populated, replaces the static seed catalog
+    if (!e6 && jerseys && jerseys.length > 0) {
+      const mapped = jerseys.map(rowToJersey);
+      localStorage.setItem(JERSEYS_KEY, JSON.stringify(mapped));
+      setJerseys(mapped);
+    }
+
     // showcase error non-fatal — table may not exist yet on first deploy
     if (!e5 && showcase) {
       const localShowcase = showcase.map(r => ({
@@ -472,7 +483,26 @@ function subscribeToSupabaseChanges() {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'showcase_videos' },
         () => syncFromSupabase())
     .subscribe();
+  sb.channel('zone14-jerseys')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'jerseys' },
+        () => syncFromSupabase())
+    .subscribe();
 }
+
+/* On page boot, hydrate JERSEYS from localStorage cache instantly (before
+   the network sync completes) so the catalog reflects admin changes from
+   the very first paint, not after a 300ms Supabase round-trip. */
+(function hydrateJerseysFromCache() {
+  try {
+    const raw = localStorage.getItem(JERSEYS_KEY);
+    if (!raw) return;
+    const cached = JSON.parse(raw);
+    if (Array.isArray(cached) && cached.length > 0) {
+      // Defer until JERSEYS const has been assigned below
+      setTimeout(() => setJerseys(cached), 0);
+    }
+  } catch (_) {}
+})();
 
 /* Background pushes — called from savePrediction / saveResult / clearResult.
    Fire-and-forget; UI doesn't wait on them. */
@@ -889,6 +919,102 @@ async function deleteShowcaseRemote(id, videoPath, posterPath) {
 }
 
 /* ============================================================
+   JERSEYS — admin catalog override. When the Supabase `jerseys` table
+   has any rows, JERSEYS[] is replaced by them. Empty table = static seed.
+   ============================================================ */
+const JERSEYS_KEY = 'zone14_jerseys_v1';
+const JERSEYS_SEED_BACKUP = null; // populated below after JERSEYS is declared
+
+/* Replace JERSEYS in place so all existing references keep working.
+   Dispatches 'jerseys:change' so the UI re-renders. */
+function setJerseys(arr) {
+  JERSEYS.length = 0;
+  arr.forEach(j => JERSEYS.push(j));
+  window.dispatchEvent(new CustomEvent('jerseys:change'));
+}
+
+/* Convert a Supabase row → JERSEYS[] item shape */
+function rowToJersey(r) {
+  return {
+    id:         r.id,
+    country:    r.country,
+    edition:    r.edition,
+    tag:        r.tag,
+    price:      r.price,
+    inStock:    !!r.in_stock,
+    stockLeft:  r.stock_left || 0,
+    comingSoon: !!r.coming_soon,
+    palette: {
+      primary:   r.palette_primary || '#cccccc',
+      secondary: r.palette_secondary || '#ffffff',
+      accent:    r.palette_accent || '#000000',
+      stripes:   !!r.palette_stripes,
+    },
+    crest:  r.crest || '',
+    number: r.shirt_number || '10',
+    images: [], video: '',
+    details: {
+      fabric: r.fabric || 'Premium polyester · 100% breathable mesh',
+      fit:    r.fit    || 'Slim athletic cut · True to Nike/Adidas international sizing',
+      care:   r.care   || 'Machine wash cold · Do not bleach · Hang dry · No iron on print',
+      origin: r.origin || 'Manufactured for Zone14, Bangladesh',
+    },
+    _override: true,  // marker so admin UI knows this is editable
+  };
+}
+
+/* Reverse — JERSEYS item shape → Supabase row */
+function jerseyToRow(j) {
+  return {
+    id:                j.id,
+    country:           j.country,
+    edition:           j.edition,
+    tag:               j.tag,
+    price:             j.price,
+    in_stock:          !!j.inStock,
+    stock_left:        j.stockLeft || 0,
+    coming_soon:       !!j.comingSoon,
+    palette_primary:   (j.palette || {}).primary,
+    palette_secondary: (j.palette || {}).secondary,
+    palette_accent:    (j.palette || {}).accent,
+    palette_stripes:   !!(j.palette || {}).stripes,
+    crest:             j.crest,
+    shirt_number:      j.number,
+    fabric:            (j.details || {}).fabric,
+    fit:               (j.details || {}).fit,
+    care:              (j.details || {}).care,
+    origin:            (j.details || {}).origin,
+    sort_order:        j.sortOrder || 0,
+    hidden:            !!j.hidden,
+    updated_at:        new Date().toISOString(),
+  };
+}
+
+async function pushJersey(jersey) {
+  const sb = getSupabase();
+  if (!sb) throw new Error('Supabase client not ready');
+  const row = jerseyToRow(jersey);
+  const { data, error } = await sb.from('jerseys').upsert(row).select().single();
+  if (error) throw error;
+  return data;
+}
+
+async function deleteJerseyRemote(id) {
+  const sb = getSupabase();
+  if (!sb) return;
+  await sb.from('jerseys').delete().eq('id', id).catch(() => {});
+}
+
+/* Seed the jerseys table from the static catalog on first use */
+async function seedJerseysFromStatic() {
+  const sb = getSupabase();
+  if (!sb) throw new Error('Supabase client not ready');
+  const rows = JERSEYS.map(jerseyToRow);
+  const { error } = await sb.from('jerseys').upsert(rows);
+  if (error) throw error;
+}
+
+/* ============================================================
    VIDEO SHOWCASE — declarative fallback cards (used only when the admin
    hasn't uploaded any showcase videos yet — keeps the section non-empty)
    ============================================================ */
@@ -931,7 +1057,7 @@ const DEFAULT_DETAILS = {
 function _jImgs(id, n)  { return Array.from({length: n}, (_, i) => `images/jerseys/${id}/${i+1}.jpg`); }
 function _jVideo(id)    { return `videos/jerseys/${id}.mp4`; }
 
-const JERSEYS = [
+let JERSEYS = [
   /* ----- HOME KITS (in stock) ----- */
   {
     id: 'bra-home', country: 'Brazil', edition: 'Home Kit', tag: 'home',
