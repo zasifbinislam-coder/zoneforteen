@@ -63,7 +63,11 @@ function bootDashboard() {
   });
 
   document.getElementById('exportOrders').addEventListener('click', exportOrdersJson);
-  document.getElementById('clearAll').addEventListener('click', clearAllOrders);
+  const clearBtn = document.getElementById('clearAll');
+  clearBtn.addEventListener('click', confirmTwoClicks(clearBtn, () => {
+    localStorage.removeItem(ORDERS_KEY);
+    render();
+  }, { confirmText: 'Click again to delete ALL' }));
 
   document.getElementById('orderSearch').addEventListener('input', e => {
     state.search = e.target.value.toLowerCase();
@@ -296,10 +300,8 @@ function renderMediaGallery() {
   }).join('');
 
   wrap.querySelectorAll('.media-tile-del').forEach(btn => {
-    btn.addEventListener('click', async e => {
-      e.stopPropagation();
+    btn.addEventListener('click', confirmTwoClicks(btn, async () => {
       const tile = btn.closest('.media-tile');
-      if (!confirm('Delete this file? It will be removed from Supabase Storage and every customer\'s view.')) return;
       const assetId = tile.dataset.aid;
       const jerseyId = tile.dataset.jid;
       const bucket = getJerseyMedia(jerseyId);
@@ -309,7 +311,7 @@ function renderMediaGallery() {
       }
       removeAsset(jerseyId, assetId);          // removes from local cache
       renderMediaGallery();
-    });
+    }));
   });
 
   // Click image/video to open in new tab
@@ -425,16 +427,58 @@ function renderAdminReviewsList() {
   }).join('');
 
   wrap.querySelectorAll('[data-del]').forEach(btn => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', confirmTwoClicks(btn, async () => {
       const tile = btn.closest('.admin-review-tile');
-      if (!confirm('Delete this review? This removes it from the homepage too.')) return;
       const id = tile.dataset.id;
       const photoPath = tile.dataset.photoPath || null;
       const videoPath = tile.dataset.videoPath || null;
       await deleteReviewRemote(id, photoPath, videoPath);
       writeReviews(readReviews().filter(r => r.id !== id));
-    });
+    }));
   });
+}
+
+/* Two-click delete helper. Native confirm() is silently dismissed in
+   some browsers / Safari configs, which made every delete button look
+   broken. This wraps a click handler so the first click flags the button
+   (red glow + label/title swap) and the second click within `timeout`ms
+   actually runs the destructive op. Auto-reverts after the timeout. */
+function confirmTwoClicks(btn, onConfirm, opts) {
+  opts = opts || {};
+  const timeout = opts.timeout || 3500;
+  const confirmText = opts.confirmText || 'Click again';
+  return async (ev) => {
+    if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+    if (btn.dataset.confirming === '1') {
+      btn.disabled = true;
+      btn.classList.add('is-confirming-running');
+      try { await onConfirm(ev); }
+      catch (e) { console.warn('Delete action failed:', e); }
+      btn.disabled = false;
+      delete btn.dataset.confirming;
+      btn.classList.remove('is-confirming', 'is-confirming-running');
+      if (btn._prevText != null) { btn.textContent = btn._prevText; delete btn._prevText; }
+      if (btn._prevTitle != null) { btn.title = btn._prevTitle; delete btn._prevTitle; }
+      return;
+    }
+    btn.dataset.confirming = '1';
+    btn.classList.add('is-confirming');
+    // Visual + a11y hint — preserve original label so we can restore it
+    btn._prevTitle = btn.title;
+    btn.title = 'Click again to confirm — auto-cancels in 3s';
+    if (btn.textContent.trim().length > 1 && btn.textContent.trim() !== '×') {
+      btn._prevText = btn.textContent;
+      btn.textContent = confirmText;
+    }
+    setTimeout(() => {
+      if (btn.dataset.confirming === '1') {
+        delete btn.dataset.confirming;
+        btn.classList.remove('is-confirming');
+        if (btn._prevText != null) { btn.textContent = btn._prevText; delete btn._prevText; }
+        if (btn._prevTitle != null) { btn.title = btn._prevTitle; delete btn._prevTitle; }
+      }
+    }, timeout);
+  };
 }
 
 function escapeAttr(s) {
@@ -557,15 +601,14 @@ function renderAdminShowcaseList() {
   `).join('');
 
   wrap.querySelectorAll('[data-del]').forEach(btn => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', confirmTwoClicks(btn, async () => {
       const tile = btn.closest('.admin-review-tile');
-      if (!confirm('Delete this showcase video? It will disappear from the homepage too.')) return;
       const id = tile.dataset.id;
       const videoPath = tile.dataset.videoPath || null;
       const posterPath = tile.dataset.posterPath || null;
       await deleteShowcaseRemote(id, videoPath, posterPath);
       writeShowcase(readShowcase().filter(v => v.id !== id));
-    });
+    }));
   });
 }
 
@@ -638,12 +681,11 @@ function renderResults() {
     });
   });
   wrap.querySelectorAll('[data-clear-result]').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', confirmTwoClicks(btn, () => {
       const card = btn.closest('.result-card');
-      if (!confirm('Clear this result? Predictions will go back to pending.')) return;
       clearResult(card.dataset.mid);
       renderResults();
-    });
+    }));
   });
 }
 
@@ -718,11 +760,10 @@ function renderOrders(orders) {
 
   // Wire delete
   wrap.querySelectorAll('[data-delete-ref]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (!confirm(`Delete order ${btn.dataset.deleteRef}? This can't be undone.`)) return;
+    btn.addEventListener('click', confirmTwoClicks(btn, () => {
       deleteOrder(btn.dataset.deleteRef);
       render();
-    });
+    }));
   });
 
   // Wire expand/collapse
@@ -869,12 +910,7 @@ function exportOrdersJson() {
   URL.revokeObjectURL(url);
 }
 
-function clearAllOrders() {
-  if (!confirm('Delete ALL orders permanently? This cannot be undone.')) return;
-  if (!confirm('Really delete everything? Last chance.')) return;
-  localStorage.removeItem(ORDERS_KEY);
-  render();
-}
+/* clearAllOrders is now bound via confirmTwoClicks in bootDashboard */
 
 function seedDemoOrders() {
   const demos = [
@@ -926,7 +962,8 @@ function initJerseysAdmin() {
   if (!list) return;
 
   document.getElementById('addJerseyBtn').addEventListener('click', () => openJerseyEditor(null));
-  document.getElementById('seedJerseysBtn').addEventListener('click', handleSeedJerseys);
+  const seedBtn = document.getElementById('seedJerseysBtn');
+  seedBtn.addEventListener('click', confirmTwoClicks(seedBtn, handleSeedJerseys, { confirmText: 'Click again to seed' }));
   document.getElementById('jerseyEditorClose').addEventListener('click', closeJerseyEditor);
   document.getElementById('jerseyFormCancel').addEventListener('click', closeJerseyEditor);
 
@@ -941,7 +978,6 @@ function initJerseysAdmin() {
 }
 
 async function handleSeedJerseys() {
-  if (!confirm('Copy the 12 default jerseys into your database? You\'ll then be able to edit any of them. Existing rows will be overwritten with the static defaults.')) return;
   const btn = document.getElementById('seedJerseysBtn');
   btn.disabled = true; btn.textContent = 'Seeding…';
   try {
@@ -1002,44 +1038,16 @@ function renderAdminJerseysList() {
     });
   });
   wrap.querySelectorAll('[data-del]').forEach(btn => {
-    btn.addEventListener('click', async (ev) => {
-      ev.preventDefault();
-      ev.stopPropagation();
+    btn.addEventListener('click', confirmTwoClicks(btn, async () => {
       const row = btn.closest('.admin-jersey-row');
       const id  = row.dataset.id;
-      const j   = JERSEYS.find(x => x.id === id);
-      if (!j) return;
-
-      // Two-click delete instead of confirm() — some browsers auto-dismiss
-      // native confirm dialogs, which made delete silently no-op for Sir.
-      if (btn.dataset.confirming === '1') {
-        btn.disabled = true;
-        btn.textContent = 'Deleting…';
-        try {
-          await deleteJerseyRemote(id);
-          // Optimistic local removal — realtime sync will confirm
-          setJerseys(JERSEYS.filter(x => x.id !== id));
-        } catch (err) {
-          alert('Delete failed: ' + (err.message || err));
-          btn.disabled = false;
-          btn.textContent = 'Delete';
-          delete btn.dataset.confirming;
-        }
-        return;
+      try {
+        await deleteJerseyRemote(id);
+        setJerseys(JERSEYS.filter(x => x.id !== id));
+      } catch (err) {
+        alert('Delete failed: ' + (err.message || err));
       }
-      btn.dataset.confirming = '1';
-      btn.textContent = 'Click again to confirm';
-      btn.style.background = 'rgba(255,107,107,0.2)';
-      btn.style.borderColor = '#ff6b6b';
-      setTimeout(() => {
-        if (btn.dataset.confirming === '1') {
-          delete btn.dataset.confirming;
-          btn.textContent = 'Delete';
-          btn.style.background = '';
-          btn.style.borderColor = '';
-        }
-      }, 3500);
-    });
+    }));
   });
 }
 
@@ -1334,10 +1342,8 @@ function renderPlayersList() {
   }).join('');
 
   wrap.querySelectorAll('[data-del-player]').forEach(btn => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', confirmTwoClicks(btn, async () => {
       const idx = parseInt(btn.closest('.player-row').dataset.idx, 10);
-      const p = PLAYERS[idx];
-      if (!confirm(`Remove player "${p.name}"?`)) return;
       const next = PLAYERS.filter((_, i) => i !== idx);
       try {
         await pushSetting('players', next);
@@ -1347,7 +1353,7 @@ function renderPlayersList() {
       } catch (err) {
         alert('Delete failed: ' + (err.message || err));
       }
-    });
+    }));
   });
 }
 
@@ -1408,10 +1414,8 @@ function renderOffersList() {
   `).join('');
 
   wrap.querySelectorAll('[data-del-offer]').forEach(btn => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', confirmTwoClicks(btn, async () => {
       const idx = parseInt(btn.closest('.offer-row').dataset.idx, 10);
-      const o = OFFERS[idx];
-      if (!confirm(`Remove offer "${o.title}"?`)) return;
       const next = OFFERS.filter((_, i) => i !== idx);
       try {
         await pushSetting('offers', next);
@@ -1421,7 +1425,7 @@ function renderOffersList() {
       } catch (err) {
         alert('Delete failed: ' + (err.message || err));
       }
-    });
+    }));
   });
 }
 
@@ -1523,9 +1527,8 @@ function renderPromosList() {
   }).join('');
 
   wrap.querySelectorAll('[data-del-promo]').forEach(btn => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', confirmTwoClicks(btn, async () => {
       const code = btn.closest('.promo-row').dataset.code;
-      if (!confirm(`Remove promo code "${code}"?`)) return;
       const next = { ...PROMOS };
       delete next[code];
       try {
@@ -1536,7 +1539,7 @@ function renderPromosList() {
       } catch (err) {
         alert('Delete failed: ' + (err.message || err));
       }
-    });
+    }));
   });
 }
 
