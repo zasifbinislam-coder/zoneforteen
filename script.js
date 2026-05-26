@@ -260,55 +260,60 @@ function initReveal() {
 }
 
 /* ---------- REVIEWS CAROUSEL ---------- */
+/* Reviews are presented as a continuous right-to-left marquee. We clone the
+   card list once so the CSS animation can loop seamlessly (translateX(-50%)
+   takes us exactly to the start of the duplicate). Arrows nudge manually
+   and pause the float. Mouse hover also pauses for reading.
+   Re-runs are idempotent — calling initReviews again after renderDynamicReviews
+   replaces the cards resets the clones cleanly. */
 function initReviews() {
   const track = document.getElementById('reviewsTrack');
-  const prev = document.getElementById('reviewPrev');
-  const next = document.getElementById('reviewNext');
+  const prev  = document.getElementById('reviewPrev');
+  const next  = document.getElementById('reviewNext');
   if (!track) return;
 
-  let index = 0;
-  const cards = track.children;
-  const total = cards.length;
+  // Strip any previous clones so we don't double up on re-init
+  track.querySelectorAll('[data-clone]').forEach(el => el.remove());
+  track.classList.remove('is-floating', 'is-paused');
+  track.style.transform = '';
+  track.style.animation = '';
 
-  const perView = () => {
-    if (window.innerWidth >= 968) return 3;
-    if (window.innerWidth >= 640) return 2;
-    return 1;
+  const originals = Array.from(track.children);
+  const total = originals.length;
+  if (total === 0) return;
+
+  // Clone the entire set once so the marquee can loop seamlessly
+  originals.forEach(card => {
+    const clone = card.cloneNode(true);
+    clone.setAttribute('data-clone', '1');
+    clone.setAttribute('aria-hidden', 'true');
+    track.appendChild(clone);
+  });
+
+  // Pick a duration based on card count — ~6s per card feels natural
+  const seconds = Math.max(30, total * 6);
+  track.style.setProperty('--marquee-duration', seconds + 's');
+  track.classList.add('is-floating');
+
+  // Manual arrows nudge by one card-width and pause the float briefly.
+  // Touching the play state directly via class is cleaner than fighting CSS.
+  let pauseTimer = null;
+  const nudge = (dir) => {
+    track.classList.add('is-paused');
+    const cardW = originals[0].getBoundingClientRect().width + 24;
+    const cur = parseFloat(track.dataset.nudge || '0');
+    const nx  = cur + dir * cardW;
+    track.style.transform = `translateX(${-nx}px)`;
+    track.dataset.nudge = nx;
+    clearTimeout(pauseTimer);
+    pauseTimer = setTimeout(() => {
+      track.classList.remove('is-paused');
+      track.style.transform = '';
+      track.dataset.nudge = '0';
+    }, 5000);
   };
-
-  const update = () => {
-    const pv = perView();
-    const maxIndex = Math.max(0, total - pv);
-    if (index > maxIndex) index = maxIndex;
-    if (index < 0) index = 0;
-    const card = cards[0];
-    if (!card) return;
-    const cardWidth = card.getBoundingClientRect().width;
-    const gap = 24;
-    const offset = index * (cardWidth + gap);
-    track.style.transform = `translateX(-${offset}px)`;
-  };
-
-  prev.addEventListener('click', () => { index--; update(); });
-  next.addEventListener('click', () => { index++; update(); });
-
-  let autoplay = setInterval(() => {
-    const pv = perView();
-    index = (index + 1) % Math.max(1, total - pv + 1);
-    update();
-  }, 5000);
-
-  [prev, next].forEach(b => b.addEventListener('click', () => {
-    clearInterval(autoplay);
-    autoplay = setInterval(() => {
-      const pv = perView();
-      index = (index + 1) % Math.max(1, total - pv + 1);
-      update();
-    }, 7000);
-  }));
-
-  window.addEventListener('resize', update);
-  update();
+  if (prev) prev.addEventListener('click', () => nudge(-1));
+  if (next) next.addEventListener('click', () => nudge(1));
 }
 
 /* ---------- CONFETTI (hero) ---------- */
@@ -455,7 +460,12 @@ function initCartPill() {
    ============================================================ */
 function renderDynamicReviews() {
   const reviews = readReviews();
-  if (!reviews || reviews.length === 0) return;   // keep static fallback
+  if (!reviews || reviews.length === 0) {
+    // No admin reviews — make sure the static fallback marquee is initialized.
+    // (Re-call is safe; initReviews strips clones first.)
+    if (typeof initReviews === 'function') initReviews();
+    return;
+  }
 
   const track = document.getElementById('reviewsTrack');
   if (!track) return;
@@ -498,6 +508,9 @@ function renderDynamicReviews() {
       </article>
     `;
   }).join('');
+
+  // After replacing the cards, re-init so the marquee picks up the new set
+  if (typeof initReviews === 'function') initReviews();
 }
 
 function hashStr(s) {

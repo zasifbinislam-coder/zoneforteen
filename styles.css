@@ -1755,6 +1755,27 @@ h1, h2, h3, .display {
   gap: 24px;
   transition: transform 0.6s var(--ease-out);
 }
+
+/* Floating marquee mode — cards drift right→left continuously. JS clones the
+   card list once so the loop seams perfectly (the second set starts exactly
+   where the first ended). Hovering pauses for readability. Manual arrow
+   clicks also pause autoplay. */
+.reviews-track.is-floating {
+  animation: reviews-float var(--marquee-duration, 60s) linear infinite;
+  transition: none;
+  will-change: transform;
+}
+.reviews-track.is-floating:hover,
+.reviews-track.is-floating.is-paused {
+  animation-play-state: paused;
+}
+@keyframes reviews-float {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }   /* exactly the first half (= 1 clone) */
+}
+@media (prefers-reduced-motion: reduce) {
+  .reviews-track.is-floating { animation: none; }
+}
 .review-card {
   flex: 0 0 calc(33.333% - 16px);
   padding: 28px;
