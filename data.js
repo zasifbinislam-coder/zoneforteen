@@ -3,11 +3,14 @@
    Loaded by both index.html and order.html
    ============================================================ */
 
-const WHATSAPP = '8801723360078';
-const KICKOFF  = new Date('2026-06-11T18:00:00-05:00'); // 11 June 2026, Estadio Azteca
+/* These start with the defaults below but can be overridden at runtime by
+   site_settings rows from Supabase (loaded in syncFromSupabase). Use `let`
+   so the admin Settings panel can mutate them after edits. */
+let WHATSAPP = '8801723360078';
+let KICKOFF  = new Date('2026-06-11T18:00:00-05:00'); // 11 June 2026, Estadio Azteca
 
 /* Delivery charges (BDT) */
-const DELIVERY = {
+let DELIVERY = {
   dhaka:   70,
   outside: 130,
   freeAbove: 3000,         // free delivery above this subtotal
@@ -16,12 +19,27 @@ const DELIVERY = {
 const CUSTOM_PRINT_FEE = 150; // per jersey for name+number
 
 /* Promo codes (mock — real validation happens manually on WhatsApp side) */
-const PROMOS = {
+let PROMOS = {
   WC2026:     { type: 'pct',  value: 10, label: '10% off — World Cup 2026' },
   ZONE14:     { type: 'pct',  value: 14, label: '14% off — Zone14 launch' },
   FIRSTORDER: { type: 'flat', value: 150, label: '৳150 off your first order' },
   TEAMSET:    { type: 'pct',  value: 25, label: '25% off — Full Team Set (5+ jerseys)' },
   MATCHDAY:   { type: 'pct',  value: 15, label: '15% off — Match Day special' },
+};
+
+/* Mobile-banking merchant numbers shown on the order page. Overridable from
+   the Settings admin panel. */
+let PAY_NUMBERS = {
+  bkash:  { label: 'bKash Send Money number',  number: '01723-360078' },
+  nagad:  { label: 'Nagad Send Money number',  number: '01723-360078' },
+  rocket: { label: 'Rocket Send Money number', number: '01723360078-1' },
+};
+
+/* Hero section copy — overridable from admin */
+let HERO = {
+  title:    'GEAR UP FOR THE',
+  accent:   'WORLD CUP 2026',
+  subtitle: 'Premium World Cup 2026 jerseys, handcrafted in Bangladesh. Worn by champions, built for fans.',
 };
 
 /* ---------- WORLD CUP 2026 MATCH HUB ---------- */
@@ -343,12 +361,13 @@ async function syncFromSupabase() {
   if (!sb) return false;
   try {
     const [
-      { data: preds,   error: e1 },
-      { data: results, error: e2 },
-      { data: media,   error: e3 },
-      { data: reviews, error: e4 },
+      { data: preds,    error: e1 },
+      { data: results,  error: e2 },
+      { data: media,    error: e3 },
+      { data: reviews,  error: e4 },
       { data: showcase, error: e5 },
       { data: jerseys,  error: e6 },
+      { data: settings, error: e7 },
     ] = await Promise.all([
       sb.from('predictions').select('*'),
       sb.from('match_results').select('*'),
@@ -362,7 +381,16 @@ async function syncFromSupabase() {
       sb.from('jerseys').select('*').eq('hidden', false)
         .order('sort_order', { ascending: false })
         .order('created_at', { ascending: true }),
+      sb.from('site_settings').select('*'),
     ]);
+
+    // Site settings — apply before anything else so prices/promos are correct
+    if (!e7 && Array.isArray(settings)) {
+      const map = {};
+      settings.forEach(r => { map[r.key] = r.value; });
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(map));
+      applySettings(map);
+    }
     if (e1) throw e1;
     if (e2) throw e2;
     if (e3) throw e3;
@@ -485,6 +513,10 @@ function subscribeToSupabaseChanges() {
     .subscribe();
   sb.channel('zone14-jerseys')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'jerseys' },
+        () => syncFromSupabase())
+    .subscribe();
+  sb.channel('zone14-site-settings')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'site_settings' },
         () => syncFromSupabase())
     .subscribe();
 }
@@ -1004,6 +1036,52 @@ async function deleteJerseyRemote(id) {
   if (!sb) return;
   await sb.from('jerseys').delete().eq('id', id).catch(() => {});
 }
+
+/* ============================================================
+   SITE SETTINGS — key/value config from Supabase site_settings table.
+   Loaded on boot and applied to module-level configs (DELIVERY, PROMOS,
+   PAY_NUMBERS, WHATSAPP, KICKOFF, HERO). Admin panel pushes updates here.
+   ============================================================ */
+const SETTINGS_KEY = 'zone14_settings_v1';
+
+function readSettings() {
+  try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; }
+  catch (_) { return {}; }
+}
+function writeSettings(obj) {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(obj));
+  window.dispatchEvent(new CustomEvent('settings:change'));
+}
+
+/* Apply a settings map (key → value) to live module-level configs.
+   Called from sync + hydration; the *values* of these vars change in place. */
+function applySettings(settings) {
+  if (!settings || typeof settings !== 'object') return;
+  if (settings.whatsapp)        WHATSAPP    = settings.whatsapp;
+  if (settings.kickoff)         KICKOFF     = new Date(settings.kickoff);
+  if (settings.delivery)        DELIVERY    = { ...DELIVERY, ...settings.delivery };
+  if (settings.promos)          PROMOS      = { ...settings.promos };
+  if (settings.payment_numbers) PAY_NUMBERS = { ...PAY_NUMBERS, ...settings.payment_numbers };
+  if (settings.hero)            HERO        = { ...HERO, ...settings.hero };
+  window.dispatchEvent(new CustomEvent('settings:applied'));
+}
+
+async function pushSetting(key, value) {
+  const sb = getSupabase();
+  if (!sb) throw new Error('Supabase client not ready');
+  const { error } = await sb.from('site_settings').upsert({
+    key, value, updated_at: new Date().toISOString(),
+  });
+  if (error) throw error;
+}
+
+/* Hydrate from cache on boot so saved settings apply before network sync */
+(function hydrateSettingsFromCache() {
+  setTimeout(() => {
+    const cached = readSettings();
+    if (Object.keys(cached).length > 0) applySettings(cached);
+  }, 0);
+})();
 
 /* Seed the jerseys table from the static catalog on first use */
 async function seedJerseysFromStatic() {

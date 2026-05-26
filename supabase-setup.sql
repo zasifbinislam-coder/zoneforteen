@@ -211,3 +211,26 @@ create policy "jerseys_update" on public.jerseys for update using (true) with ch
 create policy "jerseys_delete" on public.jerseys for delete using (true);
 
 alter publication supabase_realtime add table public.jerseys;
+
+-- ============================================================
+-- 11. SITE SETTINGS — key/value config (hero text, payment numbers,
+-- delivery rates, promo codes, etc.). Admin Settings panel edits these.
+-- ============================================================
+create table if not exists public.site_settings (
+  key         text primary key,
+  value       jsonb not null,
+  updated_at  timestamptz default now()
+);
+
+alter table public.site_settings enable row level security;
+
+drop policy if exists "settings_read"   on public.site_settings;
+drop policy if exists "settings_insert" on public.site_settings;
+drop policy if exists "settings_update" on public.site_settings;
+drop policy if exists "settings_delete" on public.site_settings;
+create policy "settings_read"   on public.site_settings for select using (true);
+create policy "settings_insert" on public.site_settings for insert with check (true);
+create policy "settings_update" on public.site_settings for update using (true) with check (true);
+create policy "settings_delete" on public.site_settings for delete using (true);
+
+alter publication supabase_realtime add table public.site_settings;

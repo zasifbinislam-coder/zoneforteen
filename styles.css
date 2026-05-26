@@ -5452,6 +5452,75 @@ h1, h2, h3, .display {
 }
 .admin-section-head p { color: var(--text-dim); font-size: 13px; margin-bottom: 18px; }
 
+/* ============ SITE SETTINGS ADMIN ============ */
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 14px;
+}
+.settings-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+}
+.settings-card h3 {
+  font-family: 'Bohemian Typewriter', monospace;
+  font-size: 16px;
+  margin-bottom: 14px;
+  color: var(--neon);
+  letter-spacing: 0.04em;
+}
+.settings-card-hint { color: var(--text-mute); font-size: 12px; margin-bottom: 12px; }
+.settings-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+.settings-msg { font-size: 12px; font-weight: 600; }
+.settings-msg.ok  { color: #51e0a4; }
+.settings-msg.err { color: #ff6b6b; }
+
+.promos-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.promo-row {
+  display: grid;
+  grid-template-columns: 120px 90px 1fr 28px;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 8px;
+  font-size: 13px;
+}
+.promo-code-tag {
+  font-family: 'Courier Prime', monospace;
+  color: var(--neon);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+.promo-value { color: #ffb547; font-weight: 600; }
+.promo-label { color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.promo-add-row {
+  display: grid;
+  grid-template-columns: 160px 100px 100px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+}
+.promo-add-row input, .promo-add-row select {
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  font-size: 12px;
+}
+@media (max-width: 700px) {
+  .promo-row, .promo-add-row { grid-template-columns: 1fr; }
+}
+
 /* ============ JERSEYS CATALOG ADMIN ============ */
 .jerseys-toolbar {
   display: flex;

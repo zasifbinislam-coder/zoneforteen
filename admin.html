@@ -86,6 +86,111 @@
         </div>
       </section>
 
+      <!-- Site Settings — payment numbers, delivery rates, promo codes, hero text -->
+      <section class="admin-settings">
+        <header class="admin-section-head">
+          <h2>⚙️ Site Settings</h2>
+          <p>Mobile-banking numbers, delivery charges, promo codes, hero text. Changes go live instantly.</p>
+        </header>
+
+        <div class="settings-grid">
+
+          <!-- Payment numbers -->
+          <form id="paymentSettingsForm" class="settings-card">
+            <h3>💳 Mobile Banking Numbers</h3>
+            <div class="form-row">
+              <label>bKash number
+                <input type="text" name="bkash" placeholder="01XXXXXXXXX" maxlength="20" />
+              </label>
+              <label>Nagad number
+                <input type="text" name="nagad" placeholder="01XXXXXXXXX" maxlength="20" />
+              </label>
+              <label>Rocket number
+                <input type="text" name="rocket" placeholder="01XXXXXXXXX-1" maxlength="20" />
+              </label>
+            </div>
+            <div class="settings-actions">
+              <button type="submit" class="btn btn-primary">Save Numbers</button>
+              <span class="settings-msg" data-msg></span>
+            </div>
+          </form>
+
+          <!-- Delivery rates -->
+          <form id="deliverySettingsForm" class="settings-card">
+            <h3>🚚 Delivery Charges</h3>
+            <div class="form-row">
+              <label>Inside Dhaka (BDT)
+                <input type="number" name="dhaka" min="0" max="9999" placeholder="70" />
+              </label>
+              <label>Outside Dhaka (BDT)
+                <input type="number" name="outside" min="0" max="9999" placeholder="130" />
+              </label>
+              <label>Free delivery above (BDT)
+                <input type="number" name="freeAbove" min="0" max="999999" placeholder="3000" />
+              </label>
+            </div>
+            <div class="settings-actions">
+              <button type="submit" class="btn btn-primary">Save Rates</button>
+              <span class="settings-msg" data-msg></span>
+            </div>
+          </form>
+
+          <!-- WhatsApp + Hero text -->
+          <form id="brandSettingsForm" class="settings-card">
+            <h3>🎬 Brand &amp; Hero</h3>
+            <div class="form-row">
+              <label>WhatsApp business number
+                <input type="text" name="whatsapp" placeholder="8801XXXXXXXXX" maxlength="20" />
+                <span class="hint">Include country code, no +</span>
+              </label>
+              <label>World Cup kickoff (ISO)
+                <input type="text" name="kickoff" placeholder="2026-06-11T18:00:00-05:00" maxlength="30" />
+              </label>
+            </div>
+            <div class="form-row">
+              <label>Hero title (first line)
+                <input type="text" name="title" maxlength="60" placeholder="GEAR UP FOR THE" />
+              </label>
+              <label>Hero accent (cyan text)
+                <input type="text" name="accent" maxlength="60" placeholder="WORLD CUP 2026" />
+              </label>
+            </div>
+            <div class="form-row full">
+              <label>Hero subtitle
+                <textarea name="subtitle" rows="2" maxlength="240" placeholder="Premium World Cup 2026 jerseys..."></textarea>
+              </label>
+            </div>
+            <div class="settings-actions">
+              <button type="submit" class="btn btn-primary">Save Brand</button>
+              <span class="settings-msg" data-msg></span>
+            </div>
+          </form>
+
+        </div>
+
+        <!-- Promo codes — separate card spanning full width -->
+        <div class="settings-card" style="margin-top:16px">
+          <h3>🏷 Promo Codes</h3>
+          <p class="settings-card-hint">Codes customers can enter at checkout. <code>pct</code> = % off, <code>flat</code> = ৳ off.</p>
+
+          <div class="promos-list" id="promosList">
+            <!-- populated by admin.js -->
+          </div>
+
+          <form id="promoAddForm" class="promo-add-row">
+            <input type="text" name="code"  required placeholder="CODE (e.g. WC2026)" maxlength="16" />
+            <select name="type">
+              <option value="pct">% off</option>
+              <option value="flat">৳ off</option>
+            </select>
+            <input type="number" name="value" required min="1" max="99999" placeholder="Value" />
+            <input type="text" name="label" required placeholder="Label shown to customer" maxlength="80" />
+            <button type="submit" class="btn btn-primary btn-sm">Add</button>
+          </form>
+          <p class="settings-msg" id="promoMsg"></p>
+        </div>
+      </section>
+
       <!-- Jerseys catalog — add/edit/delete jerseys -->
       <section class="admin-jerseys">
         <header class="admin-section-head">

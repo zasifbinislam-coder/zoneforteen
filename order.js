@@ -7,13 +7,8 @@ const state = {
   promo: null,   // { code, label, type, value }
 };
 
-/* Mobile-banking merchant numbers shown on the order page.
-   Update these when Sir wires up real merchant accounts. */
-const PAY_NUMBERS = {
-  bkash:  { label: 'bKash Send Money number',  number: '01723-360078' },
-  nagad:  { label: 'Nagad Send Money number',  number: '01723-360078' },
-  rocket: { label: 'Rocket Send Money number', number: '01723360078-1' },
-};
+/* PAY_NUMBERS now lives in data.js (let) and is overridable from the
+   Settings admin panel via site_settings table. */
 
 /* ---------- Boot ---------- */
 document.addEventListener('DOMContentLoaded', () => {

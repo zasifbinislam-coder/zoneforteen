@@ -80,6 +80,7 @@ function bootDashboard() {
   initReviewsAdmin();
   initShowcaseAdmin();
   initJerseysAdmin();
+  initSettingsAdmin();
   window.addEventListener('storage', () => { render(); renderResults(); renderMediaGallery(); renderAdminReviewsList(); renderAdminShowcaseList(); renderAdminJerseysList(); });
   window.addEventListener('predictions:change', renderResults);
   window.addEventListener('results:change',     renderResults);
@@ -90,6 +91,8 @@ function bootDashboard() {
     renderAdminJerseysList();
     refreshJerseyDropdowns();
   });
+  window.addEventListener('settings:change',    fillSettingsForms);
+  window.addEventListener('settings:applied',   fillSettingsForms);
 
   // Pull latest shared predictions + results from Supabase, then subscribe
   // for realtime updates so admin sees customer activity live.
@@ -1120,6 +1123,165 @@ async function handleJerseySubmit(e) {
   } finally {
     btn.disabled = false; btn.textContent = 'Save Jersey';
   }
+}
+
+/* ============================================================
+   SITE SETTINGS ADMIN — payment numbers, delivery, promos, hero
+   ============================================================ */
+function initSettingsAdmin() {
+  if (!document.getElementById('paymentSettingsForm')) return;
+
+  fillSettingsForms();
+
+  document.getElementById('paymentSettingsForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const value = {
+      bkash:  { label: 'bKash Send Money number',  number: (fd.get('bkash')  || '').toString().trim() || PAY_NUMBERS.bkash.number },
+      nagad:  { label: 'Nagad Send Money number',  number: (fd.get('nagad')  || '').toString().trim() || PAY_NUMBERS.nagad.number },
+      rocket: { label: 'Rocket Send Money number', number: (fd.get('rocket') || '').toString().trim() || PAY_NUMBERS.rocket.number },
+    };
+    await saveSetting('payment_numbers', value, e.target);
+  });
+
+  document.getElementById('deliverySettingsForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const value = {
+      dhaka:     parseInt(fd.get('dhaka'),     10) || 0,
+      outside:   parseInt(fd.get('outside'),   10) || 0,
+      freeAbove: parseInt(fd.get('freeAbove'), 10) || 0,
+    };
+    await saveSetting('delivery', value, e.target);
+  });
+
+  document.getElementById('brandSettingsForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const whatsapp = (fd.get('whatsapp') || '').toString().trim();
+    const kickoff  = (fd.get('kickoff')  || '').toString().trim();
+    const hero = {
+      title:    (fd.get('title')    || '').toString().trim() || HERO.title,
+      accent:   (fd.get('accent')   || '').toString().trim() || HERO.accent,
+      subtitle: (fd.get('subtitle') || '').toString().trim() || HERO.subtitle,
+    };
+    try {
+      if (whatsapp) await pushSetting('whatsapp', whatsapp);
+      if (kickoff)  await pushSetting('kickoff', kickoff);
+      await pushSetting('hero', hero);
+      showSettingsMsg(e.target, 'ok', '✓ Saved');
+    } catch (err) {
+      showSettingsMsg(e.target, 'err', '✗ ' + (err.message || err));
+    }
+  });
+
+  document.getElementById('promoAddForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const code = (fd.get('code') || '').toString().trim().toUpperCase();
+    if (!code) return;
+    const next = { ...PROMOS, [code]: {
+      type:  fd.get('type'),
+      value: parseInt(fd.get('value'), 10) || 0,
+      label: (fd.get('label') || '').toString().trim(),
+    }};
+    try {
+      await pushSetting('promos', next);
+      PROMOS = next;
+      writeSettings({ ...readSettings(), promos: next });
+      e.target.reset();
+      renderPromosList();
+      document.getElementById('promoMsg').textContent = '✓ Added "' + code + '"';
+      setTimeout(() => document.getElementById('promoMsg').textContent = '', 3000);
+    } catch (err) {
+      document.getElementById('promoMsg').textContent = '✗ ' + (err.message || err);
+    }
+  });
+
+  renderPromosList();
+}
+
+async function saveSetting(key, value, formEl) {
+  try {
+    await pushSetting(key, value);
+    // Apply locally too so the form reflects the saved state
+    applySettings({ [key]: value });
+    writeSettings({ ...readSettings(), [key]: value });
+    showSettingsMsg(formEl, 'ok', '✓ Saved');
+  } catch (err) {
+    showSettingsMsg(formEl, 'err', '✗ ' + (err.message || err));
+  }
+}
+
+function showSettingsMsg(formEl, kind, text) {
+  const msg = formEl.querySelector('[data-msg]');
+  if (!msg) return;
+  msg.textContent = text;
+  msg.className = 'settings-msg ' + kind;
+  setTimeout(() => { msg.textContent = ''; msg.className = 'settings-msg'; }, 4000);
+}
+
+function fillSettingsForms() {
+  const pay = document.getElementById('paymentSettingsForm');
+  if (pay) {
+    pay.bkash.value  = PAY_NUMBERS.bkash.number;
+    pay.nagad.value  = PAY_NUMBERS.nagad.number;
+    pay.rocket.value = PAY_NUMBERS.rocket.number;
+  }
+  const del = document.getElementById('deliverySettingsForm');
+  if (del) {
+    del.dhaka.value     = DELIVERY.dhaka;
+    del.outside.value   = DELIVERY.outside;
+    del.freeAbove.value = DELIVERY.freeAbove;
+  }
+  const brand = document.getElementById('brandSettingsForm');
+  if (brand) {
+    brand.whatsapp.value = WHATSAPP;
+    brand.kickoff.value  = KICKOFF.toISOString();
+    brand.title.value    = HERO.title;
+    brand.accent.value   = HERO.accent;
+    brand.subtitle.value = HERO.subtitle;
+  }
+  renderPromosList();
+}
+
+function renderPromosList() {
+  const wrap = document.getElementById('promosList');
+  if (!wrap) return;
+  const codes = Object.keys(PROMOS);
+  if (codes.length === 0) {
+    wrap.innerHTML = '<p style="color:var(--text-mute);font-size:13px">No promo codes yet — add one below.</p>';
+    return;
+  }
+  wrap.innerHTML = codes.map(code => {
+    const p = PROMOS[code];
+    const valueDisplay = p.type === 'pct' ? `${p.value}%` : `৳${p.value}`;
+    return `
+      <div class="promo-row" data-code="${code}">
+        <code class="promo-code-tag">${code}</code>
+        <span class="promo-value">${valueDisplay} off</span>
+        <span class="promo-label">${escapeAttr(p.label)}</span>
+        <button type="button" class="qi-remove" data-del-promo title="Remove promo">×</button>
+      </div>
+    `;
+  }).join('');
+
+  wrap.querySelectorAll('[data-del-promo]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const code = btn.closest('.promo-row').dataset.code;
+      if (!confirm(`Remove promo code "${code}"?`)) return;
+      const next = { ...PROMOS };
+      delete next[code];
+      try {
+        await pushSetting('promos', next);
+        PROMOS = next;
+        writeSettings({ ...readSettings(), promos: next });
+        renderPromosList();
+      } catch (err) {
+        alert('Delete failed: ' + (err.message || err));
+      }
+    });
+  });
 }
 
 /* Refresh any dropdown that lists jerseys (Media Library, Showcase form, etc.) */

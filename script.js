@@ -1540,6 +1540,24 @@ function initNewsletter() {
    browser is actually playing frames — at that moment we briefly dim the
    logo poster so the eye reads a soft "lighting shift", then fade the video
    in over it. End effect: the load delay (~3-5s on slow links) is invisible. */
+/* Sync the hero title/accent/subtitle DOM with the HERO settings object.
+   Fired on boot and whenever admin saves the brand settings form. */
+function applyHeroToDOM() {
+  if (typeof HERO === 'undefined') return;
+  const t = document.getElementById('heroTitle');
+  const a = document.getElementById('heroAccent');
+  const s = document.getElementById('heroSubtitle');
+  if (t && HERO.title)  t.textContent = HERO.title;
+  if (a && HERO.accent) { a.textContent = HERO.accent; a.setAttribute('data-text', HERO.accent); }
+  if (s && HERO.subtitle) {
+    // Preserve the Bangla line if subtitle doesn't include one
+    const bn = s.querySelector('.bn');
+    s.innerHTML = '';
+    s.appendChild(document.createTextNode(HERO.subtitle));
+    if (bn) { s.appendChild(document.createElement('br')); s.appendChild(bn); }
+  }
+}
+
 function initHeroVideo() {
   const video  = document.getElementById('heroVideo');
   const poster = document.getElementById('heroPoster');
@@ -1578,6 +1596,7 @@ function initHeroVideo() {
 
 /* ---------- INIT ---------- */
 document.addEventListener('DOMContentLoaded', () => {
+  applyHeroToDOM();
   initHeroVideo();
   renderJerseys();
   initFilters();
@@ -1602,6 +1621,10 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('jerseys:change', () => {
     renderJerseys();
     if (typeof renderFilters === 'function') renderFilters();
+  });
+  window.addEventListener('settings:applied', () => {
+    applyHeroToDOM();
+    updateCountdown();
   });
   window.addEventListener('storage', e => {
     if (e.key === MEDIA_KEY) { renderJerseys(); renderVideoShowcase(); }
