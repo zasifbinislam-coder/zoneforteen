@@ -481,6 +481,11 @@ h1, h2, h3, .display {
   0%, 100% { opacity: 0.12; transform: translate(calc(-50% - 1.1%), -50%) scale(1); }
   50%      { opacity: 0.18; transform: translate(calc(-50% - 1.1%), -50%) scale(1.02); }
 }
+/* Mobile variant — bigger leftward nudge to visually centre the crest */
+@keyframes watermarkBreathMobile {
+  0%, 100% { opacity: 0.12; transform: translate(calc(-50% - 5%), -50%) scale(1); }
+  50%      { opacity: 0.18; transform: translate(calc(-50% - 5%), -50%) scale(1.02); }
+}
 
 .hero-badge {
   display: inline-flex;
@@ -2539,7 +2544,19 @@ h1, h2, h3, .display {
 
   .hero { padding: 100px 0 80px; }
   .hero-title { font-size: clamp(40px, 12vw, 80px); }
-  .hero-watermark { width: 145vw; opacity: 0.26; }
+
+  /* Centre the logo crest on narrow phones — the raw image sits slightly
+     right-of-centre, so we nudge object-position left to compensate. */
+  .hero-poster { object-position: calc(50% - 3%) center; }
+
+  /* Watermark: bigger leftward nudge on mobile — the logo in the image
+     is inherently right-of-centre, so we push harder than desktop's 1.1%. */
+  .hero-watermark {
+    width: 145vw;
+    opacity: 0.26;
+    transform: translate(calc(-50% - 5%), -50%);
+    animation-name: watermarkBreathMobile;
+  }
 
   .logo-mark { height: 80px; }
   .countdown { padding: 14px 18px; gap: 4px; }
