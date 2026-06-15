@@ -3131,6 +3131,243 @@ h1, h2, h3, .display {
   margin-bottom: 20px;
 }
 
+/* ============================================================
+   PROMOTIONAL SALE — strikethrough prices, card flash, popup
+   ============================================================ */
+/* On-sale price on jersey cards: old price struck, new price in gold */
+.jersey-price.on-sale { display: inline-flex; align-items: baseline; gap: 8px; }
+.jersey-price .price-was {
+  font-size: 16px;
+  color: var(--text-mute);
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+}
+.jersey-price .price-now { color: var(--gold); }
+
+/* Quick-view price strikethrough */
+.qv-price .price-was {
+  color: var(--text-mute);
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  margin-right: 8px;
+  font-size: 0.7em;
+}
+.qv-price .price-now { color: var(--gold); }
+
+/* Cart-line struck original price (order page) */
+.cart-item-price .ci-was {
+  color: var(--text-mute);
+  text-decoration: line-through;
+  font-size: 0.82em;
+  margin-right: 4px;
+}
+
+/* Corner "SALE −৳X" flash on cards */
+.sale-flash {
+  position: absolute;
+  top: 12px; left: 12px;
+  z-index: 4;
+  padding: 5px 10px;
+  background: var(--grad-gold);
+  color: #2a1c00;
+  font-family: 'Bebas Neue', 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(255, 215, 0, 0.35);
+  animation: salePulse 2.4s ease-in-out infinite;
+}
+@keyframes salePulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.06); }
+}
+
+/* ---- Sale popup overlay ---- */
+.sale-popup {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(8px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.sale-popup.show { display: flex; animation: fadeInUp 0.3s var(--ease-out); }
+.sale-popup-card {
+  position: relative;
+  max-width: 440px;
+  width: 100%;
+  padding: 40px 32px 28px;
+  text-align: center;
+  background:
+    radial-gradient(600px 300px at 50% 0%, rgba(255, 215, 0, 0.16) 0%, transparent 65%),
+    linear-gradient(180deg, #14110a 0%, #0a0f14 100%);
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 30px 90px -20px rgba(255, 215, 0, 0.3);
+  animation: popIn 0.4s var(--ease-out);
+}
+@keyframes popIn {
+  from { transform: scale(0.9) translateY(10px); opacity: 0; }
+  to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+.sale-popup-close {
+  position: absolute;
+  top: 14px; right: 14px;
+  width: 34px; height: 34px;
+  display: grid; place-items: center;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.sale-popup-close:hover { color: var(--text); background: var(--surface-hi); transform: rotate(90deg); }
+.sale-popup-badge {
+  display: inline-block;
+  padding: 6px 14px;
+  margin-bottom: 16px;
+  background: var(--grad-gold);
+  color: #2a1c00;
+  font-family: 'Bebas Neue', 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  border-radius: 999px;
+}
+.sale-popup-title {
+  font-family: 'Bohemian Typewriter', 'Bebas Neue', sans-serif;
+  font-size: 34px;
+  line-height: 1.05;
+  letter-spacing: 0.02em;
+  margin-bottom: 12px;
+  color: var(--gold);
+}
+.sale-popup-sub {
+  color: var(--text-dim);
+  font-size: 14.5px;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+.sale-popup-timer {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+.sale-popup-timer .sp-unit {
+  min-width: 54px;
+  padding: 10px 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--text-mute);
+  letter-spacing: 0.05em;
+}
+.sale-popup-timer .sp-unit b {
+  display: block;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+.sale-popup-cta { width: 100%; }
+.sale-popup-dismiss {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  background: none;
+  border: none;
+  color: var(--text-mute);
+  font-size: 13px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+.sale-popup-dismiss:hover { color: var(--text-dim); }
+
+@media (max-width: 480px) {
+  .sale-popup-card { padding: 34px 22px 24px; }
+  .sale-popup-title { font-size: 28px; }
+  .sale-popup-timer .sp-unit { min-width: 46px; }
+  .sale-popup-timer .sp-unit b { font-size: 22px; }
+}
+
+/* ============================================================
+   HERO VIDEO BAND — caption-free autoplay strip under the hero
+   ============================================================ */
+.hero-video-band {
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 0;
+}
+.hero-video-track {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;   /* center the tiles — single video sits dead-center */
+  align-items: center;
+  gap: 14px;
+  padding: 0 24px;
+}
+.hero-video-tile {
+  position: relative;
+  flex: 0 0 auto;
+  width: 210px;
+  aspect-ratio: 9 / 16;
+  padding: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--bg-2);
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  transition: transform 0.25s var(--ease-out), border-color 0.25s ease, box-shadow 0.25s ease;
+}
+.hero-video-tile:hover {
+  transform: translateY(-4px) scale(1.02);
+  border-color: var(--border-hi);
+  box-shadow: var(--shadow-neon);
+}
+.hero-video-tile video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;      /* clicks go to the button, not the <video> */
+}
+.hero-video-play {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 58px; height: 58px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(6, 10, 14, 0.55);
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  color: #fff;
+  backdrop-filter: blur(2px);
+  transition: transform 0.25s var(--ease-out), background 0.25s ease;
+}
+.hero-video-play svg { margin-left: 3px; }   /* optical-center the triangle */
+.hero-video-tile:hover .hero-video-play {
+  transform: scale(1.12);
+  background: var(--grad-neon);
+  color: #052424;
+  border-color: transparent;
+}
+@media (max-width: 768px) {
+  .hero-video-track { gap: 10px; padding: 0 16px; }
+  .hero-video-tile { width: 150px; }
+  .hero-video-play { width: 48px; height: 48px; }
+}
+
 @media (max-width: 968px) {
   .checkout-grid { grid-template-columns: 1fr; }
   .order-summary { position: static; }
@@ -5050,6 +5287,29 @@ h1, h2, h3, .display {
   text-transform: uppercase;
 }
 .mc-final-label strong { color: var(--text); }
+
+/* Live match state — red glow + pulsing dot */
+.mc-final.live {
+  background: rgba(255, 59, 92, 0.08);
+  border-color: rgba(255, 59, 92, 0.4);
+}
+.mc-final.live .mc-final-score { color: var(--red); }
+.mc-final.live .mc-final-label { color: var(--red); font-weight: 700; }
+.live-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  margin-right: 4px;
+  border-radius: 50%;
+  background: var(--red);
+  box-shadow: 0 0 0 0 rgba(255, 59, 92, 0.6);
+  animation: livePulse 1.4s ease-out infinite;
+  vertical-align: middle;
+}
+@keyframes livePulse {
+  0%   { box-shadow: 0 0 0 0 rgba(255, 59, 92, 0.6); }
+  70%  { box-shadow: 0 0 0 7px rgba(255, 59, 92, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 59, 92, 0); }
+}
 .my-pred {
   display: inline-block;
   margin-top: 6px;
@@ -5721,7 +5981,7 @@ h1, h2, h3, .display {
 }
 .admin-jersey-row {
   display: grid;
-  grid-template-columns: 56px 1fr auto;
+  grid-template-columns: auto 56px 1fr auto;
   align-items: center;
   gap: 14px;
   padding: 12px 14px;
@@ -5731,6 +5991,30 @@ h1, h2, h3, .display {
   transition: background 0.15s ease;
 }
 .admin-jersey-row:hover { background: rgba(94, 233, 227, 0.05); }
+.ajr-order {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.ajr-move {
+  width: 26px; height: 22px;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--text-dim);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.ajr-move:hover:not(:disabled) {
+  color: #052424;
+  background: var(--neon);
+  border-color: transparent;
+}
+.ajr-move:disabled { opacity: 0.3; cursor: not-allowed; }
 .ajr-swatch {
   width: 56px; height: 56px;
   border-radius: 8px;

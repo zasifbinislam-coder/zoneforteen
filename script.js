@@ -34,6 +34,7 @@ function renderJerseys() {
       <div class="jersey-img-wrap">
         <span class="jersey-tag ${j.tag}">${j.edition}</span>
         ${stockBadge}
+        ${jerseyOnSale(j) ? `<span class="sale-flash">SALE −৳${(j.price - salePrice(j)).toLocaleString('en-IN')}</span>` : ''}
         <button type="button" class="wish-heart${inWishlist(j.id) ? ' active' : ''}" aria-label="Save to wishlist" data-wish>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
         </button>
@@ -49,7 +50,7 @@ function renderJerseys() {
       <div class="jersey-body">
         <div class="jersey-head">
           <h3 class="jersey-country flag-text" style="background-image:${(COUNTRY[j.id.split('-')[0].toUpperCase()] || {}).gradient || 'linear-gradient(180deg,#fff,#b0b0b0)'}">${j.country}</h3>
-          <span class="jersey-price">৳${j.price.toLocaleString('en-IN')}</span>
+          ${priceTagHTML(j)}
         </div>
         <div class="size-picker" role="group" aria-label="Select size for ${j.country}">
           ${['M','L','XL','XXL'].map(s =>
@@ -122,7 +123,7 @@ function renderJerseys() {
           `${subj}\n\n` +
           `👕 ${jersey.country} — ${jersey.edition}\n` +
           `📏 My size: ${size}\n` +
-          `💰 Price: ৳${jersey.price.toLocaleString('en-IN')}` +
+          `💰 Price: ৳${salePrice(jersey).toLocaleString('en-IN')}${jerseyOnSale(jersey) ? ` (was ৳${jersey.price.toLocaleString('en-IN')} — sale)` : ''}` +
           (isComing ? `\n\nPlease confirm expected delivery timeline.` : '')
         );
         window.open(`https://wa.me/${WHATSAPP}?text=${msg}`, '_blank', 'noopener');
@@ -190,8 +191,32 @@ function initFilters() {
 }
 
 /* ---------- COUNTDOWN ---------- */
+function nextUpcomingMatch() {
+  return MATCHES
+    .map(m => ({ ...m, ts: new Date(m.date).getTime() }))
+    .filter(m => m.ts > Date.now())
+    .sort((a, b) => a.ts - b.ts)[0] || null;
+}
+
 function updateCountdown() {
-  const diff = KICKOFF.getTime() - Date.now();
+  // Count down to KICKOFF, but once it's passed roll over to the next upcoming
+  // fixture so the hero clock stays live throughout the tournament.
+  const nm = nextUpcomingMatch();
+  let target = KICKOFF.getTime();
+  if (target - Date.now() <= 0 && nm) target = nm.ts;
+
+  // Caption under the countdown — show exactly who's playing next
+  const cap = document.getElementById('cdCaption');
+  if (cap) {
+    if (nm) {
+      const h = (COUNTRY[nm.home] || {}).name || nm.home;
+      const a = (COUNTRY[nm.away] || {}).name || nm.away;
+      cap.innerHTML = `Next up · <strong>${h}</strong> vs <strong>${a}</strong> · ${formatMatchDate(nm.date)}, ${formatBdLocalTime(nm.date)}`;
+    } else {
+      cap.textContent = 'World Cup 2026 · Group Stage underway';
+    }
+  }
+  const diff = target - Date.now();
   if (diff <= 0) {
     ['cdDays', 'cdHours', 'cdMinutes', 'cdSeconds'].forEach(id => {
       document.getElementById(id).textContent = '00';
@@ -543,6 +568,41 @@ function relTime(ms) {
 /* ============================================================
    VIDEO SHOWCASE — landing-page grid + modal player
    ============================================================ */
+/* ---------- HERO VIDEO BAND ----------
+   Caption-free strip of muted, looping, autoplay jersey videos right under
+   the hero. Driven entirely by admin uploads (hero_videos table). Hidden when
+   empty so the layout stays clean. */
+function renderHeroVideos() {
+  const section = document.getElementById('heroVideos');
+  const track   = document.getElementById('heroVideoTrack');
+  if (!section || !track) return;
+
+  const vids = (typeof readHeroVideos === 'function' ? readHeroVideos() : []);
+  if (!vids.length) { section.hidden = true; track.innerHTML = ''; return; }
+
+  section.hidden = false;
+  // Paused preview tiles (first frame via #t=0.1 when no poster). Click opens
+  // the big video modal where it plays with controls.
+  track.innerHTML = vids.map(v => `
+    <button type="button" class="hero-video-tile" data-hero-vid="${v.id}" aria-label="Play video">
+      <video src="${v.videoUrl}#t=0.1"${v.posterUrl ? ` poster="${v.posterUrl}"` : ''}
+             muted playsinline preload="metadata"></video>
+      <span class="hero-video-play" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </span>
+    </button>
+  `).join('');
+
+  // Click a tile → open the large modal preview (plays there, not inline)
+  track.querySelectorAll('[data-hero-vid]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const v = vids.find(x => x.id === btn.dataset.heroVid);
+      if (!v) return;
+      openVideoModal({ url: v.videoUrl, poster: v.posterUrl || '', title: '', subtitle: '' });
+    });
+  });
+}
+
 function renderVideoShowcase() {
   const grid = document.getElementById('videoGrid');
   if (!grid) return;
@@ -651,7 +711,7 @@ function openVideoModal(video) {
     <video src="${video.url}" controls autoplay playsinline ${video.poster ? `poster="${video.poster}"` : ''}></video>
   `;
   meta.innerHTML = `
-    <h3>${video.title}</h3>
+    ${video.title ? `<h3>${video.title}</h3>` : ''}
     ${video.subtitle ? `<p>${video.subtitle}</p>` : ''}
     ${video.jerseyId ? `<a class="btn btn-primary btn-sm" href="#jerseys">Shop this kit →</a>` : ''}
   `;
@@ -763,7 +823,7 @@ function openWishlistModal() {
   const lines = ['Hi Zone14! My wishlist — please notify me when these are back in stock or on offer:\n'];
   list.forEach(id => {
     const j = getJersey(id);
-    if (j) lines.push(`👕 ${j.country} ${j.edition} — ${fmtBDT(j.price)}${j.inStock ? '' : ' (currently OOS)'}`);
+    if (j) lines.push(`👕 ${j.country} ${j.edition} — ${fmtBDT(salePrice(j))}${jerseyOnSale(j) ? ' (sale)' : ''}${j.inStock ? '' : ' (currently OOS)'}`);
   });
   const msg = encodeURIComponent(lines.join('\n'));
   window.open(`https://wa.me/${WHATSAPP}?text=${msg}`, '_blank', 'noopener');
@@ -951,7 +1011,9 @@ function initQuickView() {
     qvTag.className = 'qv-tag ' + j.tag;
     qvTitle.textContent = j.country;
     qvEdition.textContent = j.edition;
-    qvPrice.textContent = fmtBDT(j.price);
+    qvPrice.innerHTML = jerseyOnSale(j)
+      ? `<span class="price-was">${fmtBDT(j.price)}</span> <span class="price-now">${fmtBDT(salePrice(j))}</span>`
+      : fmtBDT(j.price);
     qvStock.innerHTML = j.inStock
       ? `<span class="qv-stock-ok">${j.stockLeft <= 6 ? `🔥 Only ${j.stockLeft} left in stock` : '✓ In stock — ships within 24 h'}</span>`
       : `<span class="qv-stock-oos">⏳ Currently restocking — get a WhatsApp alert</span>`;
@@ -1155,86 +1217,316 @@ function tickFeaturedCountdown() {
   cd.querySelector('[data-cd=s]').textContent = pad(s);
 }
 
-/* ---------- Render match grid (upcoming fixtures) ---------- */
+/* ---------- LIVE AUTO-SCORES ----------
+   Pulls real World Cup results from the free, keyless SportSRC feed and overlays
+   them onto our fixtures by team name (order-independent). No admin entry needed —
+   scores appear automatically the moment a match goes live or finishes. */
+const WC_SCORES_URL = 'https://api.sportsrc.org/?data=results&category=scores&league=WC';
+
+function _normTeam(s) { return (s || '').toString().trim().toLowerCase(); }
+
+/* Find the local MATCHES entry that corresponds to a feed match. */
+function _feedToLocalMatch(fm) {
+  const fh = _normTeam(fm.homeTeam && fm.homeTeam.name);
+  const fa = _normTeam(fm.awayTeam && fm.awayTeam.name);
+  return MATCHES.find(m => {
+    const mh = _normTeam((COUNTRY[m.home] || {}).name || m.home);
+    const ma = _normTeam((COUNTRY[m.away] || {}).name || m.away);
+    return (mh === fh && ma === fa) || (mh === fa && ma === fh);
+  });
+}
+
+async function syncLiveScores() {
+  let json;
+  try {
+    const res = await fetch(WC_SCORES_URL, { cache: 'no-store' });
+    json = await res.json();
+  } catch (_) { return false; }
+  if (!json || !json.success || !json.data) return false;
+
+  const feed = [...(json.data.live || []), ...(json.data.finished || [])];
+  if (!feed.length) return false;
+
+  const live = readLiveScores();
+  let changed = false;
+
+  feed.forEach(fm => {
+    const local = _feedToLocalMatch(fm);
+    if (!local) return;
+    const ft = (fm.score && fm.score.fullTime) || {};
+    if (ft.home == null || ft.away == null) return;
+
+    // Orient the feed's home/away to OUR home/away
+    const feedHomeIsOurHome =
+      _normTeam((COUNTRY[local.home] || {}).name || local.home) === _normTeam(fm.homeTeam.name);
+    const homeScore = feedHomeIsOurHome ? ft.home : ft.away;
+    const awayScore = feedHomeIsOurHome ? ft.away : ft.home;
+    const outcome = homeScore > awayScore ? 'home' : awayScore > homeScore ? 'away' : 'draw';
+    const isLive = fm.status === 'IN_PLAY' || fm.status === 'PAUSED';
+
+    const prev = live[local.id];
+    if (!prev || prev.homeScore !== homeScore || prev.awayScore !== awayScore ||
+        prev.live !== isLive || prev.outcome !== outcome) {
+      live[local.id] = {
+        homeScore, awayScore, outcome,
+        finishedAt: Date.now(), live: isLive, auto: true, status: fm.status,
+      };
+      changed = true;
+    }
+  });
+
+  if (changed) writeLiveScores(live);   // local overlay → fires results:change
+  return changed;
+}
+
+/* Pull all 12 WC group standings (every team, live points) from the public feed. */
+const WC_TABLES_URL = 'https://api.sportsrc.org/?data=results&category=tables&league=WC';
+async function syncGroupStandings() {
+  let json;
+  try {
+    const r = await fetch(WC_TABLES_URL, { cache: 'no-store' });
+    json = await r.json();
+  } catch (_) { return false; }
+  if (!json || !json.success || !json.data || !Array.isArray(json.data.standings)) return false;
+
+  const groups = json.data.standings.map(g => ({
+    name: (g.group || '').replace(/^group\s+/i, '').trim(),
+    teams: (g.table || []).map(t => ({
+      name:  t.team.name,
+      tla:   t.team.tla,
+      crest: t.team.crest,
+      P: t.playedGames, W: t.won, D: t.draw, L: t.lost,
+      GF: t.goalsFor, GA: t.goalsAgainst, GD: t.goalDifference, Pts: t.points,
+    })),
+  })).filter(g => g.name && g.teams.length);
+
+  if (!groups.length) return false;
+  localStorage.setItem(GROUP_STANDINGS_KEY, JSON.stringify(groups));
+  window.dispatchEvent(new CustomEvent('groups:change'));
+  return true;
+}
+
+/* Teams we sell kits for — highlighted in the standings table. */
+const OUR_TLAS = ['BRA', 'ARG', 'ESP', 'FRA'];
+
+/* Pull EVERY WC match (all 12 groups): finished + live from the scores feed,
+   upcoming from the near-term fixtures feed, plus our own static fixtures —
+   merged & deduped so the Matches grid shows the whole tournament, not just
+   the four teams we sell. */
+const WC_UPCOMING_URL = 'https://api.sportsrc.org/?data=matches&category=football';
+
+function _groupLetter(g) { return (g || '').toString().replace(/^group[_\s]*/i, '').trim(); }
+
+async function syncAllMatches() {
+  // Team-name → group letter map (from standings) for fixtures that lack a group
+  const standings = readGroupStandings() || [];
+  const nameToGroup = {};
+  const wcNames = new Set();
+  standings.forEach(g => g.teams.forEach(t => {
+    nameToGroup[_normTeam(t.name)] = g.name;
+    wcNames.add(_normTeam(t.name));
+  }));
+
+  const RANK = { FINISHED: 3, IN_PLAY: 3, PAUSED: 3, STATIC: 2, UPCOMING: 1 };
+  const byPair = new Map();
+  const add = (card, rank) => {
+    const key = [_normTeam(card.home.name), _normTeam(card.away.name)].sort().join('|');
+    const prev = byPair.get(key);
+    if (!prev || rank > prev._rank) { card._rank = rank; byPair.set(key, card); }
+  };
+
+  // 1) Finished + live (real scores, every group)
+  try {
+    const r = await fetch(WC_SCORES_URL, { cache: 'no-store' });
+    const j = await r.json();
+    if (j && j.success && j.data) {
+      [...(j.data.live || []), ...(j.data.finished || [])].forEach(fm => {
+        const ft = (fm.score && fm.score.fullTime) || {};
+        add({
+          id: 'wc-' + fm.homeTeam.tla + '-' + fm.awayTeam.tla,
+          group: _groupLetter(fm.group),
+          date: fm.utcDate,
+          home: { name: fm.homeTeam.name, tla: fm.homeTeam.tla, crest: fm.homeTeam.crest },
+          away: { name: fm.awayTeam.name, tla: fm.awayTeam.tla, crest: fm.awayTeam.crest },
+          status: fm.status,
+          score: (ft.home == null) ? null : { home: ft.home, away: ft.away },
+        }, RANK[fm.status] || 3);
+      });
+    }
+  } catch (_) {}
+
+  // 2) Upcoming fixtures (filter to WC by matching both team names)
+  try {
+    const r = await fetch(WC_UPCOMING_URL, { cache: 'no-store' });
+    const j = await r.json();
+    (j && j.data || []).forEach(m => {
+      const hn = m.teams && m.teams.home && m.teams.home.name;
+      const an = m.teams && m.teams.away && m.teams.away.name;
+      if (!hn || !an) return;
+      if (wcNames.size && (!wcNames.has(_normTeam(hn)) || !wcNames.has(_normTeam(an)))) return;
+      add({
+        id: 'wcup-' + _normTeam(hn) + '-' + _normTeam(an),
+        group: nameToGroup[_normTeam(hn)] || nameToGroup[_normTeam(an)] || '',
+        date: new Date(m.date).toISOString(),
+        home: { name: hn, crest: (m.teams.home.badge || m.poster || '') },
+        away: { name: an, crest: (m.teams.away.badge || '') },
+        status: 'TIMED', score: null,
+      }, RANK.UPCOMING);
+    });
+  } catch (_) {}
+
+  // 3) Our own fixtures — keep predictions + correct flags for the 4 teams
+  MATCHES.forEach(m => {
+    add({
+      id: m.id, localMatchId: m.id,
+      group: m.group || '', date: m.date, venue: m.venue, city: m.city,
+      home: { name: (COUNTRY[m.home] || {}).name || m.home, code: m.home },
+      away: { name: (COUNTRY[m.away] || {}).name || m.away, code: m.away },
+      status: 'SCHEDULED', score: null,
+    }, RANK.STATIC);
+  });
+
+  const all = [...byPair.values()].sort((a, b) => new Date(a.date) - new Date(b.date));
+  all.forEach(c => { delete c._rank; });
+  if (!all.length) return false;
+  localStorage.setItem(ALL_MATCHES_KEY, JSON.stringify(all));
+  window.dispatchEvent(new CustomEvent('allmatches:change'));
+  return true;
+}
+
+/* The list the Matches grid renders — the full tournament if we have it cached,
+   otherwise our own static fixtures mapped to the same card shape. */
+function getDisplayMatches() {
+  const all = readAllMatches();
+  if (all && all.length) return all;
+  return MATCHES.map(m => ({
+    id: m.id, localMatchId: m.id, group: m.group || '', date: m.date, venue: m.venue, city: m.city,
+    home: { name: (COUNTRY[m.home] || {}).name || m.home, code: m.home },
+    away: { name: (COUNTRY[m.away] || {}).name || m.away, code: m.away },
+    status: 'SCHEDULED', score: null,
+  }));
+}
+
+/* Compute live group standings from real results (merged: live + admin). */
+function computeGroupStats(groupName) {
+  const results = mergedResults();
+  const stats = {};
+  GROUPS.find(g => g.name === groupName)?.teams.forEach(t => {
+    stats[t.code] = { code: t.code, P: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, Pts: 0 };
+  });
+  MATCHES.filter(m => m.group === groupName).forEach(m => {
+    const r = results[m.id];
+    if (!r || r.live) return;                 // only count finished matches
+    const h = stats[m.home], a = stats[m.away];
+    if (!h || !a) return;
+    h.P++; a.P++;
+    h.GF += r.homeScore; h.GA += r.awayScore;
+    a.GF += r.awayScore; a.GA += r.homeScore;
+    if (r.outcome === 'home')      { h.W++; h.Pts += 3; a.L++; }
+    else if (r.outcome === 'away') { a.W++; a.Pts += 3; h.L++; }
+    else                           { h.D++; a.D++; h.Pts++; a.Pts++; }
+  });
+  return stats;
+}
+
+/* WhatsApp reminder link built from a unified match card. */
+function cardReminderHref(card) {
+  const time = formatMatchTime(card.date);
+  const date = formatMatchDate(card.date);
+  const loc  = card.venue ? `\n📍 ${card.venue}${card.city ? ', ' + card.city : ''}` : '';
+  const text = encodeURIComponent(
+    `Hi Zone14! Please remind me before this match kicks off:\n\n` +
+    `🏟 ${card.home.name} vs ${card.away.name}\n` +
+    `📅 ${date} · ${time}${loc}\n\n` +
+    `Send me a WhatsApp ping 30 minutes before kick-off.`
+  );
+  return `https://wa.me/${WHATSAPP}?text=${text}`;
+}
+
+/* ---------- Render match grid (ALL WC matches: finished + live + upcoming) ---------- */
 function renderMatchGrid() {
   const grid = document.getElementById('matchGrid');
   if (!grid) return;
-  const sorted = [...MATCHES].sort((a, b) => new Date(a.date) - new Date(b.date));
-  const results = readResults();
+  const cards = getDisplayMatches().slice().sort((a, b) => new Date(a.date) - new Date(b.date));
 
-  grid.innerHTML = sorted.map(m => {
-    const home = COUNTRY[m.home] || { name: m.home, bg: '#222', fg: '#fff' };
-    const away = COUNTRY[m.away] || { name: m.away, bg: '#222', fg: '#fff' };
-    const hasOurJersey = COUNTRY_TO_JERSEY[m.home] || COUNTRY_TO_JERSEY[m.away];
+  const flag = t => t.crest
+    ? `<img class="flag-img" src="${t.crest}" alt="${t.name}" loading="lazy" />`
+    : (t.code ? flagImg(t.code) : '');
+
+  grid.innerHTML = cards.map(m => {
+    const hCode = m.home.code || m.home.tla;
+    const aCode = m.away.code || m.away.tla;
+    const hasOurJersey = !!(COUNTRY_TO_JERSEY[hCode] || COUNTRY_TO_JERSEY[aCode]);
     const ts = new Date(m.date).getTime();
     const ms = ts - Date.now();
-    const isUpcoming = ms > 0;
-    const result = results[m.id];
-    const myPred = getMyPrediction(m.id);
+    const isLive = m.status === 'IN_PLAY' || m.status === 'PAUSED';
+    const isUpcoming = !m.score && !isLive && ms > 0;
+    const myPred = m.localMatchId ? getMyPrediction(m.localMatchId) : null;
+    const predMatch = { home: hCode, away: aCode };
 
-    // Predict button label varies with state
-    let predictBtn = '';
-    if (result) {
-      const winLabel = result.outcome === 'home' ? home.name : result.outcome === 'away' ? away.name : 'Draw';
-      const myStatus = myPred
-        ? (myPred.choice === result.outcome
+    let bottom = '';
+    if (m.score) {
+      const winLabel = m.score.home > m.score.away ? m.home.name
+        : m.score.away > m.score.home ? m.away.name : 'Draw';
+      const myStatus = (myPred && !isLive)
+        ? (myPred.choice === (m.score.home > m.score.away ? 'home' : m.score.away > m.score.home ? 'away' : 'draw')
             ? '<span class="my-pred correct">✓ You called it</span>'
-            : '<span class="my-pred wrong">✗ You picked ' + outcomeLabel(myPred.choice, m) + '</span>')
+            : '<span class="my-pred wrong">✗ You picked ' + outcomeLabel(myPred.choice, predMatch) + '</span>')
         : '';
-      predictBtn = `
-        <div class="mc-final">
-          <span class="mc-final-score">${result.homeScore} – ${result.awayScore}</span>
-          <span class="mc-final-label">FT · Winner: <strong>${winLabel}</strong></span>
+      bottom = `
+        <div class="mc-final${isLive ? ' live' : ''}">
+          <span class="mc-final-score">${m.score.home} – ${m.score.away}</span>
+          <span class="mc-final-label">${isLive
+            ? '<span class="live-dot"></span> LIVE'
+            : `FT · Winner: <strong>${winLabel}</strong>`}</span>
           ${myStatus}
         </div>`;
-    } else if (isUpcoming) {
-      const myMark = myPred
-        ? `<span class="mc-mypred">Your pick: ${outcomeLabel(myPred.choice, m)}</span>`
-        : '';
-      predictBtn = `
-        <button class="mc-predict-btn" type="button" data-predict="${m.id}">
+    } else if (isUpcoming && m.localMatchId) {
+      const myMark = myPred ? `<span class="mc-mypred">Your pick: ${outcomeLabel(myPred.choice, predMatch)}</span>` : '';
+      bottom = `
+        <button class="mc-predict-btn" type="button" data-predict="${m.localMatchId}">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6 4.4 2.3 7.4-6.3-4.6-6.3 4.6 2.3-7.4-6-4.4h7.6z"/></svg>
           ${myPred ? 'Change your prediction' : 'Predict the winner'}
         </button>
         ${myMark}`;
-    } else {
-      predictBtn = `<div class="mc-final"><span class="mc-final-label">⏳ Match in progress · result pending</span></div>`;
+    } else if (!isUpcoming) {
+      bottom = `<div class="mc-final"><span class="mc-final-label">⏳ In progress · result pending</span></div>`;
     }
 
     return `
       <article class="match-card reveal ${hasOurJersey ? 'has-jersey' : ''}" data-id="${m.id}" data-ts="${ts}">
         <div class="mc-head">
-          <span class="mc-stage">${m.stage}</span>
+          <span class="mc-stage">${m.group ? 'Group ' + m.group : 'World Cup 2026'}</span>
           <span class="mc-date">${formatMatchDate(m.date)}</span>
         </div>
         <div class="mc-teams">
           <div class="mc-team">
-            <div class="mc-flag">${flagImg(m.home)}</div>
-            <span class="mc-team-name">${home.name}</span>
+            <div class="mc-flag">${flag(m.home)}</div>
+            <span class="mc-team-name">${m.home.name}</span>
           </div>
           <span class="mc-vs">VS</span>
           <div class="mc-team">
-            <div class="mc-flag">${flagImg(m.away)}</div>
-            <span class="mc-team-name">${away.name}</span>
+            <div class="mc-flag">${flag(m.away)}</div>
+            <span class="mc-team-name">${m.away.name}</span>
           </div>
         </div>
         <div class="mc-foot">
           <div class="mc-venue">
-            <strong>${m.venue}</strong>
-            ${m.city} · ${formatBdLocalTime(m.date)}
+            ${m.venue ? `<strong>${m.venue}</strong>` : ''}
+            ${m.city ? m.city + ' · ' : ''}${formatBdLocalTime(m.date)}
           </div>
           <div class="mc-actions">
             ${isUpcoming ? `<span class="mc-countdown-pill" data-mc-cd="${ts}">${compactCountdown(ms)}</span>` : ''}
-            <a class="mc-ico-btn" href="${setReminderHref(m)}" target="_blank" rel="noopener" title="Set reminder on WhatsApp">
+            ${isUpcoming ? `<a class="mc-ico-btn" href="${cardReminderHref(m)}" target="_blank" rel="noopener" title="Set reminder on WhatsApp">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 22a2 2 0 002-2h-4a2 2 0 002 2zm6-6V11a6 6 0 00-5-5.91V4a1 1 0 00-2 0v1.09A6 6 0 006 11v5l-2 2v1h16v-1l-2-2z"/></svg>
-            </a>
+            </a>` : ''}
             ${hasOurJersey ? `
               <a class="mc-ico-btn" href="#jerseys" title="Shop kits">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M16 4l-4 2-4-2-6 4 2 6 4-2v8h8v-8l4 2 2-6z"/></svg>
               </a>` : ''}
           </div>
         </div>
-        ${predictBtn}
+        ${bottom}
       </article>
     `;
   }).join('');
@@ -1266,7 +1558,7 @@ function renderLeaderboard() {
 
   const board   = computeLeaderboard();
   const preds   = readPredictions();
-  const results = readResults();
+  const results = mergedResults();
 
   totalEl.textContent    = `${preds.length} prediction${preds.length === 1 ? '' : 's'}`;
   resolvedEl.textContent = `${Object.keys(results).length} match${Object.keys(results).length === 1 ? '' : 'es'} resolved`;
@@ -1432,11 +1724,47 @@ function tickMatchPills() {
   });
 }
 
-/* ---------- Render group standings ---------- */
+/* ---------- Render group standings ----------
+   Prefers the live feed (all 12 WC groups, every team). Falls back to the
+   static four-group view computed from our own results if the feed is offline. */
 function renderGroups() {
   const wrap = document.getElementById('groupsGrid');
   if (!wrap) return;
-  wrap.innerHTML = GROUPS.map(g => `
+
+  const live = readGroupStandings();
+
+  // Build a normalized [{ name, rows:[{name,P,W,D,L,GD,Pts, crest?, code?, ours}] }]
+  let groups;
+  if (live && live.length) {
+    groups = live.map(g => ({
+      name: g.name,
+      rows: g.teams
+        .map(t => ({
+          name: t.name, crest: t.crest, code: t.tla,
+          P: t.P, W: t.W, D: t.D, L: t.L, GD: t.GD, Pts: t.Pts,
+          ours: OUR_TLAS.includes(t.tla),
+        }))
+        .sort((a, b) => b.Pts - a.Pts || b.GD - a.GD || b.P - a.P),
+    }));
+  } else {
+    groups = GROUPS.map(g => {
+      const stats = computeGroupStats(g.name);
+      return {
+        name: g.name,
+        rows: g.teams
+          .map(t => {
+            const s = stats[t.code] || { P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 };
+            const c = COUNTRY[t.code] || { name: t.code };
+            return { name: c.name, code: t.code, crest: null,
+                     P: s.P, W: s.W, D: s.D, L: s.L, GD: s.GF - s.GA, Pts: s.Pts,
+                     ours: !!COUNTRY_TO_JERSEY[t.code] };
+          })
+          .sort((a, b) => b.Pts - a.Pts || b.GD - a.GD || b.P - a.P),
+      };
+    });
+  }
+
+  wrap.innerHTML = groups.map(g => `
     <article class="group-card reveal">
       <h3><span class="grp-badge">${g.name}</span> Group ${g.name}</h3>
       <table class="group-table">
@@ -1444,20 +1772,20 @@ function renderGroups() {
           <tr><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr>
         </thead>
         <tbody>
-          ${g.teams.map(t => {
-            const c = COUNTRY[t.code] || { name: t.code };
-            const highlight = COUNTRY_TO_JERSEY[t.code] ? ' team-highlight' : '';
-            const gd = t.GF - t.GA;
+          ${g.rows.map(t => {
+            const flag = t.crest
+              ? `<img class="flag-img" src="${t.crest}" alt="${t.name}" loading="lazy" />`
+              : (t.code ? flagImg(t.code) : '');
             return `
-              <tr class="${highlight}">
+              <tr class="${t.ours ? 'team-highlight' : ''}">
                 <td>
                   <div class="team-cell">
-                    <span class="team-mini-flag">${flagImg(t.code)}</span>
-                    <span class="team-name">${c.name}</span>
+                    <span class="team-mini-flag">${flag}</span>
+                    <span class="team-name">${t.name}</span>
                   </div>
                 </td>
                 <td>${t.P}</td><td>${t.W}</td><td>${t.D}</td><td>${t.L}</td>
-                <td>${gd > 0 ? '+' + gd : gd}</td>
+                <td>${t.GD > 0 ? '+' + t.GD : t.GD}</td>
                 <td class="pts">${t.Pts}</td>
               </tr>
             `;
@@ -1466,6 +1794,7 @@ function renderGroups() {
       </table>
     </article>
   `).join('');
+
   if (typeof revealObserver !== 'undefined') {
     wrap.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
   }
@@ -1680,6 +2009,68 @@ function initHeroVideo() {
   });
 }
 
+/* ---------- PROMOTIONAL SALE POPUP ----------
+   Shows once per calendar day while a sale is active. Content + countdown are
+   driven entirely by the SALE config (data.js / admin Settings panel). */
+let _salePopupReady = false;
+function initSalePopup() {
+  const pop = document.getElementById('salePopup');
+  if (!pop) return;
+  // Only run when a sale is genuinely live and the popup is enabled
+  if (typeof saleActive !== 'function' || !saleActive()) return;
+  if (!SALE.popup || SALE.popup.enabled === false) return;
+  if (_salePopupReady) return;           // guard against double-binding
+  _salePopupReady = true;
+
+  // Show at most once per calendar day per visitor
+  const SEEN_KEY = 'zone14_sale_popup_seen';
+  const today = new Date().toISOString().slice(0, 10);
+  if (localStorage.getItem(SEEN_KEY) === today) return;
+
+  const p = SALE.popup;
+  const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt || ''; };
+  set('salePopBadge', p.badge);
+  set('salePopTitle', p.title);
+  set('salePopSub',   p.sub);
+  const cta = document.getElementById('salePopCta');
+  if (cta) { cta.textContent = p.cta || 'Shop Now'; cta.setAttribute('href', p.ctaUrl || '#jerseys'); }
+
+  // Live countdown to the sale end
+  const timer = document.getElementById('salePopTimer');
+  let tick = null;
+  function renderTimer() {
+    if (!timer || !SALE.endsAt) { if (timer) timer.style.display = 'none'; return; }
+    const diff = new Date(SALE.endsAt).getTime() - Date.now();
+    if (!isFinite(diff) || diff <= 0) { timer.style.display = 'none'; if (tick) clearInterval(tick); return; }
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    timer.innerHTML =
+      `<span class="sp-unit"><b>${d}</b>d</span>` +
+      `<span class="sp-unit"><b>${String(h).padStart(2,'0')}</b>h</span>` +
+      `<span class="sp-unit"><b>${String(m).padStart(2,'0')}</b>m</span>` +
+      `<span class="sp-unit"><b>${String(s).padStart(2,'0')}</b>s</span>`;
+  }
+
+  const open = () => {
+    renderTimer();
+    tick = setInterval(renderTimer, 1000);
+    pop.classList.add('show');
+  };
+  const close = () => {
+    pop.classList.remove('show');
+    localStorage.setItem(SEEN_KEY, today);
+    if (tick) clearInterval(tick);
+  };
+
+  setTimeout(open, 1400);
+  pop.querySelectorAll('[data-sale-close]').forEach(b => b.addEventListener('click', close));
+  pop.addEventListener('click', e => { if (e.target === pop) close(); });
+  if (cta) cta.addEventListener('click', close);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && pop.classList.contains('show')) close(); });
+}
+
 /* ---------- INIT ---------- */
 document.addEventListener('DOMContentLoaded', () => {
   applyHeroToDOM();
@@ -1700,8 +2091,13 @@ document.addEventListener('DOMContentLoaded', () => {
   initQuickView();
 
   // Video showcase
+  renderHeroVideos();
   renderVideoShowcase();
   initVideoModal();
+  window.addEventListener('herovideos:change', renderHeroVideos);
+
+  // Promotional sale popup (no-op when no sale is active)
+  initSalePopup();
 
   // Re-render gallery + cards when admin uploads media (cross-tab sync)
   window.addEventListener('media:change', () => { renderJerseys(); renderVideoShowcase(); });
@@ -1716,6 +2112,8 @@ document.addEventListener('DOMContentLoaded', () => {
     renderOffers();
     if (typeof renderPlayers === 'function') renderPlayers();
     updateCountdown();
+    renderJerseys();      // re-render so sale prices/badges reflect synced config
+    initSalePopup();      // sale may have just turned on from Supabase sync
   });
   window.addEventListener('storage', e => {
     if (e.key === MEDIA_KEY) { renderJerseys(); renderVideoShowcase(); }
@@ -1732,6 +2130,24 @@ document.addEventListener('DOMContentLoaded', () => {
   initMatchDayStrip();
   initPredictionModal();
   initPredictionListeners();
+
+  // Auto-scores: whenever results change (live feed or admin), refresh everything
+  window.addEventListener('results:change', () => {
+    renderMatchGrid();
+    renderLeaderboard();
+    renderFeatured();
+    renderGroups();          // keeps the static fallback live when the feed is down
+  });
+  // Live group standings (all 12 groups) re-render on their own feed
+  window.addEventListener('groups:change', renderGroups);
+  // Full match list (every group) re-renders on its own feed
+  window.addEventListener('allmatches:change', renderMatchGrid);
+
+  // Live World Cup data — fetch now, then poll every 60s for auto-updates.
+  // Standings first so the all-matches sync can map fixtures → groups.
+  syncGroupStandings().then(() => syncAllMatches());
+  syncLiveScores();
+  setInterval(() => { syncLiveScores(); syncGroupStandings().then(() => syncAllMatches()); }, 60000);
 
   // Countdowns
   updateCountdown();

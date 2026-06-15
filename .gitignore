@@ -19,3 +19,6 @@ package-lock.json
 
 # Project-local AI conventions (not needed for the deployed site)
 CLAUDE*.md
+
+# Local raw image library (~1GB source assets — site loads media from Supabase)
+images/zone 14/

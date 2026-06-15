@@ -165,6 +165,62 @@
             </div>
           </form>
 
+          <!-- Promotional sale -->
+          <form id="saleSettingsForm" class="settings-card">
+            <h3>🔥 Promotional Sale</h3>
+            <p class="settings-card-hint">Run a sitewide discount for a set period. Every jersey's price drops automatically and a popup invites shoppers in. Turn it off here when the campaign ends.</p>
+            <div class="form-row">
+              <label class="check-label">
+                <input type="checkbox" name="active" /> Sale active
+              </label>
+              <label>Sale name (internal)
+                <input type="text" name="label" maxlength="40" placeholder="World Cup Sale" />
+              </label>
+            </div>
+            <div class="form-row">
+              <label>Flat ৳ off each jersey
+                <input type="number" name="amountOff" min="0" max="9999" placeholder="100" />
+              </label>
+              <label>OR % off (overrides ৳)
+                <input type="number" name="pctOff" min="0" max="90" placeholder="0" />
+              </label>
+              <label>Sale ends at
+                <input type="datetime-local" name="endsAt" />
+              </label>
+            </div>
+            <h4 style="margin:14px 0 4px;font-size:13px;color:var(--text-dim)">Popup</h4>
+            <div class="form-row">
+              <label class="check-label">
+                <input type="checkbox" name="popupEnabled" /> Show popup
+              </label>
+              <label>Badge text
+                <input type="text" name="popupBadge" maxlength="40" placeholder="LIMITED TIME · 10 DAYS ONLY" />
+              </label>
+            </div>
+            <div class="form-row full">
+              <label>Popup headline
+                <input type="text" name="popupTitle" maxlength="60" placeholder="৳100 OFF Every Jersey" />
+              </label>
+            </div>
+            <div class="form-row full">
+              <label>Popup subtext
+                <input type="text" name="popupSub" maxlength="140" placeholder="World Cup 2026 kits now ৳1,399. Grab yours before the sale ends." />
+              </label>
+            </div>
+            <div class="form-row">
+              <label>Button text
+                <input type="text" name="popupCta" maxlength="30" placeholder="Shop the Sale" />
+              </label>
+              <label>Button link
+                <input type="text" name="popupCtaUrl" maxlength="120" placeholder="#jerseys" />
+              </label>
+            </div>
+            <div class="settings-actions">
+              <button type="submit" class="btn btn-primary">Save Sale</button>
+              <span class="settings-msg" data-msg></span>
+            </div>
+          </form>
+
           <!-- Contact info -->
           <form id="contactSettingsForm" class="settings-card">
             <h3>📍 Contact Info (footer)</h3>
@@ -557,6 +613,39 @@
         </form>
 
         <div class="admin-reviews-list" id="adminReviewsList">
+          <!-- populated by admin.js -->
+        </div>
+      </section>
+
+      <!-- Hero Videos — caption-free autoplay band under the homepage hero -->
+      <section class="admin-showcase">
+        <header class="admin-section-head">
+          <h2>🎞 Hero Videos</h2>
+          <p>Caption-free videos for the autoplay strip right under the homepage hero banner. No title or text — just the video. They loop muted and autoplay.</p>
+        </header>
+
+        <form id="heroVideoForm" class="review-form" novalidate>
+          <div class="form-row">
+            <label>Video file<span class="req">*</span>
+              <input type="file" name="video" accept="video/*" required />
+              <span class="hint">MP4 recommended, portrait (9:16) looks best. Max 50 MB.</span>
+            </label>
+            <label>Poster image (optional)
+              <input type="file" name="poster" accept="image/*" />
+              <span class="hint">First frame shown before the video plays.</span>
+            </label>
+          </div>
+          <div class="form-row">
+            <label>Sort priority
+              <input type="number" name="sortOrder" value="0" min="0" max="999" />
+              <span class="hint">Higher = shows first (left)</span>
+            </label>
+          </div>
+          <button type="submit" class="btn btn-primary">Add Hero Video</button>
+          <p class="review-form-msg" id="heroVideoFormMsg" hidden></p>
+        </form>
+
+        <div class="admin-reviews-list" id="adminHeroVideoList">
           <!-- populated by admin.js -->
         </div>
       </section>

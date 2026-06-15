@@ -236,7 +236,7 @@
         <div class="cd-sep">:</div>
         <div class="cd-box"><span class="cd-num" id="cdSeconds">00</span><span class="cd-lbl">Seconds</span></div>
       </div>
-      <p class="cd-caption">Kick-off · 11 June 2026 · Estadio Azteca, Mexico City</p>
+      <p class="cd-caption" id="cdCaption">Kick-off · World Cup 2026</p>
 
       <div class="hero-cta">
         <a href="#jerseys" class="btn btn-primary btn-lg">
@@ -268,6 +268,13 @@
         Shop The Look
         <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M13 5l7 7-7 7-1.4-1.4L16.2 13H4v-2h12.2l-4.6-4.6z"/></svg>
       </a>
+    </div>
+  </section>
+
+  <!-- ============ HERO VIDEO BAND (caption-free, admin-uploadable) ============ -->
+  <section id="heroVideos" class="hero-video-band" hidden aria-label="Jersey videos">
+    <div class="hero-video-track" id="heroVideoTrack">
+      <!-- video tiles injected by JS -->
     </div>
   </section>
 
@@ -1070,6 +1077,21 @@
   <button id="backToTop" class="back-to-top" aria-label="Back to top">
     <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M12 4l-8 8h5v8h6v-8h5z"/></svg>
   </button>
+
+  <!-- ============ PROMOTIONAL SALE POPUP ============ -->
+  <div id="salePopup" class="sale-popup" role="dialog" aria-modal="true" aria-labelledby="salePopTitle">
+    <div class="sale-popup-card">
+      <button type="button" class="sale-popup-close" data-sale-close aria-label="Close">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+      <span class="sale-popup-badge" id="salePopBadge">LIMITED TIME</span>
+      <h3 class="sale-popup-title" id="salePopTitle">Sale</h3>
+      <p class="sale-popup-sub" id="salePopSub"></p>
+      <div class="sale-popup-timer" id="salePopTimer" aria-hidden="true"></div>
+      <a href="#jerseys" class="btn btn-primary btn-lg sale-popup-cta" id="salePopCta">Shop the Sale</a>
+      <button type="button" class="sale-popup-dismiss" data-sale-close>No thanks, maybe later</button>
+    </div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="data.js" defer></script>

@@ -72,7 +72,11 @@ function renderCart() {
           </div>
         </div>
         <div class="cart-item-right">
-          <span class="cart-item-price">${fmtBDT(j.price * item.qty)}</span>
+          <span class="cart-item-price">${
+            jerseyOnSale(j)
+              ? `<span class="ci-was">${fmtBDT(j.price * item.qty)}</span> ${fmtBDT(salePrice(j) * item.qty)}`
+              : fmtBDT(j.price * item.qty)
+          }</span>
           <button type="button" class="cart-item-remove" data-act="rm" aria-label="Remove">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
           </button>
@@ -105,7 +109,12 @@ function renderTotals() {
   const cart = readCart();
   const subtotal = cart.reduce((s, i) => {
     const j = getJersey(i.id);
-    return s + (j ? j.price * i.qty : 0);
+    return s + (j ? salePrice(j) * i.qty : 0);
+  }, 0);
+  // How much the sale shaved off the original prices (for the savings line)
+  const saleSavings = cart.reduce((s, i) => {
+    const j = getJersey(i.id);
+    return s + (j ? (j.price - salePrice(j)) * i.qty : 0);
   }, 0);
   const totalItems = cart.reduce((s, i) => s + i.qty, 0);
 
@@ -130,6 +139,17 @@ function renderTotals() {
   const grand = Math.max(0, subtotal + shipping - discount);
 
   document.getElementById('tSubtotal').textContent = fmtBDT(subtotal);
+
+  const saleRow = document.getElementById('saleSavingsRow');
+  if (saleRow) {
+    if (saleSavings > 0 && totalItems > 0) {
+      saleRow.hidden = false;
+      document.getElementById('tSaleSavings').textContent = '−' + fmtBDT(saleSavings);
+    } else {
+      saleRow.hidden = true;
+    }
+  }
+
   document.getElementById('tShipping').textContent = totalItems === 0
     ? '—'
     : (shipping === 0 ? 'FREE' : fmtBDT(shipping));
@@ -413,11 +433,15 @@ function hookPlaceOrder() {
     lines.push(``);
     lines.push(`👕 *Items (${cart.reduce((s, i) => s + i.qty, 0)})*`);
     let subtotal = 0;
+    let saleSavings = 0;
     cart.forEach(i => {
       const j = getJersey(i.id);
-      const lineTotal = j.price * i.qty;
+      const unit = salePrice(j);
+      const lineTotal = unit * i.qty;
       subtotal += lineTotal;
-      lines.push(`• ${j.country} ${j.edition} — Size ${i.size} × ${i.qty} = ${fmtBDT(lineTotal)}`);
+      saleSavings += (j.price - unit) * i.qty;
+      const saleNote = jerseyOnSale(j) ? ` (sale, was ${fmtBDT(j.price)})` : '';
+      lines.push(`• ${j.country} ${j.edition} — Size ${i.size} × ${i.qty} = ${fmtBDT(lineTotal)}${saleNote}`);
     });
     lines.push(``);
 
@@ -439,6 +463,7 @@ function hookPlaceOrder() {
 
     lines.push(`💰 *Bill*`);
     lines.push(`Subtotal: ${fmtBDT(subtotal)}`);
+    if (saleSavings > 0) lines.push(`🔥 Sale savings: −${fmtBDT(saleSavings)}`);
     const zone = fd.get('zone');
     const shipping = subtotal >= DELIVERY.freeAbove ? 0 : DELIVERY[zone];
     lines.push(`Delivery: ${shipping === 0 ? 'FREE' : fmtBDT(shipping)}`);
@@ -519,7 +544,8 @@ function hookPlaceOrder() {
         const j = getJersey(i.id);
         return {
           id: i.id, country: j.country, edition: j.edition,
-          size: i.size, qty: i.qty, price: j.price,
+          size: i.size, qty: i.qty, price: salePrice(j),
+          listPrice: j.price, onSale: jerseyOnSale(j),
         };
       }),
       payment: fd.get('payment'),
@@ -527,7 +553,7 @@ function hookPlaceOrder() {
       bankTxnId: fd.get('bankTxnId') || '',
       notes:   fd.get('notes') || '',
       promo:   state.promo ? state.promo.code : '',
-      totals:  { subtotal, shipping, discount, grand },
+      totals:  { subtotal, shipping, discount, grand, saleSavings },
     });
 
     // 3) EmailJS — fire admin + customer emails in the background. Silently no-ops
@@ -600,7 +626,8 @@ function buildEmailVars({ ref, cart, fd, paymentLabel, grand, subtotal, shipping
   const c = window.EMAILJS_CONFIG;
   const itemsText = cart.map(i => {
     const j = getJersey(i.id);
-    return `• ${j.country} ${j.edition} — Size ${i.size} × ${i.qty} = ${fmtBDT(j.price * i.qty)}`;
+    const saleNote = jerseyOnSale(j) ? ` (sale, was ${fmtBDT(j.price)})` : '';
+    return `• ${j.country} ${j.edition} — Size ${i.size} × ${i.qty} = ${fmtBDT(salePrice(j) * i.qty)}${saleNote}`;
   }).join('\n');
 
   const addressFull = [

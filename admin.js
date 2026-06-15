@@ -83,14 +83,16 @@ function bootDashboard() {
   initMediaLibrary();
   initReviewsAdmin();
   initShowcaseAdmin();
+  initHeroVideosAdmin();
   initJerseysAdmin();
   initSettingsAdmin();
-  window.addEventListener('storage', () => { render(); renderResults(); renderMediaGallery(); renderAdminReviewsList(); renderAdminShowcaseList(); renderAdminJerseysList(); });
+  window.addEventListener('storage', () => { render(); renderResults(); renderMediaGallery(); renderAdminReviewsList(); renderAdminShowcaseList(); renderAdminHeroVideoList(); renderAdminJerseysList(); });
   window.addEventListener('predictions:change', renderResults);
   window.addEventListener('results:change',     renderResults);
   window.addEventListener('media:change',       renderMediaGallery);
   window.addEventListener('reviews:change',     renderAdminReviewsList);
   window.addEventListener('showcase:change',    renderAdminShowcaseList);
+  window.addEventListener('herovideos:change',  renderAdminHeroVideoList);
   window.addEventListener('jerseys:change',     () => {
     renderAdminJerseysList();
     refreshJerseyDropdowns();
@@ -612,6 +614,95 @@ function renderAdminShowcaseList() {
   });
 }
 
+/* ---------- Hero Videos (caption-free band) ---------- */
+function initHeroVideosAdmin() {
+  const form = document.getElementById('heroVideoForm');
+  if (!form) return;
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!form.checkValidity()) { form.reportValidity(); return; }
+
+    const fd = new FormData(form);
+    const videoFile  = fd.get('video');
+    const posterFile = fd.get('poster');
+    const sortOrder  = parseInt(fd.get('sortOrder'), 10) || 0;
+
+    if (!videoFile || videoFile.size === 0) {
+      showHeroVideoMsg('err', 'Video file required.'); return;
+    }
+    if (videoFile.size > 50 * 1024 * 1024) {
+      showHeroVideoMsg('err', `Video too large (${formatBytes(videoFile.size)}). Max 50 MB.`); return;
+    }
+    if (posterFile && posterFile.size > 5 * 1024 * 1024) {
+      showHeroVideoMsg('err', `Poster too large (${formatBytes(posterFile.size)}). Max 5 MB.`); return;
+    }
+
+    const btn = form.querySelector('button[type=submit]');
+    btn.disabled = true;
+    btn.textContent = 'Uploading video…';
+
+    try {
+      await pushHeroVideo(videoFile, posterFile && posterFile.size > 0 ? posterFile : null, sortOrder);
+      showHeroVideoMsg('ok', '✓ Hero video added — live on homepage now.');
+      form.reset();
+    } catch (err) {
+      console.warn(err);
+      showHeroVideoMsg('err', '✗ Failed: ' + (err.message || err));
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Add Hero Video';
+    }
+  });
+
+  renderAdminHeroVideoList();
+  window.addEventListener('herovideos:change', renderAdminHeroVideoList);
+}
+
+function showHeroVideoMsg(kind, text) {
+  const msg = document.getElementById('heroVideoFormMsg');
+  if (!msg) return;
+  msg.hidden = false;
+  msg.className = 'review-form-msg ' + kind;
+  msg.textContent = text;
+  setTimeout(() => { msg.hidden = true; }, 6000);
+}
+
+function renderAdminHeroVideoList() {
+  const wrap = document.getElementById('adminHeroVideoList');
+  if (!wrap) return;
+  const videos = readHeroVideos();
+  if (videos.length === 0) {
+    wrap.innerHTML = `
+      <div class="admin-review-empty">
+        <span class="icon">🎞</span>
+        <p>No hero videos yet. Add one above — it'll appear in the autoplay strip under the homepage hero.</p>
+      </div>`;
+    return;
+  }
+  wrap.innerHTML = videos.map(v => `
+    <div class="admin-review-tile" data-id="${v.id}" data-video-path="${v.videoPath || ''}" data-poster-path="${v.posterPath || ''}">
+      <video class="admin-review-tile-img" src="${v.videoUrl}" muted playsinline preload="metadata" ${v.posterUrl ? `poster="${v.posterUrl}"` : ''}></video>
+      <div class="admin-review-tile-head">
+        <strong>Hero video</strong>
+        <span class="art-stars">#${v.sortOrder || 0}</span>
+      </div>
+      <button type="button" class="admin-review-tile-del" data-del title="Delete video">×</button>
+    </div>
+  `).join('');
+
+  wrap.querySelectorAll('[data-del]').forEach(btn => {
+    btn.addEventListener('click', confirmTwoClicks(btn, async () => {
+      const tile = btn.closest('.admin-review-tile');
+      const id = tile.dataset.id;
+      const videoPath = tile.dataset.videoPath || null;
+      const posterPath = tile.dataset.posterPath || null;
+      await deleteHeroVideoRemote(id, videoPath, posterPath);
+      writeHeroVideos(readHeroVideos().filter(v => v.id !== id));
+    }));
+  });
+}
+
 /* ---------- Match results entry ---------- */
 function renderResults() {
   const wrap = document.getElementById('resultsGrid');
@@ -1006,11 +1097,17 @@ function renderAdminJerseysList() {
     return;
   }
 
-  wrap.innerHTML = JERSEYS.map(j => {
+  wrap.innerHTML = JERSEYS.map((j, idx) => {
     const stock  = j.inStock ? `${j.stockLeft} in stock` : (j.comingSoon ? 'Coming Soon' : 'Out of stock');
     const stockCls = j.inStock ? 'ok' : (j.comingSoon ? 'warn' : 'bad');
+    const isFirst = idx === 0;
+    const isLast  = idx === JERSEYS.length - 1;
     return `
       <div class="admin-jersey-row" data-id="${j.id}">
+        <div class="ajr-order">
+          <button type="button" class="ajr-move" data-up title="Move up" ${isFirst ? 'disabled' : ''}>▲</button>
+          <button type="button" class="ajr-move" data-down title="Move down" ${isLast ? 'disabled' : ''}>▼</button>
+        </div>
         <div class="ajr-swatch" style="background:${j.palette.primary};border-color:${j.palette.accent}">
           <span style="color:${j.palette.secondary}">${escapeAttr(j.number || '10')}</span>
         </div>
@@ -1030,6 +1127,11 @@ function renderAdminJerseysList() {
     `;
   }).join('');
 
+  wrap.querySelectorAll('[data-up]').forEach(btn =>
+    btn.addEventListener('click', () => moveJersey(btn.closest('.admin-jersey-row').dataset.id, -1)));
+  wrap.querySelectorAll('[data-down]').forEach(btn =>
+    btn.addEventListener('click', () => moveJersey(btn.closest('.admin-jersey-row').dataset.id, +1)));
+
   wrap.querySelectorAll('[data-edit]').forEach(btn => {
     btn.addEventListener('click', () => {
       const row = btn.closest('.admin-jersey-row');
@@ -1042,6 +1144,7 @@ function renderAdminJerseysList() {
       const row = btn.closest('.admin-jersey-row');
       const id  = row.dataset.id;
       try {
+        await ensureJerseysSeeded();   // make Supabase the source of truth first
         await deleteJerseyRemote(id);
         setJerseys(JERSEYS.filter(x => x.id !== id));
       } catch (err) {
@@ -1049,6 +1152,30 @@ function renderAdminJerseysList() {
       }
     }));
   });
+}
+
+/* Reorder a jersey one slot up (-1) or down (+1). Reassigns sort_order for the
+   whole list and persists to Supabase so the new order sticks everywhere. */
+let _jerseyMoveBusy = false;
+async function moveJersey(id, dir) {
+  if (_jerseyMoveBusy) return;
+  const arr = [...JERSEYS];
+  const i = arr.findIndex(x => x.id === id);
+  const k = i + dir;
+  if (i < 0 || k < 0 || k >= arr.length) return;
+  [arr[i], arr[k]] = [arr[k], arr[i]];
+  // Higher sort_order shows first (matches data.js sync ordering)
+  arr.forEach((j, idx) => { j.sortOrder = arr.length - idx; });
+
+  _jerseyMoveBusy = true;
+  setJerseys(arr);                 // optimistic: updates UI + cache immediately
+  try {
+    await seedJerseysFromStatic(); // full upsert with new sort_order (also seeds if empty)
+  } catch (err) {
+    console.warn('Reorder save failed (kept locally):', err.message || err);
+  } finally {
+    _jerseyMoveBusy = false;
+  }
 }
 
 let jerseyEditorMode = 'add'; // 'add' | 'edit'
@@ -1140,6 +1267,7 @@ async function handleJerseySubmit(e) {
   btn.disabled = true; btn.textContent = 'Saving…';
 
   try {
+    await ensureJerseysSeeded();   // seed full catalog first so we never collapse to one row
     await pushJersey(jersey);
     msg.hidden = false; msg.className = 'review-form-msg ok'; msg.textContent = '✓ Saved.';
 
@@ -1201,6 +1329,29 @@ function initSettingsAdmin() {
       freeAbove: parseInt(fd.get('freeAbove'), 10) || 0,
     };
     await saveSetting('delivery', value, e.target);
+  });
+
+  const saleForm = document.getElementById('saleSettingsForm');
+  if (saleForm) saleForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const endsRaw = (fd.get('endsAt') || '').toString().trim();
+    const value = {
+      active:    fd.get('active') === 'on',
+      label:     (fd.get('label') || '').toString().trim() || 'Sale',
+      amountOff: parseInt(fd.get('amountOff'), 10) || 0,
+      pctOff:    parseInt(fd.get('pctOff'), 10) || 0,
+      endsAt:    endsRaw ? new Date(endsRaw).toISOString() : '',
+      popup: {
+        enabled: fd.get('popupEnabled') === 'on',
+        badge:   (fd.get('popupBadge')   || '').toString().trim(),
+        title:   (fd.get('popupTitle')   || '').toString().trim(),
+        sub:     (fd.get('popupSub')     || '').toString().trim(),
+        cta:     (fd.get('popupCta')     || '').toString().trim() || 'Shop Now',
+        ctaUrl:  (fd.get('popupCtaUrl')  || '').toString().trim() || '#jerseys',
+      },
+    };
+    await saveSetting('sale', value, e.target);
   });
 
   const contactForm = document.getElementById('contactSettingsForm');
@@ -1475,6 +1626,18 @@ function setFieldValue(form, name, val) {
   const el = $field(form, name);
   if (el && 'value' in el) el.value = val == null ? '' : val;
 }
+function setFieldChecked(form, name, on) {
+  const el = $field(form, name);
+  if (el && 'checked' in el) el.checked = !!on;
+}
+/* ISO timestamp → value for a <input type="datetime-local"> (local wall clock) */
+function isoToLocalInput(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return '';
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+}
 
 function fillSettingsForms() {
   const pay = document.getElementById('paymentSettingsForm');
@@ -1513,6 +1676,21 @@ function fillSettingsForms() {
     setFieldValue(del, 'dhaka',     DELIVERY.dhaka);
     setFieldValue(del, 'outside',   DELIVERY.outside);
     setFieldValue(del, 'freeAbove', DELIVERY.freeAbove);
+  }
+  const sale = document.getElementById('saleSettingsForm');
+  if (sale && typeof SALE !== 'undefined') {
+    const pp = SALE.popup || {};
+    setFieldChecked(sale, 'active',    SALE.active);
+    setFieldValue(sale, 'label',       SALE.label);
+    setFieldValue(sale, 'amountOff',   SALE.amountOff);
+    setFieldValue(sale, 'pctOff',      SALE.pctOff);
+    setFieldValue(sale, 'endsAt',      isoToLocalInput(SALE.endsAt));
+    setFieldChecked(sale, 'popupEnabled', pp.enabled);
+    setFieldValue(sale, 'popupBadge',  pp.badge);
+    setFieldValue(sale, 'popupTitle',  pp.title);
+    setFieldValue(sale, 'popupSub',    pp.sub);
+    setFieldValue(sale, 'popupCta',    pp.cta);
+    setFieldValue(sale, 'popupCtaUrl', pp.ctaUrl);
   }
   const brand = document.getElementById('brandSettingsForm');
   if (brand) {

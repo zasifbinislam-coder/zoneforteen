@@ -27,6 +27,65 @@ let PROMOS = {
   MATCHDAY:   { type: 'pct',  value: 15, label: '15% off — Match Day special' },
 };
 
+/* ---------- SITEWIDE PROMOTIONAL SALE ----------
+   When `active` is true and the current time is before `endsAt`, every jersey's
+   price is reduced (flat ৳ off, or % off when pctOff > 0). Cards show the old
+   price struck through, and a one-time popup invites shoppers in. Fully
+   overridable from the admin Settings panel via the `sale` site_settings key. */
+let SALE = {
+  active:    true,
+  label:     'World Cup Sale',
+  amountOff: 100,                          // flat ৳ off each jersey
+  pctOff:    0,                            // % off (used instead of amountOff when > 0)
+  endsAt:    '2026-06-25T23:59:59+06:00',  // 10-day campaign · 15–25 June 2026
+  popup: {
+    enabled: true,
+    badge:   'LIMITED TIME · 10 DAYS ONLY',
+    title:   '৳100 OFF Every Jersey',
+    sub:     'World Cup 2026 kits now ৳1,399. Grab yours before the sale ends.',
+    cta:     'Shop the Sale',
+    ctaUrl:  '#jerseys',
+  },
+};
+
+/* Is the sale running right now? (active flag + not past its end date) */
+function saleActive() {
+  if (!SALE || !SALE.active) return false;
+  if (SALE.endsAt) {
+    const end = new Date(SALE.endsAt).getTime();
+    if (isFinite(end) && Date.now() > end) return false;
+  }
+  return true;
+}
+
+/* Effective price for a jersey after any active sale (rounded ৳). */
+function salePrice(j) {
+  const base = Number(j.price) || 0;
+  if (!saleActive()) return base;
+  let p = base;
+  if (Number(SALE.pctOff) > 0)         p = base * (1 - SALE.pctOff / 100);
+  else if (Number(SALE.amountOff) > 0) p = base - Number(SALE.amountOff);
+  return Math.max(0, Math.round(p));
+}
+
+/* True only when this jersey is genuinely cheaper under the sale. */
+function jerseyOnSale(j) {
+  return saleActive() && salePrice(j) < (Number(j.price) || 0);
+}
+
+/* Price markup for cards / quick view — strikes through the old price on sale. */
+function priceTagHTML(j, cls) {
+  const base  = Number(j.price) || 0;
+  const klass = cls || 'jersey-price';
+  if (jerseyOnSale(j)) {
+    return `<span class="${klass} on-sale">` +
+             `<span class="price-was">৳${base.toLocaleString('en-IN')}</span> ` +
+             `<span class="price-now">৳${salePrice(j).toLocaleString('en-IN')}</span>` +
+           `</span>`;
+  }
+  return `<span class="${klass}">৳${base.toLocaleString('en-IN')}</span>`;
+}
+
 /* Mobile-banking merchant numbers shown on the order page. Overridable from
    the Settings admin panel. */
 let PAY_NUMBERS = {
@@ -95,46 +154,62 @@ let OFFERS = [
   },
 ];
 
-/* ---------- WORLD CUP 2026 MATCH HUB ---------- */
-/* Plausible group-stage fixtures for the teams we sell (Brazil, Argentina,
-   France, Spain). All dates use real WC 2026 venue locales. */
+/* ---------- WORLD CUP 2026 MATCH HUB ----------
+   Real group-stage fixtures for the four teams we sell jerseys for, from the
+   actual WC 2026 draw: Brazil (Group C), Spain (Group H), France (Group I),
+   Argentina (Group J). Matchday-1 dates/times are confirmed from the live feed.
+   Matchday-2 & 3 dates are best-estimates within the official matchday windows —
+   the live auto-score sync (syncLiveScores) overrides scores + results with real
+   data the moment each match kicks off / finishes, so accuracy is self-healing.
+   Each match carries `group` so the standings table can compute live. */
 const MATCHES = [
-  { id:'m1', date:'2026-06-11T18:00:00-05:00', stage:'Group A · Opening Match', home:'MEX', away:'KSA', venue:'Estadio Azteca', city:'Mexico City', featured:true },
-  { id:'m2', date:'2026-06-13T15:00:00-05:00', stage:'Group D · MD1',          home:'ARG', away:'JPN', venue:'MetLife Stadium',  city:'New York / NJ' },
-  { id:'m3', date:'2026-06-14T12:00:00-05:00', stage:'Group E · MD1',          home:'BRA', away:'AUS', venue:'SoFi Stadium',     city:'Los Angeles' },
-  { id:'m4', date:'2026-06-14T18:00:00-05:00', stage:'Group F · MD1',          home:'ESP', away:'CRO', venue:'Mercedes-Benz',    city:'Atlanta' },
-  { id:'m5', date:'2026-06-15T15:00:00-05:00', stage:'Group G · MD1',          home:'FRA', away:'DEN', venue:'NRG Stadium',      city:'Houston' },
-  { id:'m6', date:'2026-06-19T15:00:00-05:00', stage:'Group D · MD2',          home:'ARG', away:'SEN', venue:'Lincoln Financial',city:'Philadelphia' },
-  { id:'m7', date:'2026-06-20T18:00:00-05:00', stage:'Group E · MD2',          home:'BRA', away:'EGY', venue:'Hard Rock Stadium',city:'Miami' },
-  { id:'m8', date:'2026-06-24T20:00:00-05:00', stage:'Group F · MD3',          home:'ESP', away:'TUN', venue:'Lumen Field',      city:'Seattle' },
-  { id:'m9', date:'2026-06-25T18:00:00-05:00', stage:'Group G · MD3',          home:'FRA', away:'CIV', venue:'BMO Field',        city:'Toronto' },
+  /* ----- Group C · Brazil ----- */
+  { id:'c-bra-mar', group:'C', date:'2026-06-13T22:00:00Z', stage:'Group C · Matchday 1', home:'BRA', away:'MAR', venue:'SoFi Stadium',        city:'Los Angeles' },
+  { id:'c-bra-sco', group:'C', date:'2026-06-19T22:00:00Z', stage:'Group C · Matchday 2', home:'BRA', away:'SCO', venue:'Hard Rock Stadium',   city:'Miami' },
+  { id:'c-bra-hai', group:'C', date:'2026-06-24T20:00:00Z', stage:'Group C · Matchday 3', home:'BRA', away:'HAI', venue:'Mercedes-Benz Stadium',city:'Atlanta' },
+
+  /* ----- Group H · Spain ----- */
+  { id:'h-esp-cpv', group:'H', date:'2026-06-15T16:00:00Z', stage:'Group H · Matchday 1', home:'ESP', away:'CPV', venue:'Lumen Field',         city:'Seattle' },
+  { id:'h-esp-ksa', group:'H', date:'2026-06-20T16:00:00Z', stage:'Group H · Matchday 2', home:'ESP', away:'KSA', venue:'Levi\'s Stadium',     city:'San Francisco Bay' },
+  { id:'h-esp-uru', group:'H', date:'2026-06-25T16:00:00Z', stage:'Group H · Matchday 3', home:'ESP', away:'URU', venue:'SoFi Stadium',        city:'Los Angeles' },
+
+  /* ----- Group I · France ----- */
+  { id:'i-fra-sen', group:'I', date:'2026-06-16T19:00:00Z', stage:'Group I · Matchday 1', home:'FRA', away:'SEN', venue:'MetLife Stadium',     city:'New York / NJ' },
+  { id:'i-fra-irq', group:'I', date:'2026-06-21T19:00:00Z', stage:'Group I · Matchday 2', home:'FRA', away:'IRQ', venue:'Gillette Stadium',    city:'Boston' },
+  { id:'i-fra-nor', group:'I', date:'2026-06-26T19:00:00Z', stage:'Group I · Matchday 3', home:'FRA', away:'NOR', venue:'Lincoln Financial',   city:'Philadelphia' },
+
+  /* ----- Group J · Argentina ----- */
+  { id:'j-arg-alg', group:'J', date:'2026-06-17T01:00:00Z', stage:'Group J · Matchday 1', home:'ARG', away:'ALG', venue:'AT&T Stadium',        city:'Dallas' },
+  { id:'j-arg-aut', group:'J', date:'2026-06-22T01:00:00Z', stage:'Group J · Matchday 2', home:'ARG', away:'AUT', venue:'NRG Stadium',         city:'Houston' },
+  { id:'j-arg-jor', group:'J', date:'2026-06-27T01:00:00Z', stage:'Group J · Matchday 3', home:'ARG', away:'JOR', venue:'Estadio Azteca',      city:'Mexico City' },
 ];
 
-/* Group standings — focus on the four groups featuring our jerseys */
+/* Group standings — the four groups featuring our jerseys. Stats start at 0
+   and are recomputed live from real results by computeGroupStats() in script.js. */
 const GROUPS = [
-  { name:'D', teams:[
-    { code:'ARG', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
-    { code:'JPN', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
+  { name:'C', teams:[
+    { code:'BRA', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
+    { code:'MAR', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
+    { code:'SCO', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
+    { code:'HAI', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
+  ]},
+  { name:'H', teams:[
+    { code:'ESP', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
+    { code:'URU', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
+    { code:'CPV', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
+    { code:'KSA', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
+  ]},
+  { name:'I', teams:[
+    { code:'FRA', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
     { code:'SEN', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
     { code:'NOR', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
+    { code:'IRQ', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
   ]},
-  { name:'E', teams:[
-    { code:'BRA', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
-    { code:'AUS', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
-    { code:'EGY', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
-    { code:'SUI', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
-  ]},
-  { name:'F', teams:[
-    { code:'ESP', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
-    { code:'CRO', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
-    { code:'TUN', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
-    { code:'CRC', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
-  ]},
-  { name:'G', teams:[
-    { code:'FRA', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
-    { code:'DEN', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
-    { code:'CIV', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
-    { code:'PAN', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
+  { name:'J', teams:[
+    { code:'ARG', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
+    { code:'AUT', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
+    { code:'ALG', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
+    { code:'JOR', P:0, W:0, D:0, L:0, GF:0, GA:0, Pts:0 },
   ]},
 ];
 
@@ -188,6 +263,15 @@ const COUNTRY = {
   PAN: { name:'Panama',        iso2:'pa',     bg:'#005293', fg:'#d21034' },
   SEN: { name:'Senegal',       iso2:'sn',     bg:'#00853f', fg:'#fdef42' },
   NOR: { name:'Norway',        iso2:'no',     bg:'#ef2b2d', fg:'#002868' },
+  MAR: { name:'Morocco',       iso2:'ma',     bg:'#c1272d', fg:'#006233' },
+  HAI: { name:'Haiti',         iso2:'ht',     bg:'#00209f', fg:'#d21034' },
+  SCO: { name:'Scotland',      iso2:'gb-sct', bg:'#0065bf', fg:'#ffffff' },
+  CPV: { name:'Cape Verde',    iso2:'cv',     bg:'#003893', fg:'#cf2027' },
+  URU: { name:'Uruguay',       iso2:'uy',     bg:'#7b9ce1', fg:'#001489' },
+  IRQ: { name:'Iraq',          iso2:'iq',     bg:'#007a3d', fg:'#ce1126' },
+  ALG: { name:'Algeria',       iso2:'dz',     bg:'#006233', fg:'#d21034' },
+  AUT: { name:'Austria',       iso2:'at',     bg:'#ed2939', fg:'#ffffff' },
+  JOR: { name:'Jordan',        iso2:'jo',     bg:'#007a3d', fg:'#ce1126' },
 };
 
 /* Real country flag (from flagcdn.com — works under file:// too) */
@@ -421,6 +505,7 @@ async function syncFromSupabase() {
       { data: showcase, error: e5 },
       { data: jerseys,  error: e6 },
       { data: settings, error: e7 },
+      { data: heroVids, error: e8 },
     ] = await Promise.all([
       sb.from('predictions').select('*'),
       sb.from('match_results').select('*'),
@@ -435,6 +520,9 @@ async function syncFromSupabase() {
         .order('sort_order', { ascending: false })
         .order('created_at', { ascending: true }),
       sb.from('site_settings').select('*'),
+      sb.from('hero_videos').select('*')
+        .order('sort_order', { ascending: false })
+        .order('created_at', { ascending: false }),
     ]);
 
     // Site settings — apply before anything else so prices/promos are correct
@@ -452,6 +540,21 @@ async function syncFromSupabase() {
       const mapped = jerseys.map(rowToJersey);
       localStorage.setItem(JERSEYS_KEY, JSON.stringify(mapped));
       setJerseys(mapped);
+    }
+
+    // hero videos error non-fatal — table may not exist yet on first deploy
+    if (!e8 && heroVids) {
+      const localHero = heroVids.map(r => ({
+        id:         r.id,
+        videoUrl:   r.video_url,
+        videoPath:  r.video_path,
+        posterUrl:  r.poster_url,
+        posterPath: r.poster_path,
+        sortOrder:  r.sort_order,
+        createdAt:  r.created_at ? new Date(r.created_at).getTime() : null,
+      }));
+      localStorage.setItem(HERO_VIDEOS_KEY, JSON.stringify(localHero));
+      window.dispatchEvent(new CustomEvent('herovideos:change'));
     }
 
     // showcase error non-fatal — table may not exist yet on first deploy
@@ -562,6 +665,10 @@ function subscribeToSupabaseChanges() {
     .subscribe();
   sb.channel('zone14-showcase-videos')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'showcase_videos' },
+        () => syncFromSupabase())
+    .subscribe();
+  sb.channel('zone14-hero-videos')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'hero_videos' },
         () => syncFromSupabase())
     .subscribe();
   sb.channel('zone14-jerseys')
@@ -702,10 +809,28 @@ function clearResult(matchId) {
   deleteResultRemote(matchId);                // sync to Supabase
 }
 
+/* ---------- LIVE AUTO-SCORES (from the public WC feed) ----------
+   Kept in their own localStorage key so they never collide with admin-entered
+   match_results synced from Supabase. mergedResults() overlays them (live wins)
+   for every consumer — match grid, group standings, leaderboard. */
+const LIVE_KEY = 'zone14_live_scores_v1';
+function readLiveScores() {
+  try { return JSON.parse(localStorage.getItem(LIVE_KEY)) || {}; }
+  catch (_) { return {}; }
+}
+function writeLiveScores(obj) {
+  localStorage.setItem(LIVE_KEY, JSON.stringify(obj));
+  window.dispatchEvent(new CustomEvent('results:change'));
+}
+/* Admin results + live auto-scores combined; the live feed takes precedence. */
+function mergedResults() {
+  return { ...readResults(), ...readLiveScores() };
+}
+
 /* Compute leaderboard — aggregate predictions across all results */
 function computeLeaderboard() {
   const preds   = readPredictions();
-  const results = readResults();
+  const results = mergedResults();
   const tally   = {};
 
   preds.forEach(p => {
@@ -1015,6 +1140,77 @@ async function deleteShowcaseRemote(id, videoPath, posterPath) {
 }
 
 /* ============================================================
+   HERO VIDEOS — caption-free autoplay strip under the hero banner.
+   Pure videos, no titles. Stored in hero_videos table + media bucket
+   (folder: 'hero/'). Cache-first read pattern, mirrors showcase.
+   ============================================================ */
+const HERO_VIDEOS_KEY = 'zone14_hero_videos_v1';
+
+function readHeroVideos() {
+  try { return JSON.parse(localStorage.getItem(HERO_VIDEOS_KEY)) || []; }
+  catch (_) { return []; }
+}
+function writeHeroVideos(arr) {
+  localStorage.setItem(HERO_VIDEOS_KEY, JSON.stringify(arr));
+  window.dispatchEvent(new CustomEvent('herovideos:change'));
+}
+
+async function pushHeroVideo(videoFile, posterFile, sortOrder) {
+  const sb = getSupabase();
+  if (!sb) throw new Error('Supabase client not ready');
+  if (!videoFile) throw new Error('Video file is required');
+
+  const uploadOne = async (file) => {
+    const ext = (file.name.split('.').pop() || 'bin').toLowerCase();
+    const path = `hero/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { data: up, error: upErr } = await sb.storage
+      .from('media')
+      .upload(path, file, { contentType: file.type, upsert: false });
+    if (upErr) throw upErr;
+    const { data: pub } = sb.storage.from('media').getPublicUrl(up.path);
+    return { url: pub.publicUrl, path: up.path };
+  };
+
+  const cleanup = [];
+  try {
+    const vid = await uploadOne(videoFile);
+    cleanup.push(vid.path);
+
+    let posterUrl = null, posterPath = null;
+    if (posterFile) {
+      const p = await uploadOne(posterFile);
+      posterUrl = p.url; posterPath = p.path;
+      cleanup.push(p.path);
+    }
+
+    const { data, error } = await sb.from('hero_videos').insert({
+      video_url:   vid.url,
+      video_path:  vid.path,
+      poster_url:  posterUrl,
+      poster_path: posterPath,
+      sort_order:  sortOrder || 0,
+    }).select().single();
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    if (cleanup.length) {
+      try { await sb.storage.from('media').remove(cleanup); } catch (_) {}
+    }
+    throw err;
+  }
+}
+
+async function deleteHeroVideoRemote(id, videoPath, posterPath) {
+  const sb = getSupabase();
+  if (!sb) return;
+  const toRemove = [videoPath, posterPath].filter(Boolean);
+  if (toRemove.length) {
+    try { await sb.storage.from('media').remove(toRemove); } catch (_) {}
+  }
+  try { await sb.from('hero_videos').delete().eq('id', id); } catch (_) {}
+}
+
+/* ============================================================
    JERSEYS — admin catalog override. When the Supabase `jerseys` table
    has any rows, JERSEYS[] is replaced by them. Empty table = static seed.
    ============================================================ */
@@ -1026,6 +1222,9 @@ const JERSEYS_SEED_BACKUP = null; // populated below after JERSEYS is declared
 function setJerseys(arr) {
   JERSEYS.length = 0;
   arr.forEach(j => JERSEYS.push(j));
+  // Persist to cache so admin edits/deletes survive reloads even before the
+  // next Supabase round-trip (and so a deleted seed jersey doesn't reappear).
+  try { localStorage.setItem(JERSEYS_KEY, JSON.stringify(arr)); } catch (_) {}
   window.dispatchEvent(new CustomEvent('jerseys:change'));
 }
 
@@ -1133,6 +1332,10 @@ function applySettings(settings) {
   if (Array.isArray(settings.players) && settings.players.length > 0) PLAYERS = settings.players;
   if (settings.contact) CONTACT = { ...CONTACT, ...settings.contact };
   if (settings.social)  SOCIAL  = { ...SOCIAL,  ...settings.social };
+  if (settings.sale)    SALE    = {
+    ...SALE, ...settings.sale,
+    popup: { ...SALE.popup, ...(settings.sale.popup || {}) },
+  };
   window.dispatchEvent(new CustomEvent('settings:applied'));
 }
 
@@ -1160,6 +1363,36 @@ async function seedJerseysFromStatic() {
   const rows = JERSEYS.map(jerseyToRow);
   const { error } = await sb.from('jerseys').upsert(rows);
   if (error) throw error;
+}
+
+/* If the jerseys table is still empty (catalog is the static seed), push the
+   FULL current catalog to Supabase before any single add/edit/delete. Without
+   this, editing one jersey would collapse the catalog to a single row, and
+   deleting a seed jersey wouldn't persist (it'd reappear on reload / for other
+   visitors). Returns true if it just seeded. */
+async function ensureJerseysSeeded() {
+  const sb = getSupabase();
+  if (!sb) return false;
+  try {
+    const { count, error } = await sb.from('jerseys').select('id', { count: 'exact', head: true });
+    if (error) return false;
+    if ((count || 0) === 0) { await seedJerseysFromStatic(); return true; }
+  } catch (_) {}
+  return false;
+}
+
+/* ---------- LIVE GROUP STANDINGS (all 12 WC groups, from the public feed) ---------- */
+const GROUP_STANDINGS_KEY = 'zone14_group_standings_v1';
+function readGroupStandings() {
+  try { return JSON.parse(localStorage.getItem(GROUP_STANDINGS_KEY)) || null; }
+  catch (_) { return null; }
+}
+
+/* ---------- ALL WC MATCHES (every group: finished + live + upcoming) ---------- */
+const ALL_MATCHES_KEY = 'zone14_all_matches_v1';
+function readAllMatches() {
+  try { return JSON.parse(localStorage.getItem(ALL_MATCHES_KEY)) || null; }
+  catch (_) { return null; }
 }
 
 /* ============================================================

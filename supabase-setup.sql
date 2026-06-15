@@ -168,6 +168,36 @@ create policy "showcase_delete" on public.showcase_videos for delete using (true
 do $$ begin alter publication supabase_realtime add table public.showcase_videos; exception when duplicate_object then null; end $$;
 
 -- ============================================================
+-- 9b. HERO VIDEOS — caption-free autoplay strip under the hero banner
+-- ============================================================
+-- Pure videos, no text. Rendered as a muted autoplay band right below the
+-- homepage hero. Admin-uploadable from the "Hero Videos" panel.
+create table if not exists public.hero_videos (
+  id          uuid primary key default gen_random_uuid(),
+  video_url   text not null,
+  video_path  text not null,
+  poster_url  text,
+  poster_path text,
+  sort_order  integer default 0,
+  created_at  timestamptz default now()
+);
+create index if not exists hero_videos_sort_idx
+  on public.hero_videos (sort_order desc, created_at desc);
+
+alter table public.hero_videos enable row level security;
+
+drop policy if exists "hero_read"   on public.hero_videos;
+drop policy if exists "hero_insert" on public.hero_videos;
+drop policy if exists "hero_update" on public.hero_videos;
+drop policy if exists "hero_delete" on public.hero_videos;
+create policy "hero_read"   on public.hero_videos for select using (true);
+create policy "hero_insert" on public.hero_videos for insert with check (true);
+create policy "hero_update" on public.hero_videos for update using (true) with check (true);
+create policy "hero_delete" on public.hero_videos for delete using (true);
+
+do $$ begin alter publication supabase_realtime add table public.hero_videos; exception when duplicate_object then null; end $$;
+
+-- ============================================================
 -- 10. JERSEYS — admin-controlled catalog override
 -- ============================================================
 -- When this table has rows, the static JERSEYS[] in data.js is replaced
