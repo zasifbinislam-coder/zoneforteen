@@ -6015,6 +6015,159 @@ h1, h2, h3, .display {
   border-color: transparent;
 }
 .ajr-move:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ============================================================
+   ADMIN — Sales & Stock
+   ============================================================ */
+.sales-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.due-pill {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 9px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  border-radius: 999px;
+  background: rgba(255, 181, 71, 0.18);
+  color: #ffb547;
+  vertical-align: middle;
+}
+.sales-list { display: flex; flex-direction: column; gap: 8px; }
+.sale-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--text-mute);
+  border-radius: 10px;
+}
+.sale-row.paid    { border-left-color: #51e0a4; }
+.sale-row.partial { border-left-color: #ffb547; }
+.sale-row.due     { border-left-color: var(--red); }
+.sale-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sale-main strong { font-size: 14px; }
+.sale-size {
+  display: inline-block; padding: 0 5px; margin-left: 2px;
+  font-size: 11px; border-radius: 4px;
+  background: var(--surface-hi); color: var(--text-dim);
+}
+.sale-cust { font-size: 12px; color: var(--text-mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sale-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.sale-total { font-family: 'Bohemian Typewriter', sans-serif; color: var(--neon); font-size: 16px; }
+.sale-pay { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; }
+.sale-pay.paid { color: #51e0a4; }
+.sale-pay.partial { color: #ffb547; }
+.sale-pay.due { color: var(--red); }
+.sale-date { font-size: 11px; color: var(--text-mute); }
+.sale-actions { display: flex; gap: 6px; }
+
+.stock-grid { display: flex; flex-direction: column; gap: 8px; }
+.stock-row {
+  display: grid;
+  grid-template-columns: 1fr repeat(4, 64px) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.stock-team { font-size: 13px; font-weight: 600; }
+.stock-cell {
+  display: flex; flex-direction: column; align-items: center;
+  font-size: 10px; color: var(--text-mute); gap: 2px;
+}
+.stock-cell input {
+  width: 56px; text-align: center;
+  padding: 5px; font-size: 13px;
+  background: var(--bg-2); color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px;
+}
+@media (max-width: 768px) {
+  .sales-kpis { grid-template-columns: repeat(2, 1fr); }
+  .stock-row { grid-template-columns: 1fr 1fr 1fr; }
+  .stock-row .stock-team { grid-column: 1 / -1; }
+  .sale-row { grid-template-columns: 1fr auto; }
+  .sale-actions { grid-column: 1 / -1; justify-content: flex-end; }
+}
+
+/* ============================================================
+   ACCOUNTS PAGE — P&L, expenses
+   ============================================================ */
+.acct-kpis { margin-bottom: 16px; }
+.kpi-card.kpi-net {
+  background: linear-gradient(135deg, rgba(81,224,164,0.12), rgba(94,233,227,0.06));
+  border-color: rgba(81,224,164,0.4);
+}
+.acct-calc-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  margin-bottom: 16px;
+}
+.acct-calc-card h2 { font-size: 18px; margin-bottom: 14px; }
+.calc-rows { display: flex; flex-direction: column; gap: 2px; max-width: 520px; }
+.calc-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 9px 4px;
+  border-bottom: 1px dashed var(--border);
+  font-size: 14px; color: var(--text-dim);
+}
+.calc-row span:last-child { font-family: 'Bohemian Typewriter', sans-serif; color: var(--text); }
+.calc-row .neg { color: #ff8a8a; }
+.calc-row.sub { color: var(--text); font-weight: 600; }
+.calc-row.sub span:last-child { color: var(--neon); }
+.calc-row.total {
+  margin-top: 6px; padding: 12px 4px;
+  border-bottom: none; border-top: 2px solid var(--border);
+  font-size: 16px; font-weight: 700; color: var(--text);
+}
+.calc-row.total.pos span:last-child { color: #51e0a4; font-size: 22px; }
+.calc-row.total.neg span:last-child { color: #ff6b6b; font-size: 22px; }
+.calc-note { margin-top: 10px; font-size: 12px; color: var(--text-mute); }
+.calc-note strong { color: var(--gold); }
+
+.acct-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.cat-breakdown { display: flex; flex-direction: column; gap: 12px; }
+.cat-row { display: flex; flex-direction: column; gap: 5px; }
+.cat-head { display: flex; justify-content: space-between; font-size: 13px; }
+.cat-head strong { font-family: 'Bohemian Typewriter', sans-serif; color: var(--text); }
+.cat-bar { height: 7px; background: var(--bg-2); border-radius: 999px; overflow: hidden; }
+.cat-bar-fill { height: 100%; background: var(--grad-neon); border-radius: 999px; }
+
+.expense-list { display: flex; flex-direction: column; gap: 7px; }
+.expense-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+}
+.exp-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.exp-main strong { font-size: 13px; }
+.exp-note { font-size: 12px; color: var(--text-mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.exp-amt { font-family: 'Bohemian Typewriter', sans-serif; color: #ff8a8a; font-size: 15px; }
+.exp-date { font-size: 11px; color: var(--text-mute); }
+
+@media (max-width: 768px) {
+  .acct-grid { grid-template-columns: 1fr; }
+}
 .ajr-swatch {
   width: 56px; height: 56px;
   border-radius: 8px;

@@ -264,3 +264,83 @@ create policy "settings_update" on public.site_settings for update using (true) 
 create policy "settings_delete" on public.site_settings for delete using (true);
 
 do $$ begin alter publication supabase_realtime add table public.site_settings; exception when duplicate_object then null; end $$;
+
+-- ============================================================
+-- 12. SALES LEDGER + STOCK — admin business tracking
+-- ============================================================
+-- Every sale recorded here (what, size, qty, price, cost, customer, paid/due).
+-- Drives the admin "Sales & Stock" dashboard: revenue, profit, outstanding dues.
+create table if not exists public.sales (
+  id              uuid primary key default gen_random_uuid(),
+  sold_at         timestamptz default now(),
+  jersey_id       text,
+  team            text,
+  edition         text,
+  size            text,
+  qty             integer default 1,
+  sell_price      integer default 0,    -- per unit (BDT)
+  cost_price      integer default 0,    -- per unit (BDT)
+  customer        text,
+  phone           text,
+  area            text,
+  payment_status  text default 'due',   -- 'paid' | 'due' | 'partial'
+  received        integer default 0,    -- amount collected so far (BDT)
+  delivery_status text default 'pending',-- 'pending' | 'shipped' | 'delivered' | 'returned'
+  notes           text,
+  created_at      timestamptz default now()
+);
+create index if not exists sales_sold_at_idx on public.sales (sold_at desc);
+
+alter table public.sales enable row level security;
+drop policy if exists "sales_read"   on public.sales;
+drop policy if exists "sales_insert" on public.sales;
+drop policy if exists "sales_update" on public.sales;
+drop policy if exists "sales_delete" on public.sales;
+create policy "sales_read"   on public.sales for select using (true);
+create policy "sales_insert" on public.sales for insert with check (true);
+create policy "sales_update" on public.sales for update using (true) with check (true);
+create policy "sales_delete" on public.sales for delete using (true);
+do $$ begin alter publication supabase_realtime add table public.sales; exception when duplicate_object then null; end $$;
+
+-- Per-jersey, per-size stock counts.
+create table if not exists public.stock (
+  jersey_id  text not null,
+  size       text not null,
+  qty        integer default 0,
+  updated_at timestamptz default now(),
+  primary key (jersey_id, size)
+);
+alter table public.stock enable row level security;
+drop policy if exists "stock_read"   on public.stock;
+drop policy if exists "stock_insert" on public.stock;
+drop policy if exists "stock_update" on public.stock;
+drop policy if exists "stock_delete" on public.stock;
+create policy "stock_read"   on public.stock for select using (true);
+create policy "stock_insert" on public.stock for insert with check (true);
+create policy "stock_update" on public.stock for update using (true) with check (true);
+create policy "stock_delete" on public.stock for delete using (true);
+do $$ begin alter publication supabase_realtime add table public.stock; exception when duplicate_object then null; end $$;
+
+-- ============================================================
+-- 13. EXPENSES — full business cost tracking (Accounts page)
+-- ============================================================
+create table if not exists public.expenses (
+  id         uuid primary key default gen_random_uuid(),
+  spent_at   timestamptz default now(),
+  category   text not null,
+  amount     integer default 0,   -- BDT
+  note       text,
+  created_at timestamptz default now()
+);
+create index if not exists expenses_spent_at_idx on public.expenses (spent_at desc);
+
+alter table public.expenses enable row level security;
+drop policy if exists "expenses_read"   on public.expenses;
+drop policy if exists "expenses_insert" on public.expenses;
+drop policy if exists "expenses_update" on public.expenses;
+drop policy if exists "expenses_delete" on public.expenses;
+create policy "expenses_read"   on public.expenses for select using (true);
+create policy "expenses_insert" on public.expenses for insert with check (true);
+create policy "expenses_update" on public.expenses for update using (true) with check (true);
+create policy "expenses_delete" on public.expenses for delete using (true);
+do $$ begin alter publication supabase_realtime add table public.expenses; exception when duplicate_object then null; end $$;

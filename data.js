@@ -506,6 +506,9 @@ async function syncFromSupabase() {
       { data: jerseys,  error: e6 },
       { data: settings, error: e7 },
       { data: heroVids, error: e8 },
+      { data: salesRows, error: e9 },
+      { data: stockRows, error: e10 },
+      { data: expenseRows, error: e11 },
     ] = await Promise.all([
       sb.from('predictions').select('*'),
       sb.from('match_results').select('*'),
@@ -523,6 +526,9 @@ async function syncFromSupabase() {
       sb.from('hero_videos').select('*')
         .order('sort_order', { ascending: false })
         .order('created_at', { ascending: false }),
+      sb.from('sales').select('*').order('sold_at', { ascending: false }),
+      sb.from('stock').select('*'),
+      sb.from('expenses').select('*').order('spent_at', { ascending: false }),
     ]);
 
     // Site settings — apply before anything else so prices/promos are correct
@@ -540,6 +546,25 @@ async function syncFromSupabase() {
       const mapped = jerseys.map(rowToJersey);
       localStorage.setItem(JERSEYS_KEY, JSON.stringify(mapped));
       setJerseys(mapped);
+    }
+
+    // sales + stock errors non-fatal — tables may not exist yet on first deploy
+    if (!e9 && Array.isArray(salesRows)) {
+      localStorage.setItem(SALES_KEY, JSON.stringify(salesRows.map(rowToSale)));
+      window.dispatchEvent(new CustomEvent('sales:change'));
+    }
+    if (!e10 && Array.isArray(stockRows)) {
+      const map = {};
+      stockRows.forEach(r => {
+        if (!map[r.jersey_id]) map[r.jersey_id] = {};
+        map[r.jersey_id][r.size] = r.qty;
+      });
+      localStorage.setItem(STOCK_KEY, JSON.stringify(map));
+      window.dispatchEvent(new CustomEvent('stock:change'));
+    }
+    if (!e11 && Array.isArray(expenseRows)) {
+      localStorage.setItem(EXPENSES_KEY, JSON.stringify(expenseRows.map(rowToExpense)));
+      window.dispatchEvent(new CustomEvent('expenses:change'));
     }
 
     // hero videos error non-fatal — table may not exist yet on first deploy
@@ -1393,6 +1418,182 @@ const ALL_MATCHES_KEY = 'zone14_all_matches_v1';
 function readAllMatches() {
   try { return JSON.parse(localStorage.getItem(ALL_MATCHES_KEY)) || null; }
   catch (_) { return null; }
+}
+
+/* ============================================================
+   SALES LEDGER + STOCK — admin business tracking (Supabase-backed)
+   ============================================================ */
+const SALES_KEY = 'zone14_sales_v1';
+const STOCK_KEY = 'zone14_stock_v1';
+const SIZES = ['M', 'L', 'XL', 'XXL'];
+
+function readSales() {
+  try { return JSON.parse(localStorage.getItem(SALES_KEY)) || []; }
+  catch (_) { return []; }
+}
+function writeSales(arr) {
+  localStorage.setItem(SALES_KEY, JSON.stringify(arr));
+  window.dispatchEvent(new CustomEvent('sales:change'));
+}
+/* Stock cache shape: { [jerseyId]: { M, L, XL, XXL } } */
+function readStock() {
+  try { return JSON.parse(localStorage.getItem(STOCK_KEY)) || {}; }
+  catch (_) { return {}; }
+}
+function writeStock(map) {
+  localStorage.setItem(STOCK_KEY, JSON.stringify(map));
+  window.dispatchEvent(new CustomEvent('stock:change'));
+}
+function getStock(jerseyId, size) {
+  const m = readStock();
+  return (m[jerseyId] && m[jerseyId][size]) || 0;
+}
+
+/* Map a Supabase sales row → local shape */
+function rowToSale(r) {
+  return {
+    id: r.id, soldAt: r.sold_at ? new Date(r.sold_at).getTime() : Date.now(),
+    jerseyId: r.jersey_id, team: r.team, edition: r.edition, size: r.size,
+    qty: r.qty, sellPrice: r.sell_price, costPrice: r.cost_price,
+    customer: r.customer, phone: r.phone, area: r.area,
+    paymentStatus: r.payment_status, received: r.received,
+    deliveryStatus: r.delivery_status, notes: r.notes,
+  };
+}
+
+async function pushSale(sale) {
+  const sb = getSupabase();
+  if (!sb) throw new Error('Supabase client not ready');
+  const { data, error } = await sb.from('sales').insert({
+    sold_at:        new Date(sale.soldAt || Date.now()).toISOString(),
+    jersey_id:      sale.jerseyId || null,
+    team:           sale.team || null,
+    edition:        sale.edition || null,
+    size:           sale.size || null,
+    qty:            sale.qty || 1,
+    sell_price:     sale.sellPrice || 0,
+    cost_price:     sale.costPrice || 0,
+    customer:       sale.customer || null,
+    phone:          sale.phone || null,
+    area:           sale.area || null,
+    payment_status: sale.paymentStatus || 'due',
+    received:       sale.received || 0,
+    delivery_status:sale.deliveryStatus || 'pending',
+    notes:          sale.notes || null,
+  }).select().single();
+  if (error) throw error;
+  return data;
+}
+async function updateSaleRemote(id, patch) {
+  const sb = getSupabase();
+  if (!sb) throw new Error('Supabase client not ready');
+  const { error } = await sb.from('sales').update(patch).eq('id', id);
+  if (error) throw error;
+}
+async function deleteSaleRemote(id) {
+  const sb = getSupabase();
+  if (!sb) return;
+  try { await sb.from('sales').delete().eq('id', id); } catch (_) {}
+}
+/* Upsert one stock cell (jersey + size → qty) */
+async function pushStock(jerseyId, size, qty) {
+  const sb = getSupabase();
+  if (!sb) throw new Error('Supabase client not ready');
+  const { error } = await sb.from('stock').upsert({
+    jersey_id: jerseyId, size, qty: Math.max(0, qty | 0),
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'jersey_id,size' });
+  if (error) throw error;
+}
+
+/* ============================================================
+   EXPENSES — full business cost tracking (for the Accounts page)
+   ============================================================ */
+const EXPENSES_KEY = 'zone14_expenses_v1';
+const EXPENSE_CATEGORIES = [
+  'Stock / Product purchase',
+  'Facebook Ads',
+  'Delivery / Courier',
+  'Packaging',
+  'Printing (name/number)',
+  'Rent',
+  'Salary / Labour',
+  'Transport',
+  'Other',
+];
+
+function readExpenses() {
+  try { return JSON.parse(localStorage.getItem(EXPENSES_KEY)) || []; }
+  catch (_) { return []; }
+}
+function writeExpenses(arr) {
+  localStorage.setItem(EXPENSES_KEY, JSON.stringify(arr));
+  window.dispatchEvent(new CustomEvent('expenses:change'));
+}
+function rowToExpense(r) {
+  return {
+    id: r.id,
+    spentAt: r.spent_at ? new Date(r.spent_at).getTime() : Date.now(),
+    category: r.category, amount: r.amount, note: r.note,
+  };
+}
+async function pushExpense(exp) {
+  const sb = getSupabase();
+  if (!sb) throw new Error('Supabase client not ready');
+  const { data, error } = await sb.from('expenses').insert({
+    spent_at: new Date(exp.spentAt || Date.now()).toISOString(),
+    category: exp.category, amount: exp.amount || 0, note: exp.note || null,
+  }).select().single();
+  if (error) throw error;
+  return data;
+}
+async function deleteExpenseRemote(id) {
+  const sb = getSupabase();
+  if (!sb) return;
+  try { await sb.from('expenses').delete().eq('id', id); } catch (_) {}
+}
+
+/* Full Profit & Loss for the Accounts page (cash basis). */
+function computeAccounts() {
+  const sales = readSales();
+  let revenue = 0, received = 0, due = 0;
+  sales.forEach(s => {
+    const total = s.sellPrice * s.qty;
+    revenue  += total;
+    received += s.received || 0;
+    due      += Math.max(0, total - (s.received || 0));
+  });
+
+  const expenses = readExpenses();
+  const byCategory = {};
+  let expenseTotal = 0;
+  expenses.forEach(e => {
+    byCategory[e.category] = (byCategory[e.category] || 0) + (e.amount || 0);
+    expenseTotal += e.amount || 0;
+  });
+
+  return {
+    revenue, received, due,
+    expenseTotal, byCategory,
+    netProfit: received - expenseTotal,          // real cash in hand
+    projectedProfit: revenue - expenseTotal,      // if all dues collected
+    expenseCount: expenses.length,
+  };
+}
+
+/* Sales summary for the dashboard cards */
+function computeSalesSummary() {
+  const sales = readSales();
+  let revenue = 0, profit = 0, received = 0, due = 0, units = 0;
+  sales.forEach(s => {
+    const total = s.sellPrice * s.qty;
+    revenue  += total;
+    profit   += (s.sellPrice - s.costPrice) * s.qty;
+    received += s.received || 0;
+    due      += Math.max(0, total - (s.received || 0));
+    units    += s.qty;
+  });
+  return { revenue, profit, received, due, units, orders: sales.length };
 }
 
 /* ============================================================
