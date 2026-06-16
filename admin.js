@@ -269,10 +269,10 @@ async function uploadOne(jerseyId, file, warnEl) {
   if (!isCloudConfigured()) {
     throw new Error('Supabase client not ready. Refresh and try again.');
   }
-  // Size sanity check — Supabase free tier per-file limit is 50 MB by default,
-  // and any single jersey photo really shouldn't exceed ~5 MB.
-  if (file.size > 50 * 1024 * 1024) {
-    throw new Error(`File too large (${formatBytes(file.size)}). Max 50 MB per file.`);
+  // Generous input cap — images + videos are compressed in the browser before
+  // upload, so the file that actually reaches Supabase is far smaller.
+  if (file.size > 300 * 1024 * 1024) {
+    throw new Error(`File too large (${formatBytes(file.size)}). Max 300 MB per file.`);
   }
   if (file.size > 5 * 1024 * 1024 && file.type.startsWith('image/')) {
     warnEl.hidden = false;
@@ -566,8 +566,8 @@ function initShowcaseAdmin() {
     if (!videoFile || videoFile.size === 0) {
       showShowcaseMsg('err', 'Video file required.'); return;
     }
-    if (videoFile.size > 50 * 1024 * 1024) {
-      showShowcaseMsg('err', `Video too large (${formatBytes(videoFile.size)}). Max 50 MB.`); return;
+    if (videoFile.size > 300 * 1024 * 1024) {
+      showShowcaseMsg('err', `Video too large (${formatBytes(videoFile.size)}). Max 300 MB.`); return;
     }
     if (posterFile && posterFile.size > 15 * 1024 * 1024) {
       showShowcaseMsg('err', `Poster too large (${formatBytes(posterFile.size)}). Max 15 MB.`); return;
@@ -583,10 +583,14 @@ function initShowcaseAdmin() {
 
     const btn = form.querySelector('button[type=submit]');
     btn.disabled = true;
-    btn.textContent = 'Uploading video…';
 
     try {
-      await pushShowcaseVideo(meta, videoFile, posterFile && posterFile.size > 0 ? posterFile : null);
+      btn.textContent = 'Compressing…';
+      const compact = await compressVideo(videoFile, {}, pct =>
+        showShowcaseMsg('ok', `Compressing video… ${Math.round(pct * 100)}%`));
+      btn.textContent = 'Uploading video…';
+      showShowcaseMsg('ok', `Uploading (${formatBytes(compact.size)})…`);
+      await pushShowcaseVideo(meta, compact, posterFile && posterFile.size > 0 ? posterFile : null);
       showShowcaseMsg('ok', '✓ Video published — live on homepage now.');
       form.reset();
     } catch (err) {
@@ -665,8 +669,8 @@ function initHeroVideosAdmin() {
     if (!videoFile || videoFile.size === 0) {
       showHeroVideoMsg('err', 'Video file required.'); return;
     }
-    if (videoFile.size > 50 * 1024 * 1024) {
-      showHeroVideoMsg('err', `Video too large (${formatBytes(videoFile.size)}). Max 50 MB.`); return;
+    if (videoFile.size > 300 * 1024 * 1024) {
+      showHeroVideoMsg('err', `Video too large (${formatBytes(videoFile.size)}). Max 300 MB.`); return;
     }
     if (posterFile && posterFile.size > 15 * 1024 * 1024) {
       showHeroVideoMsg('err', `Poster too large (${formatBytes(posterFile.size)}). Max 15 MB.`); return;
@@ -674,10 +678,14 @@ function initHeroVideosAdmin() {
 
     const btn = form.querySelector('button[type=submit]');
     btn.disabled = true;
-    btn.textContent = 'Uploading video…';
 
     try {
-      await pushHeroVideo(videoFile, posterFile && posterFile.size > 0 ? posterFile : null, sortOrder);
+      btn.textContent = 'Compressing…';
+      const compact = await compressVideo(videoFile, {}, pct =>
+        showHeroVideoMsg('ok', `Compressing video… ${Math.round(pct * 100)}%`));
+      btn.textContent = 'Uploading video…';
+      showHeroVideoMsg('ok', `Uploading (${formatBytes(compact.size)})…`);
+      await pushHeroVideo(compact, posterFile && posterFile.size > 0 ? posterFile : null, sortOrder);
       showHeroVideoMsg('ok', '✓ Hero video added — live on homepage now.');
       form.reset();
     } catch (err) {

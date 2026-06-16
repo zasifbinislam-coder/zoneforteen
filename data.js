@@ -934,13 +934,98 @@ function compressImage(file, maxW = 1400, quality = 0.82) {
   });
 }
 
+/* Client-side VIDEO compression — re-encodes in the admin browser via the
+   built-in MediaRecorder (no external tools). Downscales to maxW, caps bitrate
+   for fast customer loading, keeps audio, and prefers MP4 when the browser can
+   record it (Safari) else WebM. Real-time: a 30s clip takes ~30s to process —
+   onProgress(0..1) drives a progress bar. Falls back to the original on any
+   failure or if the result isn't smaller, so uploads never break. */
+function compressVideo(file, opts, onProgress) {
+  opts = opts || {};
+  const maxW = opts.maxW || 1280;
+  const bitrate = opts.bitrate || 2800000;   // ~2.8 Mbps — quality-leaning
+  return new Promise(resolve => {
+    const ok = typeof MediaRecorder !== 'undefined' &&
+               HTMLCanvasElement.prototype.captureStream;
+    if (!file || !file.type || !file.type.startsWith('video/') || !ok) return resolve(file);
+
+    const url = URL.createObjectURL(file);
+    const video = document.createElement('video');
+    video.src = url; video.muted = false; video.playsInline = true; video.preload = 'auto';
+    const done = (f) => { try { URL.revokeObjectURL(url); } catch (_) {} resolve(f); };
+
+    video.onloadedmetadata = () => {
+      const scale = Math.min(1, maxW / (video.videoWidth || maxW));
+      const w = Math.round((video.videoWidth || maxW) * scale);
+      const h = Math.round((video.videoHeight || maxW) * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      const stream = canvas.captureStream(30);
+
+      // Keep audio — tap it through Web Audio (not wired to speakers, so it
+      // records silently while processing).
+      let audioCtx;
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) {
+          audioCtx = new AC();
+          const src = audioCtx.createMediaElementSource(video);
+          const dest = audioCtx.createMediaStreamDestination();
+          src.connect(dest);
+          dest.stream.getAudioTracks().forEach(t => stream.addTrack(t));
+          if (audioCtx.resume) audioCtx.resume();
+        }
+      } catch (_) {}
+
+      let mime = 'video/mp4;codecs=h264,aac';
+      if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm;codecs=vp9,opus';
+      if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm;codecs=vp8,opus';
+      if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm';
+      if (!MediaRecorder.isTypeSupported(mime)) { if (audioCtx) try{audioCtx.close();}catch(_){} return done(file); }
+      const outExt = mime.indexOf('mp4') >= 0 ? 'mp4' : 'webm';
+      const outType = mime.indexOf('mp4') >= 0 ? 'video/mp4' : 'video/webm';
+
+      let rec;
+      try { rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: bitrate }); }
+      catch (_) { if (audioCtx) try{audioCtx.close();}catch(_){} return done(file); }
+
+      const chunks = [];
+      rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+      rec.onstop = () => {
+        try { if (audioCtx) audioCtx.close(); } catch (_) {}
+        const blob = new Blob(chunks, { type: outType });
+        if (!blob.size || blob.size >= file.size) return done(file);
+        const name = file.name.replace(/\.[^.]+$/, '') + '.' + outExt;
+        done(new File([blob], name, { type: outType, lastModified: Date.now() }));
+      };
+
+      const dur = video.duration || 0;
+      const draw = () => {
+        if (video.paused || video.ended) return;
+        ctx.drawImage(video, 0, 0, w, h);
+        if (onProgress && dur) onProgress(Math.min(0.99, video.currentTime / dur));
+        requestAnimationFrame(draw);
+      };
+      video.onended = () => { try { rec.stop(); } catch (_) {} if (onProgress) onProgress(1); };
+
+      try { rec.start(1000); } catch (_) { return done(file); }
+      video.play().then(draw).catch(() => { try { rec.stop(); } catch (_) {} done(file); });
+    };
+    video.onerror = () => done(file);
+  });
+}
+
 /* Upload a single file to Supabase Storage + insert the matching
    jersey_media row. Returns the inserted row (with public url). */
 async function cloudUpload(jerseyId, file) {
   const sb = getSupabase();
   if (!sb) throw new Error('Supabase client not ready');
 
-  file = await compressImage(file);            // shrink product photos before upload
+  // Shrink before upload — images to WebP, videos re-encoded via MediaRecorder
+  file = file.type && file.type.startsWith('video/')
+    ? await compressVideo(file)
+    : await compressImage(file);
   const ext = (file.name.split('.').pop() || 'bin').toLowerCase();
   const path = `${jerseyId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
