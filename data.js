@@ -902,12 +902,45 @@ function isCloudConfigured() {
   return !!getSupabase();
 }
 
+/* Client-side image compression — runs in the admin's browser before upload so
+   customers download small, fast images. Resizes to maxW and re-encodes as WebP
+   (keeps transparency + high quality). Non-images (and SVG/GIF) pass through
+   untouched; if the result isn't smaller, the original is kept. */
+function compressImage(file, maxW = 1400, quality = 0.82) {
+  return new Promise(resolve => {
+    if (!file || !file.type || !file.type.startsWith('image/') ||
+        file.type.includes('svg') || file.type.includes('gif')) {
+      return resolve(file);
+    }
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, maxW / img.width);
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      canvas.toBlob(blob => {
+        if (!blob || blob.size >= file.size) return resolve(file);  // never upsize
+        const name = file.name.replace(/\.[^.]+$/, '') + '.webp';
+        resolve(new File([blob], name, { type: 'image/webp', lastModified: Date.now() }));
+      }, 'image/webp', quality);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+    img.src = url;
+  });
+}
+
 /* Upload a single file to Supabase Storage + insert the matching
    jersey_media row. Returns the inserted row (with public url). */
 async function cloudUpload(jerseyId, file) {
   const sb = getSupabase();
   if (!sb) throw new Error('Supabase client not ready');
 
+  file = await compressImage(file);            // shrink product photos before upload
   const ext = (file.name.split('.').pop() || 'bin').toLowerCase();
   const path = `${jerseyId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
@@ -1033,6 +1066,7 @@ async function pushReview(review, photoFile, videoFile) {
   if (!sb) throw new Error('Supabase client not ready');
 
   const uploadOne = async (file, folderName) => {
+    file = await compressImage(file);          // shrink review photos before upload
     const ext = (file.name.split('.').pop() || 'bin').toLowerCase();
     const path = `${folderName}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
     const { data: up, error: upErr } = await sb.storage
@@ -1109,6 +1143,7 @@ async function pushShowcaseVideo(meta, videoFile, posterFile) {
   if (!sb) throw new Error('Supabase client not ready');
 
   const uploadOne = async (file) => {
+    file = await compressImage(file);          // poster images shrink; videos pass through
     const ext = (file.name.split('.').pop() || 'bin').toLowerCase();
     const path = `showcase/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
     const { data: up, error: upErr } = await sb.storage
@@ -1186,6 +1221,7 @@ async function pushHeroVideo(videoFile, posterFile, sortOrder) {
   if (!videoFile) throw new Error('Video file is required');
 
   const uploadOne = async (file) => {
+    file = await compressImage(file);          // poster images shrink; videos pass through
     const ext = (file.name.split('.').pop() || 'bin').toLowerCase();
     const path = `hero/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
     const { data: up, error: upErr } = await sb.storage

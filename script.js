@@ -26,7 +26,7 @@ function renderJerseys() {
     // overlay it on top — and if that photo 404s, simply hide it so the SVG
     // underneath stays visible. No fragile parentNode lookups.
     const photoOverlay = primaryPhoto
-      ? `<img class="jersey-photo" src="${primaryPhoto}" alt="${j.country} ${j.edition}" loading="lazy" onerror="this.style.display='none'" />`
+      ? `<img class="jersey-photo" src="${primaryPhoto}" alt="${j.country} ${j.edition}" loading="lazy" decoding="async" onerror="this.style.display='none'" />`
       : '';
 
     return `

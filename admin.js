@@ -243,9 +243,12 @@ async function uploadOne(jerseyId, file, warnEl) {
   if (file.size > 50 * 1024 * 1024) {
     throw new Error(`File too large (${formatBytes(file.size)}). Max 50 MB per file.`);
   }
-  if (file.size > 5 * 1024 * 1024) {
+  if (file.size > 5 * 1024 * 1024 && file.type.startsWith('image/')) {
     warnEl.hidden = false;
-    warnEl.textContent = `⚠️ Large file (${formatBytes(file.size)}) — compress under 2 MB for faster customer loading.`;
+    warnEl.textContent = `ℹ️ ${formatBytes(file.size)} image — will be auto-compressed (WebP, ~1400px) before upload.`;
+  } else if (file.size > 5 * 1024 * 1024) {
+    warnEl.hidden = false;
+    warnEl.textContent = `⚠️ Large video (${formatBytes(file.size)}) — compress for faster customer loading.`;
   }
   // cloudUpload pushes to Storage + inserts the jersey_media row.
   // syncFromSupabase() will re-populate the localStorage cache via the
@@ -352,8 +355,8 @@ function initReviewsAdmin() {
       purchase: (fd.get('purchase') || '').toString().trim(),
     };
 
-    if (photoFile && photoFile.size > 5 * 1024 * 1024) {
-      showReviewMsg('err', `Photo too large (${formatBytes(photoFile.size)}). Compress under 5 MB.`);
+    if (photoFile && photoFile.size > 15 * 1024 * 1024) {
+      showReviewMsg('err', `Photo too large (${formatBytes(photoFile.size)}). Max 15 MB.`);
       return;
     }
     if (videoFile && videoFile.size > 25 * 1024 * 1024) {
@@ -535,8 +538,8 @@ function initShowcaseAdmin() {
     if (videoFile.size > 50 * 1024 * 1024) {
       showShowcaseMsg('err', `Video too large (${formatBytes(videoFile.size)}). Max 50 MB.`); return;
     }
-    if (posterFile && posterFile.size > 5 * 1024 * 1024) {
-      showShowcaseMsg('err', `Poster too large (${formatBytes(posterFile.size)}). Max 5 MB.`); return;
+    if (posterFile && posterFile.size > 15 * 1024 * 1024) {
+      showShowcaseMsg('err', `Poster too large (${formatBytes(posterFile.size)}). Max 15 MB.`); return;
     }
 
     const meta = {
@@ -634,8 +637,8 @@ function initHeroVideosAdmin() {
     if (videoFile.size > 50 * 1024 * 1024) {
       showHeroVideoMsg('err', `Video too large (${formatBytes(videoFile.size)}). Max 50 MB.`); return;
     }
-    if (posterFile && posterFile.size > 5 * 1024 * 1024) {
-      showHeroVideoMsg('err', `Poster too large (${formatBytes(posterFile.size)}). Max 5 MB.`); return;
+    if (posterFile && posterFile.size > 15 * 1024 * 1024) {
+      showHeroVideoMsg('err', `Poster too large (${formatBytes(posterFile.size)}). Max 15 MB.`); return;
     }
 
     const btn = form.querySelector('button[type=submit]');
