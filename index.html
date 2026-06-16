@@ -178,10 +178,10 @@
          the user just perceives "the bg has always been here". -->
     <img class="hero-poster" id="heroPoster" src="logo/main.png" alt="" aria-hidden="true" />
 
-    <!-- Cinematic background video. preload="auto" so the 4.7 MB file starts
-         downloading at parse time (gives ~5s head start). Opacity starts at 0
-         and JS fades it in on the 'playing' event for a seamless cross-fade. -->
-    <video class="hero-video" id="heroVideo" autoplay muted loop playsinline preload="auto" poster="logo/main.png" aria-hidden="true">
+    <!-- Cinematic background video (~1.5 MB, web-optimized). preload="metadata"
+         keeps it off the critical path so first paint isn't blocked; JS plays it
+         and fades it in on the 'playing' event for a seamless cross-fade. -->
+    <video class="hero-video" id="heroVideo" autoplay muted loop playsinline preload="metadata" poster="logo/main.png" aria-hidden="true">
       <source src="videos/hero.mp4" type="video/mp4" />
     </video>
     <div class="hero-vignette" aria-hidden="true"></div>
