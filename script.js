@@ -145,19 +145,34 @@ function renderJerseys() {
     if (imgs.length < 2) return;
 
     imgs.forEach(src => { const im = new Image(); im.src = src; });   // preload for smooth swaps
-    photo.classList.add('cycles');
+
+    // A top crossfade layer: the base photo always stays fully opaque, so the
+    // 2D SVG jersey underneath never peeks through while the image changes.
+    const top = photo.cloneNode(false);
+    top.removeAttribute('id');
+    top.classList.add('cycle-top');
+    top.style.opacity = '0';
+    photo.parentElement.appendChild(top);
+
     let idx = 0, timer = null;
-    const start = () => {
-      if (timer) return;
-      timer = setInterval(() => {
-        idx = (idx + 1) % imgs.length;
-        photo.style.opacity = '0';
-        setTimeout(() => { photo.src = imgs[idx]; photo.style.opacity = '1'; }, 180);
-      }, 3000);
+    const swap = () => {
+      idx = (idx + 1) % imgs.length;
+      top.src = imgs[idx];
+      requestAnimationFrame(() => { top.style.opacity = '1'; });   // fade next in over current
+      setTimeout(() => {
+        photo.src = imgs[idx];                 // commit to the (still opaque) base
+        top.style.transition = 'none';
+        top.style.opacity = '0';
+        requestAnimationFrame(() => { top.style.transition = ''; });
+      }, 420);
     };
+    const start = () => { if (!timer) timer = setInterval(swap, 3000); };
     const stop = () => {
-      clearInterval(timer); timer = null; idx = 0;
-      photo.style.opacity = '1'; photo.src = imgs[0];
+      if (timer) { clearInterval(timer); timer = null; }
+      idx = 0;
+      top.style.transition = 'none'; top.style.opacity = '0';
+      photo.src = imgs[0];
+      requestAnimationFrame(() => { top.style.transition = ''; });
     };
     card.addEventListener('mouseenter', start);
     card.addEventListener('mouseleave', stop);

@@ -3850,8 +3850,13 @@ h1, h2, h3, .display {
   display: block;
   z-index: 1;
 }
-/* Hover slideshow crossfade (only when a card has 2+ photos) */
-.jersey-photo.cycles { transition: opacity 0.18s ease; }
+/* Hover slideshow crossfade — top layer fades in over the always-opaque base,
+   so the 2D SVG jersey underneath never shows during the swap. */
+.jersey-photo.cycle-top {
+  z-index: 2;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
 .qv-info {
   padding: 32px 36px;
   display: flex;
