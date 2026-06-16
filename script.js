@@ -136,10 +136,44 @@ function renderJerseys() {
     });
   });
 
+  // Hover slideshow — cycle a jersey's photos (3s each) while the mouse is over it
+  grid.querySelectorAll('.jersey-card').forEach(card => {
+    const j = getJersey(card.dataset.id);
+    const photo = card.querySelector('.jersey-photo');
+    if (!j || !photo) return;
+    const imgs = getCardImages(j);
+    if (imgs.length < 2) return;
+
+    imgs.forEach(src => { const im = new Image(); im.src = src; });   // preload for smooth swaps
+    photo.classList.add('cycles');
+    let idx = 0, timer = null;
+    const start = () => {
+      if (timer) return;
+      timer = setInterval(() => {
+        idx = (idx + 1) % imgs.length;
+        photo.style.opacity = '0';
+        setTimeout(() => { photo.src = imgs[idx]; photo.style.opacity = '1'; }, 180);
+      }, 3000);
+    };
+    const stop = () => {
+      clearInterval(timer); timer = null; idx = 0;
+      photo.style.opacity = '1'; photo.src = imgs[0];
+    };
+    card.addEventListener('mouseenter', start);
+    card.addEventListener('mouseleave', stop);
+  });
+
   // Re-observe newly added reveal targets
   if (typeof revealObserver !== 'undefined') {
     grid.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
   }
+}
+
+/* All photo URLs for a jersey (admin uploads first, else declared paths). */
+function getCardImages(j) {
+  const admin = (getJerseyMedia(j.id).images || []).map(a => a.url).filter(Boolean);
+  if (admin.length) return admin;
+  return (j.images || []).filter(Boolean);
 }
 
 /* ---------- FILTERS + SEARCH ---------- */
