@@ -561,6 +561,22 @@
         <ul class="media-queue-list" id="mediaQueueList"></ul>
 
         <div class="media-stats" id="mediaStats"></div>
+
+        <!-- One-click: re-compress already-uploaded photos -->
+        <div class="optimize-box">
+          <div class="optimize-head">
+            <div>
+              <strong>⚡ Optimize existing photos</strong>
+              <span>আগে আপলোড করা ভারী ছবিগুলো এক ক্লিকে WebP-তে compress করে (quality ঠিক রেখে) — customer দ্রুত দেখবে।</span>
+            </div>
+            <button type="button" class="btn btn-primary" id="optimizeMediaBtn">Optimize Now</button>
+          </div>
+          <div class="optimize-progress" id="optimizeProgress" hidden>
+            <div class="op-bar"><div class="op-bar-fill" id="opBarFill"></div></div>
+            <span id="opStatus"></span>
+          </div>
+        </div>
+
         <div class="media-gallery" id="mediaGallery"><!-- populated --></div>
       </section>
 

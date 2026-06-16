@@ -967,6 +967,53 @@ async function cloudUpload(jerseyId, file) {
   return row;
 }
 
+/* One-click migration: download each already-uploaded jersey photo, compress it
+   (WebP ~1400px), re-upload, repoint the row, and delete the old fat file.
+   Runs entirely in the admin browser. onProgress({done,total,optimized,saved}). */
+async function recompressExistingMedia(onProgress) {
+  const sb = getSupabase();
+  if (!sb) throw new Error('Supabase client not ready');
+  const { data: rows, error } = await sb.from('jersey_media').select('*').eq('type', 'image');
+  if (error) throw error;
+
+  const total = (rows || []).length;
+  let done = 0, optimized = 0, saved = 0;
+
+  for (const r of (rows || [])) {
+    try {
+      const resp = await fetch(r.url, { cache: 'no-store' });
+      const blob = await resp.blob();
+      const origSize = blob.size;
+      const file = new File([blob], r.name || 'photo.jpg', { type: blob.type || 'image/jpeg' });
+      const compressed = await compressImage(file);
+
+      // Only replace when meaningfully smaller (>8%)
+      if (compressed.size < origSize * 0.92) {
+        const ext = (compressed.name.split('.').pop() || 'webp').toLowerCase();
+        const path = `${r.jersey_id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { data: up, error: upErr } = await sb.storage
+          .from('media').upload(path, compressed, { contentType: compressed.type, upsert: false });
+        if (upErr) throw upErr;
+        const { data: pub } = sb.storage.from('media').getPublicUrl(up.path);
+
+        const { error: updErr } = await sb.from('jersey_media').update({
+          url: pub.publicUrl, storage_path: up.path,
+          name: compressed.name, size_bytes: compressed.size,
+        }).eq('id', r.id);
+        if (updErr) { try { await sb.storage.from('media').remove([up.path]); } catch (_) {} throw updErr; }
+
+        if (r.storage_path) { try { await sb.storage.from('media').remove([r.storage_path]); } catch (_) {} }
+        optimized++; saved += (origSize - compressed.size);
+      }
+    } catch (e) {
+      console.warn('Recompress skipped for', r.id, e.message || e);
+    }
+    done++;
+    if (onProgress) onProgress({ done, total, optimized, saved });
+  }
+  return { total, optimized, saved };
+}
+
 /* Delete both the row and the underlying storage object.
    Each step is independently try/caught — Supabase's PostgrestFilterBuilder
    is awaitable but doesn't implement .catch(), so chaining .catch() on

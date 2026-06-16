@@ -128,7 +128,38 @@ function initMediaLibrary() {
   refreshMediaJerseyDropdown();
 
   form.addEventListener('submit', handleMediaSubmit);
+
+  const optBtn = document.getElementById('optimizeMediaBtn');
+  if (optBtn) optBtn.addEventListener('click', handleOptimizeMedia);
+
   renderMediaGallery();
+}
+
+async function handleOptimizeMedia() {
+  const btn  = document.getElementById('optimizeMediaBtn');
+  const box  = document.getElementById('optimizeProgress');
+  const fill = document.getElementById('opBarFill');
+  const stat = document.getElementById('opStatus');
+  if (!confirm('পুরনো সব jersey ছবি compress করা হবে (quality ঠিক থাকবে)। চালিয়ে যাবেন?')) return;
+
+  btn.disabled = true; btn.textContent = 'Optimizing…';
+  box.hidden = false;
+  const mb = b => (b / (1024 * 1024)).toFixed(1) + ' MB';
+  try {
+    const res = await recompressExistingMedia(({ done, total, optimized, saved }) => {
+      const pct = total ? Math.round((done / total) * 100) : 100;
+      fill.style.width = pct + '%';
+      stat.textContent = `${done}/${total} checked · ${optimized} optimized · ${mb(saved)} saved`;
+    });
+    stat.textContent = `✓ Done — ${res.optimized}/${res.total} optimized · ${mb(res.saved)} saved. Refreshing…`;
+    if (typeof syncFromSupabase === 'function') await syncFromSupabase();
+    renderMediaGallery();
+    if (typeof render === 'function') render();
+  } catch (err) {
+    stat.textContent = '✗ ' + (err.message || err);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Optimize Now';
+  }
 }
 
 function refreshMediaJerseyDropdown() {
