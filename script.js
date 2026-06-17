@@ -38,10 +38,6 @@ function renderJerseys() {
         <button type="button" class="wish-heart${inWishlist(j.id) ? ' active' : ''}" aria-label="Save to wishlist" data-wish>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
         </button>
-        <button type="button" class="jersey-quickview" data-quickview aria-label="Quick view">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zM12 17a5 5 0 110-10 5 5 0 010 10zm0-8a3 3 0 100 6 3 3 0 000-6z"/></svg>
-          Quick View
-        </button>
         <span class="jersey-shine"></span>
         ${jerseySVG(j)}
         ${photoOverlay}
@@ -95,11 +91,20 @@ function renderJerseys() {
     });
   });
 
-  // Quick view buttons (and image-area click)
+  // Quick view buttons (and tapping anywhere on the product image)
   grid.querySelectorAll('[data-quickview]').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation();
       const id = btn.closest('.jersey-card').dataset.id;
+      if (window.openQuickView) window.openQuickView(id);
+    });
+  });
+  grid.querySelectorAll('.jersey-img-wrap').forEach(wrap => {
+    wrap.style.cursor = 'pointer';
+    wrap.addEventListener('click', e => {
+      // Let the wishlist heart / quick-view button handle their own clicks
+      if (e.target.closest('[data-wish], [data-quickview]')) return;
+      const id = wrap.closest('.jersey-card').dataset.id;
       if (window.openQuickView) window.openQuickView(id);
     });
   });
@@ -617,39 +622,105 @@ function relTime(ms) {
 /* ============================================================
    VIDEO SHOWCASE — landing-page grid + modal player
    ============================================================ */
-/* ---------- HERO VIDEO BAND ----------
-   Caption-free strip of muted, looping, autoplay jersey videos right under
-   the hero. Driven entirely by admin uploads (hero_videos table). Hidden when
-   empty so the layout stays clean. */
+/* ---------- HERO VIDEO BAND — single-video carousel ----------
+   Shows ONE jersey video at a time (muted autoplay preview), auto-advances
+   every few seconds, and lets the visitor swipe/drag or tap dots to change.
+   Tapping the play button opens the big modal (with sound). Admin-driven
+   (hero_videos table); hidden when empty. */
+let _heroCarousel = null;
 function renderHeroVideos() {
-  const section = document.getElementById('heroVideos');
-  const track   = document.getElementById('heroVideoTrack');
+  const section  = document.getElementById('heroVideos');
+  const track    = document.getElementById('heroVideoTrack');
+  const dotsWrap = document.getElementById('heroVideoDots');
+  const viewport = document.getElementById('heroVideoViewport');
   if (!section || !track) return;
 
-  const vids = (typeof readHeroVideos === 'function' ? readHeroVideos() : []);
-  if (!vids.length) { section.hidden = true; track.innerHTML = ''; return; }
+  // Tear down any previous carousel timers/listeners
+  if (_heroCarousel) { _heroCarousel.destroy(); _heroCarousel = null; }
 
+  const vids = (typeof readHeroVideos === 'function' ? readHeroVideos() : []);
+  if (!vids.length) {
+    section.hidden = true;
+    track.innerHTML = ''; if (dotsWrap) dotsWrap.innerHTML = '';
+    return;
+  }
   section.hidden = false;
-  // Paused preview tiles (first frame via #t=0.1 when no poster). Click opens
-  // the big video modal where it plays with controls.
+
   track.innerHTML = vids.map(v => `
-    <button type="button" class="hero-video-tile" data-hero-vid="${v.id}" aria-label="Play video">
-      <video src="${v.videoUrl}#t=0.1"${v.posterUrl ? ` poster="${v.posterUrl}"` : ''}
-             muted playsinline preload="metadata"></video>
-      <span class="hero-video-play" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-      </span>
-    </button>
+    <div class="hero-video-slide">
+      <button type="button" class="hero-video-tile" data-hero-vid="${v.id}" aria-label="Play video">
+        <video src="${v.videoUrl}#t=0.1"${v.posterUrl ? ` poster="${v.posterUrl}"` : ''}
+               muted loop playsinline preload="metadata"></video>
+      </button>
+    </div>
   `).join('');
 
-  // Click a tile → open the large modal preview (plays there, not inline)
+  if (dotsWrap) {
+    dotsWrap.innerHTML = vids.length > 1
+      ? vids.map((_, i) => `<button type="button" class="hvb-dot${i === 0 ? ' active' : ''}" data-dot="${i}" aria-label="Video ${i + 1}"></button>`).join('')
+      : '';
+  }
+
+  const videoEls = [...track.querySelectorAll('video')];
+  const dotEls   = dotsWrap ? [...dotsWrap.children] : [];
+  let idx = 0, timer = null, startX = 0, dragging = false, moved = false;
+
+  const playOnly = (n) => videoEls.forEach((v, i) => {
+    if (i === n) { const p = v.play(); if (p && p.catch) p.catch(() => {}); }
+    else { try { v.pause(); } catch (_) {} }
+  });
+  const show = (n) => {
+    idx = (n + vids.length) % vids.length;
+    track.style.transform = `translateX(${-idx * 100}%)`;
+    dotEls.forEach((d, i) => d.classList.toggle('active', i === idx));
+    playOnly(idx);
+  };
+  const stop  = () => { if (timer) { clearInterval(timer); timer = null; } };
+  const start = () => { if (!timer && vids.length > 1) timer = setInterval(() => show(idx + 1), 4500); };
+  const restart = () => { stop(); start(); };
+
+  // Tap play → open big modal (ignored right after a drag)
   track.querySelectorAll('[data-hero-vid]').forEach(btn => {
     btn.addEventListener('click', () => {
+      if (moved) return;
       const v = vids.find(x => x.id === btn.dataset.heroVid);
-      if (!v) return;
-      openVideoModal({ url: v.videoUrl, poster: v.posterUrl || '', title: '', subtitle: '' });
+      if (v) openVideoModal({ url: v.videoUrl, poster: v.posterUrl || '', title: '', subtitle: '' });
     });
   });
+
+  // Dots → jump
+  dotEls.forEach(d => d.addEventListener('click', () => { show(+d.dataset.dot); restart(); }));
+
+  // Swipe / drag (pointer events cover touch + mouse)
+  const vp = viewport || track;
+  const onDown = (e) => { dragging = true; moved = false; startX = e.clientX; stop(); };
+  const onMove = (e) => { if (dragging && Math.abs(e.clientX - startX) > 8) moved = true; };
+  const onUp   = (e) => {
+    if (!dragging) return;
+    dragging = false;
+    const dx = e.clientX - startX;
+    if (Math.abs(dx) > 40) show(idx + (dx < 0 ? 1 : -1));
+    restart();
+  };
+  vp.addEventListener('pointerdown', onDown);
+  vp.addEventListener('pointermove', onMove);
+  vp.addEventListener('pointerup', onUp);
+  vp.addEventListener('pointercancel', () => { dragging = false; restart(); });
+  vp.addEventListener('pointerleave', () => { if (dragging) { dragging = false; restart(); } });
+
+  // Pause cycling while the tab is hidden
+  const onVis = () => { if (document.hidden) stop(); else { playOnly(idx); start(); } };
+  document.addEventListener('visibilitychange', onVis);
+
+  _heroCarousel = {
+    destroy() {
+      stop();
+      document.removeEventListener('visibilitychange', onVis);
+    },
+  };
+
+  show(0);
+  start();
 }
 
 function renderVideoShowcase() {
@@ -787,6 +858,73 @@ function initVideoModal() {
   modal.querySelectorAll('[data-vid-close]').forEach(el => el.addEventListener('click', close));
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !modal.hidden) close(); });
 }
+
+/* ============================================================
+   IMAGE LIGHTBOX — fullscreen zoom + swipe (window.openImageLightbox)
+   ============================================================ */
+let _lb = null;   // { srcs, idx, zoom, panX, panY }
+function initImageLightbox() {
+  const lb = document.getElementById('imgLightbox');
+  if (!lb || lb._wired) return;
+  lb._wired = true;
+
+  const imgEl = lb.querySelector('.lb-img');
+  const dots  = lb.querySelector('.lb-dots');
+  const stage = lb.querySelector('.lb-stage');
+
+  const apply = () => {
+    imgEl.style.transform = `translate(${_lb.panX}px, ${_lb.panY}px) scale(${_lb.zoom})`;
+    imgEl.classList.toggle('zoomed', _lb.zoom > 1);
+  };
+  const render = () => {
+    imgEl.src = _lb.srcs[_lb.idx];
+    _lb.zoom = 1; _lb.panX = 0; _lb.panY = 0; apply();
+    dots.innerHTML = _lb.srcs.length > 1
+      ? _lb.srcs.map((_, i) => `<span class="lb-dot${i === _lb.idx ? ' active' : ''}"></span>`).join('')
+      : '';
+  };
+  const show = (n) => { _lb.idx = (n + _lb.srcs.length) % _lb.srcs.length; render(); };
+  const close = () => { lb.classList.remove('show'); document.body.style.overflow = ''; _lb = null; };
+  lb._render = render;
+
+  lb.querySelectorAll('[data-lb-close]').forEach(b => b.addEventListener('click', close));
+  lb.addEventListener('click', e => { if (e.target === lb) close(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && lb.classList.contains('show')) close(); });
+
+  let downX = 0, downY = 0, moved = false, sPanX = 0, sPanY = 0;
+  stage.addEventListener('pointerdown', e => {
+    if (!_lb) return;
+    downX = e.clientX; downY = e.clientY; moved = false;
+    sPanX = _lb.panX; sPanY = _lb.panY;
+    try { stage.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+  stage.addEventListener('pointermove', e => {
+    if (!_lb || e.buttons === 0) return;
+    const dx = e.clientX - downX, dy = e.clientY - downY;
+    if (Math.abs(dx) > 6 || Math.abs(dy) > 6) moved = true;
+    if (_lb.zoom > 1) { _lb.panX = sPanX + dx; _lb.panY = sPanY + dy; apply(); }
+  });
+  stage.addEventListener('pointerup', e => {
+    if (!_lb) return;
+    const dx = e.clientX - downX, dy = e.clientY - downY;
+    if (!moved) {
+      // tap toggles zoom
+      _lb.zoom = _lb.zoom > 1 ? 1 : 2.5;
+      _lb.panX = 0; _lb.panY = 0; apply();
+    } else if (_lb.zoom === 1 && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+      show(_lb.idx + (dx < 0 ? 1 : -1));   // swipe to change (only when not zoomed)
+    }
+  });
+}
+window.openImageLightbox = function (srcs, start) {
+  const lb = document.getElementById('imgLightbox');
+  if (!lb || !srcs || !srcs.length) return;
+  initImageLightbox();
+  _lb = { srcs, idx: Math.max(0, Math.min(start || 0, srcs.length - 1)), zoom: 1, panX: 0, panY: 0 };
+  lb.classList.add('show');
+  document.body.style.overflow = 'hidden';
+  lb._render();
+};
 
 /* ============================================================
    STAR PLAYERS — customization upsell
@@ -984,6 +1122,11 @@ function initQuickView() {
     }
   }
 
+  // Tapping the big image opens the fullscreen zoom/swipe lightbox
+  function openImgLightbox(srcs, start) {
+    if (window.openImageLightbox) window.openImageLightbox(srcs, start);
+  }
+
   function renderMedia(jersey, images, video) {
     /* Build the list of media items: photos first, video last (if present),
        SVG fallback if no real photos exist. */
@@ -1022,6 +1165,17 @@ function initQuickView() {
     qvThumbs.querySelectorAll('.qv-thumb').forEach(btn => {
       btn.addEventListener('click', () => setActive(parseInt(btn.dataset.i, 10)));
     });
+
+    // Tap the main image → fullscreen zoom + swipe viewer (images only)
+    const imgSrcs = items.filter(it => it.type === 'img').map(it => it.src);
+    qvMain.onclick = () => {
+      if (!imgSrcs.length) return;
+      const cur = items[active];
+      if (!cur || cur.type !== 'img') return;   // let video controls work
+      const start = Math.max(0, imgSrcs.indexOf(cur.src));
+      openImgLightbox(imgSrcs, start);
+    };
+    qvMain.style.cursor = imgSrcs.length ? 'zoom-in' : '';
 
     setActive(0);
   }
@@ -1953,6 +2107,27 @@ function renderVenues() {
   }
 }
 
+/* ---------- Match Hub collapse (mobile) ---------- */
+function initMatchHubCollapse() {
+  const section = document.getElementById('matches');
+  const toggle  = document.getElementById('matchHubToggle');
+  if (!section || !toggle) return;
+  const MOBILE = () => window.matchMedia('(max-width: 768px)').matches;
+
+  // Start collapsed on phones, open on desktop
+  const setCollapsed = (c) => {
+    section.classList.toggle('collapsed', c);
+    toggle.setAttribute('aria-expanded', String(!c));
+    toggle.querySelector('span').textContent = c ? 'Tap to view fixtures' : 'Hide fixtures';
+  };
+  setCollapsed(MOBILE());
+
+  toggle.addEventListener('click', () => setCollapsed(!section.classList.contains('collapsed')));
+
+  // Keep desktop always expanded if the viewport grows
+  window.addEventListener('resize', () => { if (!MOBILE()) setCollapsed(false); });
+}
+
 /* ---------- Match tabs ---------- */
 function initMatchTabs() {
   const tabs = document.querySelectorAll('.match-tab');
@@ -2257,6 +2432,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderVenues();
   renderLeaderboard();
   initMatchTabs();
+  initMatchHubCollapse();
   initMatchDayStrip();
   initPredictionModal();
   initPredictionListeners();

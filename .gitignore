@@ -22,3 +22,5 @@ CLAUDE*.md
 
 # Local raw image library (~1GB source assets — site loads media from Supabase)
 images/zone 14/
+
+.vercel

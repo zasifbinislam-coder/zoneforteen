@@ -282,19 +282,18 @@ h1, h2, h3, .display {
    subtle "lighting change" instead of a hard cut — masks the swap entirely. */
 .hero-poster {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: min(70vw, 480px);
-  height: auto;
-  object-fit: contain;          /* show the whole logo, never crop/stretch */
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: calc(50% - 1.1%) center;
   z-index: 0;
-  filter: drop-shadow(0 12px 40px rgba(0, 0, 0, 0.5));
-  transition: opacity 1s ease, transform 1s ease;
+  filter: saturate(0.95) brightness(0.7);
+  transition: filter 0.5s ease, opacity 1.2s ease;
   pointer-events: none;
 }
-.hero-poster.dimming { opacity: 0.8; }
-.hero-poster.fade-out { opacity: 0; transform: translate(-50%, -50%) scale(1.04); }
+.hero-poster.dimming { filter: saturate(0.85) brightness(0.45); }
+.hero-poster.fade-out { opacity: 0; }
 
 /* Cinematic background video — sits above the poster, fades in once ready */
 .hero-video {
@@ -2546,8 +2545,22 @@ h1, h2, h3, .display {
   .hero { padding: 100px 0 80px; }
   .hero-title { font-size: clamp(40px, 12vw, 80px); }
 
-  /* Centred logo splash on phones — a touch larger so it reads well. */
-  .hero-poster { width: min(78vw, 380px); }
+  /* Centred logo splash on phones only (desktop keeps the full-cover poster). */
+  .hero-poster {
+    inset: auto;
+    top: 44%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(86vw, 460px);
+    height: auto;
+    object-fit: contain;
+    object-position: center;
+    opacity: 0.82;
+    filter: drop-shadow(0 12px 40px rgba(0, 0, 0, 0.5));
+    transition: opacity 1s ease, transform 1s ease;
+  }
+  .hero-poster.dimming { opacity: 0.6; filter: drop-shadow(0 12px 40px rgba(0, 0, 0, 0.5)); }
+  .hero-poster.fade-out { opacity: 0; transform: translate(-50%, -50%) scale(1.04); }
 
   /* Watermark: bigger leftward nudge on mobile — the logo in the image
      is inherently right-of-centre, so we push harder than desktop's 1.1%. */
@@ -3307,18 +3320,44 @@ h1, h2, h3, .display {
   border-bottom: 1px solid var(--border);
   padding: 16px 0;
 }
+.hvb-viewport {
+  max-width: 300px;
+  margin: 0 auto;
+  overflow: hidden;
+  touch-action: pan-y;          /* vertical page scroll still works; we handle horizontal */
+  border-radius: var(--radius-sm);
+}
 .hero-video-track {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;   /* center the tiles — single video sits dead-center */
-  align-items: center;
-  gap: 14px;
-  padding: 0 24px;
+  transition: transform 0.4s var(--ease-out);
+  will-change: transform;
 }
+.hero-video-slide {
+  flex: 0 0 100%;
+  display: flex;
+  justify-content: center;
+}
+.hvb-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+.hvb-dot {
+  width: 7px; height: 7px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--surface-hi);
+  cursor: pointer;
+  transition: width 0.25s ease, background 0.25s ease;
+}
+.hvb-dot.active { width: 20px; border-radius: 999px; background: var(--neon); }
 .hero-video-tile {
   position: relative;
   flex: 0 0 auto;
-  width: 210px;
+  width: 100%;
+  max-width: 300px;
   aspect-ratio: 9 / 16;
   padding: 0;
   border-radius: var(--radius-sm);
@@ -3363,9 +3402,8 @@ h1, h2, h3, .display {
   border-color: transparent;
 }
 @media (max-width: 768px) {
-  .hero-video-track { gap: 10px; padding: 0 16px; }
-  .hero-video-tile { width: 150px; }
-  .hero-video-play { width: 48px; height: 48px; }
+  .hvb-viewport { max-width: 270px; }
+  .hero-video-play { width: 52px; height: 52px; }
 }
 
 @media (max-width: 968px) {
@@ -3557,7 +3595,9 @@ h1, h2, h3, .display {
   bottom: 12px; right: 12px;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
+  white-space: nowrap;
   padding: 7px 12px;
   background: rgba(5, 10, 14, 0.85);
   backdrop-filter: blur(10px);
@@ -3577,6 +3617,7 @@ h1, h2, h3, .display {
   opacity: 1;
   transform: translateY(0);
 }
+.jersey-quickview svg { flex-shrink: 0; }
 .jersey-quickview:hover {
   background: var(--grad-neon);
   color: #052424;
@@ -3863,6 +3904,103 @@ h1, h2, h3, .display {
   flex-direction: column;
   gap: 12px;
 }
+
+/* ============================================================
+   MATCH HUB — collapse on mobile (tap to expand)
+   ============================================================ */
+.match-hub-toggle {
+  display: none;            /* desktop: always expanded, no toggle */
+  align-items: center;
+  gap: 6px;
+  margin: 14px auto 0;
+  padding: 9px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border-hi);
+  border-radius: 999px;
+  color: var(--neon);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+.match-hub-toggle svg { transition: transform 0.3s ease; }
+.section-matches:not(.collapsed) .match-hub-toggle svg { transform: rotate(180deg); }
+
+@media (max-width: 768px) {
+  .match-hub-toggle { display: inline-flex; }
+  /* Collapsed: hide everything but the heading + toggle */
+  .section-matches.collapsed .match-featured,
+  .section-matches.collapsed .match-tabs,
+  .section-matches.collapsed .match-panel { display: none !important; }
+}
+
+/* ============================================================
+   IMAGE LIGHTBOX — fullscreen zoom + swipe viewer
+   ============================================================ */
+.qv-media-main { cursor: zoom-in; }
+.img-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  background: rgba(0, 0, 0, 0.95);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;          /* we handle pan/swipe/zoom ourselves */
+}
+.img-lightbox.show { display: flex; animation: fadeInUp 0.25s var(--ease-out); }
+.lb-stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.lb-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transform-origin: center center;
+  transition: transform 0.2s ease;
+  user-select: none;
+  -webkit-user-drag: none;
+  cursor: zoom-in;
+  will-change: transform;
+}
+.lb-img.zoomed { transition: none; cursor: grab; }
+.lb-close {
+  position: absolute;
+  top: 16px; right: 16px;
+  z-index: 2;
+  width: 44px; height: 44px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+}
+.lb-close:hover { background: rgba(255, 255, 255, 0.22); }
+.lb-dots {
+  position: absolute;
+  bottom: 52px; left: 0; right: 0;
+  display: flex; justify-content: center; gap: 7px;
+  pointer-events: none;
+}
+.lb-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255, 255, 255, 0.35); transition: all 0.25s ease; }
+.lb-dot.active { background: #fff; width: 22px; border-radius: 999px; }
+.lb-hint {
+  position: absolute;
+  bottom: 22px; left: 0; right: 0;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  pointer-events: none;
+}
 .qv-tag {
   display: inline-block;
   align-self: flex-start;
@@ -3967,11 +4105,29 @@ h1, h2, h3, .display {
 }
 
 @media (max-width: 900px) {
+  /* Compact, fits-on-one-screen quick view — no long internal scroll. */
   .qv-grid { grid-template-columns: 1fr; }
-  .qv-img { aspect-ratio: 4/3; border-right: none; border-bottom: 1px solid var(--border); padding: 20px; }
-  .qv-info { padding: 24px; }
-  .qv-country { font-size: 36px; }
-  .qv-price { font-size: 32px; }
+  .qv-media {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 10px;
+    gap: 8px;
+  }
+  .qv-media-main { aspect-ratio: auto; height: 58vh; }
+  .qv-media-main img, .qv-media-main video { object-fit: contain; }  /* full jersey on phones */
+  .qv-thumbs { justify-content: center; gap: 6px; }
+  .qv-thumb { flex: 0 0 44px; width: 44px; height: 44px; }
+  .qv-info { padding: 14px 18px 18px; gap: 7px; }
+  .qv-tag { margin-bottom: 0; }
+  .qv-country { font-size: 26px; }
+  .qv-edition { font-size: 12px; }
+  .qv-price { font-size: 24px; }
+  .qv-stock { font-size: 12px; }
+  .qv-label { font-size: 11px; margin: 2px 0 0; }
+  .qv-qty button { width: 34px; height: 34px; }
+  .qv-actions { margin-top: 2px; }
+  .qv-details { font-size: 11px; }
+  .qv-perks { display: none; }     /* trim marketing fluff so it all fits */
 }
 
 /* ============================================================

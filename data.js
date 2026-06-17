@@ -123,7 +123,7 @@ let CONTACT = {
 /* Social links — overridable from admin */
 let SOCIAL = {
   facebook:  'https://facebook.com/zone14bd',
-  instagram: 'https://instagram.com/zone14bd',
+  instagram: 'https://www.instagram.com/zoneforteen/',
   messenger: 'https://m.me/zone14bd',
   tiktok:    '',
   youtube:   '',

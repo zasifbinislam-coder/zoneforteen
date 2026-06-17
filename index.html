@@ -52,7 +52,7 @@
     },
     "sameAs": [
       "https://facebook.com/zone14bd",
-      "https://instagram.com/zone14bd"
+      "https://www.instagram.com/zoneforteen/"
     ]
   }
   </script>
@@ -271,11 +271,14 @@
     </div>
   </section>
 
-  <!-- ============ HERO VIDEO BAND (caption-free, admin-uploadable) ============ -->
+  <!-- ============ HERO VIDEO BAND — single-video carousel (auto + swipe) ============ -->
   <section id="heroVideos" class="hero-video-band" hidden aria-label="Jersey videos">
-    <div class="hero-video-track" id="heroVideoTrack">
-      <!-- video tiles injected by JS -->
+    <div class="hvb-viewport" id="heroVideoViewport">
+      <div class="hero-video-track" id="heroVideoTrack">
+        <!-- video slides injected by JS -->
+      </div>
     </div>
+    <div class="hvb-dots" id="heroVideoDots"></div>
   </section>
 
   <!-- ============ FEATURED JERSEYS ============ -->
@@ -404,6 +407,10 @@
         <p class="eyebrow">FIFA World Cup 2026</p>
         <h2 class="section-title">Match <span class="accent">Hub</span></h2>
         <p class="section-sub">Fixtures, kick-off countdowns, group standings, and the kits to match every game.</p>
+        <button type="button" class="match-hub-toggle" id="matchHubToggle" aria-expanded="false">
+          <span>Tap to view fixtures</span>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M7 10l5 5 5-5z"/></svg>
+        </button>
       </header>
 
       <!-- Featured next match — live countdown -->
@@ -921,7 +928,7 @@
           <a href="https://facebook.com" target="_blank" rel="noopener" aria-label="Facebook" id="socialFacebook">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M22 12a10 10 0 10-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.77-3.89 1.1 0 2.25.2 2.25.2v2.47h-1.27c-1.25 0-1.64.78-1.64 1.57V12h2.79l-.45 2.89h-2.34v6.99A10 10 0 0022 12z"/></svg>
           </a>
-          <a href="https://instagram.com" target="_blank" rel="noopener" aria-label="Instagram" id="socialInstagram">
+          <a href="https://www.instagram.com/zoneforteen/" target="_blank" rel="noopener" aria-label="Instagram" id="socialInstagram">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2.16c3.2 0 3.58.01 4.85.07 1.17.05 1.8.25 2.23.41.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.42.36 1.06.41 2.23.06 1.26.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.05 1.17-.25 1.8-.41 2.23-.22.56-.48.96-.9 1.38-.42.42-.82.68-1.38.9-.42.16-1.06.36-2.23.41-1.26.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-1.17-.05-1.8-.25-2.23-.41a3.7 3.7 0 01-1.38-.9 3.7 3.7 0 01-.9-1.38c-.16-.42-.36-1.06-.41-2.23-.06-1.26-.07-1.65-.07-4.85s.01-3.58.07-4.85c.05-1.17.25-1.8.41-2.23.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.42-.16 1.06-.36 2.23-.41 1.26-.06 1.65-.07 4.85-.07M12 0C8.74 0 8.33.01 7.05.07 5.78.13 4.9.33 4.14.63a5.9 5.9 0 00-2.13 1.38A5.9 5.9 0 00.63 4.14C.33 4.9.13 5.78.07 7.05.01 8.33 0 8.74 0 12s.01 3.67.07 4.95c.06 1.27.26 2.15.56 2.91a5.9 5.9 0 001.38 2.13c.66.66 1.32 1.07 2.13 1.38.76.3 1.64.5 2.91.56C8.33 23.99 8.74 24 12 24s3.67-.01 4.95-.07c1.27-.06 2.15-.26 2.91-.56a5.9 5.9 0 002.13-1.38 5.9 5.9 0 001.38-2.13c.3-.76.5-1.64.56-2.91.06-1.28.07-1.69.07-4.95s-.01-3.67-.07-4.95c-.06-1.27-.26-2.15-.56-2.91a5.9 5.9 0 00-1.38-2.13A5.9 5.9 0 0019.86.63C19.1.33 18.22.13 16.95.07 15.67.01 15.26 0 12 0zm0 5.84a6.16 6.16 0 100 12.32 6.16 6.16 0 000-12.32zM12 16a4 4 0 110-8 4 4 0 010 8zm6.4-11.85a1.44 1.44 0 100 2.88 1.44 1.44 0 000-2.88z"/></svg>
           </a>
           <a href="https://wa.me/8801723360078" target="_blank" rel="noopener" aria-label="WhatsApp" id="socialWhatsapp">
@@ -986,7 +993,7 @@
   </a>
 
   <!-- ============ FLOATING INSTAGRAM ============ -->
-  <a href="https://instagram.com/zone14bd" target="_blank" rel="noopener" class="float-instagram" id="floatInstagram" aria-label="Follow on Instagram">
+  <a href="https://www.instagram.com/zoneforteen/" target="_blank" rel="noopener" class="float-instagram" id="floatInstagram" aria-label="Follow on Instagram">
     <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true"><path d="M12 2.16c3.2 0 3.58.01 4.85.07 1.17.05 1.8.25 2.23.41.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.42.36 1.06.41 2.23.06 1.26.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.05 1.17-.25 1.8-.41 2.23-.22.56-.48.96-.9 1.38-.42.42-.82.68-1.38.9-.42.16-1.06.36-2.23.41-1.26.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-1.17-.05-1.8-.25-2.23-.41a3.7 3.7 0 01-1.38-.9 3.7 3.7 0 01-.9-1.38c-.16-.42-.36-1.06-.41-2.23-.06-1.26-.07-1.65-.07-4.85s.01-3.58.07-4.85c.05-1.17.25-1.8.41-2.23.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.42-.16 1.06-.36 2.23-.41 1.26-.06 1.65-.07 4.85-.07M12 0C8.74 0 8.33.01 7.05.07 5.78.13 4.9.33 4.14.63a5.9 5.9 0 00-2.13 1.38A5.9 5.9 0 00.63 4.14C.33 4.9.13 5.78.07 7.05.01 8.33 0 8.74 0 12s.01 3.67.07 4.95c.06 1.27.26 2.15.56 2.91a5.9 5.9 0 001.38 2.13c.66.66 1.32 1.07 2.13 1.38.76.3 1.64.5 2.91.56C8.33 23.99 8.74 24 12 24s3.67-.01 4.95-.07c1.27-.06 2.15-.26 2.91-.56a5.9 5.9 0 002.13-1.38 5.9 5.9 0 001.38-2.13c.3-.76.5-1.64.56-2.91.06-1.28.07-1.69.07-4.95s-.01-3.67-.07-4.95c-.06-1.27-.26-2.15-.56-2.91a5.9 5.9 0 00-1.38-2.13A5.9 5.9 0 0019.86.63C19.1.33 18.22.13 16.95.07 15.67.01 15.26 0 12 0zm0 5.84a6.16 6.16 0 100 12.32 6.16 6.16 0 000-12.32zM12 16a4 4 0 110-8 4 4 0 010 8zm6.4-11.85a1.44 1.44 0 100 2.88 1.44 1.44 0 000-2.88z"/></svg>
   </a>
 
@@ -1071,6 +1078,16 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- ============ IMAGE LIGHTBOX (zoom + swipe) ============ -->
+  <div id="imgLightbox" class="img-lightbox" role="dialog" aria-modal="true" aria-label="Product image viewer">
+    <button class="lb-close" data-lb-close aria-label="Close">&times;</button>
+    <div class="lb-stage">
+      <img class="lb-img" alt="" draggable="false" />
+    </div>
+    <div class="lb-dots"></div>
+    <div class="lb-hint">Tap to zoom · swipe to change</div>
   </div>
 
   <!-- ============ BACK TO TOP ============ -->
