@@ -1267,10 +1267,59 @@ function tickFeaturedCountdown() {
 }
 
 /* ---------- LIVE AUTO-SCORES ----------
-   Pulls real World Cup results from the free, keyless SportSRC feed and overlays
-   them onto our fixtures by team name (order-independent). No admin entry needed —
-   scores appear automatically the moment a match goes live or finishes. */
+   Primary source: our own /api/wc proxy (football-data.org via a server-side
+   key — reliable, fresh). Fallback: the free keyless SportSRC feed. Both share
+   the same football-data.org JSON shape, so one set of parsers handles both.
+   getWC() fetches once and caches ~25s so the 3 sync passes share a round-trip. */
 const WC_SCORES_URL = 'https://api.sportsrc.org/?data=results&category=scores&league=WC';
+const WC_TABLES_URL = 'https://api.sportsrc.org/?data=results&category=tables&league=WC';
+const WC_UPCOMING_URL = 'https://api.sportsrc.org/?data=matches&category=football';
+
+let _wc = null, _wcAt = 0, _wcPromise = null;
+async function getWC(force) {
+  if (!force && _wc && Date.now() - _wcAt < 25000) return _wc;
+  if (_wcPromise) return _wcPromise;
+  _wcPromise = (async () => {
+    // 1) Our proxy (football-data.org with key) — preferred
+    try {
+      const r = await fetch('/api/wc', { cache: 'no-store' });
+      if (r.ok) {
+        const j = await r.json();
+        if (j && j.success && j.data &&
+            ((j.data.all && j.data.all.length) || (j.data.finished && j.data.finished.length))) {
+          _wc = {
+            live: j.data.live || [], finished: j.data.finished || [],
+            all: j.data.all || [], standings: j.data.standings || [], upcoming: [],
+            source: 'proxy',
+          };
+          _wcAt = Date.now(); _wcPromise = null; return _wc;
+        }
+      }
+    } catch (_) {}
+    // 2) Fallback: SportSRC (scores + tables + near-term fixtures)
+    try {
+      const [sc, tb, up] = await Promise.all([
+        fetch(WC_SCORES_URL,   { cache: 'no-store' }).then(r => r.json()).catch(() => null),
+        fetch(WC_TABLES_URL,   { cache: 'no-store' }).then(r => r.json()).catch(() => null),
+        fetch(WC_UPCOMING_URL, { cache: 'no-store' }).then(r => r.json()).catch(() => null),
+      ]);
+      _wc = {
+        live:      (sc && sc.data && sc.data.live) || [],
+        finished:  (sc && sc.data && sc.data.finished) || [],
+        all:       [],
+        standings: (tb && tb.data && tb.data.standings) || [],
+        upcoming:  (up && up.data) || [],
+        source: 'sportsrc',
+      };
+      _wcAt = Date.now();
+    } catch (_) {
+      _wc = _wc || { live: [], finished: [], all: [], standings: [], upcoming: [], source: 'none' };
+    }
+    _wcPromise = null;
+    return _wc;
+  })();
+  return _wcPromise;
+}
 
 function _normTeam(s) {
   let t = (s || '').toString().toLowerCase();
@@ -1296,14 +1345,8 @@ function _feedToLocalMatch(fm) {
 }
 
 async function syncLiveScores() {
-  let json;
-  try {
-    const res = await fetch(WC_SCORES_URL, { cache: 'no-store' });
-    json = await res.json();
-  } catch (_) { return false; }
-  if (!json || !json.success || !json.data) return false;
-
-  const feed = [...(json.data.live || []), ...(json.data.finished || [])];
+  const wc = await getWC();
+  const feed = [...(wc.live || []), ...(wc.finished || [])];
   if (!feed.length) return false;
 
   const live = readLiveScores();
@@ -1338,17 +1381,12 @@ async function syncLiveScores() {
   return changed;
 }
 
-/* Pull all 12 WC group standings (every team, live points) from the public feed. */
-const WC_TABLES_URL = 'https://api.sportsrc.org/?data=results&category=tables&league=WC';
+/* Pull all 12 WC group standings (every team, live points). */
 async function syncGroupStandings() {
-  let json;
-  try {
-    const r = await fetch(WC_TABLES_URL, { cache: 'no-store' });
-    json = await r.json();
-  } catch (_) { return false; }
-  if (!json || !json.success || !json.data || !Array.isArray(json.data.standings)) return false;
+  const wc = await getWC();
+  if (!Array.isArray(wc.standings) || !wc.standings.length) return false;
 
-  const groups = json.data.standings.map(g => ({
+  const groups = wc.standings.map(g => ({
     name: (g.group || '').replace(/^group\s+/i, '').trim(),
     teams: (g.table || []).map(t => ({
       name:  t.team.name,
@@ -1372,11 +1410,10 @@ const OUR_TLAS = ['BRA', 'ARG', 'ESP', 'FRA'];
    upcoming from the near-term fixtures feed, plus our own static fixtures —
    merged & deduped so the Matches grid shows the whole tournament, not just
    the four teams we sell. */
-const WC_UPCOMING_URL = 'https://api.sportsrc.org/?data=matches&category=football';
-
 function _groupLetter(g) { return (g || '').toString().replace(/^group[_\s]*/i, '').trim(); }
 
 async function syncAllMatches() {
+  const wc = await getWC();
   // Name → group + name → TLA maps (from standings) so fixtures missing those
   // can be matched. Dedup keys on TLA/code (stable) — not display names, which
   // differ across feeds (e.g. "Cape Verde" vs "Cape Verde Islands").
@@ -1418,45 +1455,44 @@ async function syncAllMatches() {
     }
   };
 
-  // 1) Finished + live (real scores, every group)
-  try {
-    const r = await fetch(WC_SCORES_URL, { cache: 'no-store' });
-    const j = await r.json();
-    if (j && j.success && j.data) {
-      [...(j.data.live || []), ...(j.data.finished || [])].forEach(fm => {
-        const ft = (fm.score && fm.score.fullTime) || {};
-        add({
-          id: 'wc-' + fm.homeTeam.tla + '-' + fm.awayTeam.tla,
-          group: _groupLetter(fm.group),
-          date: fm.utcDate,
-          home: { name: fm.homeTeam.name, tla: fm.homeTeam.tla, crest: fm.homeTeam.crest },
-          away: { name: fm.awayTeam.name, tla: fm.awayTeam.tla, crest: fm.awayTeam.crest },
-          status: fm.status,
-          score: (ft.home == null) ? null : { home: ft.home, away: ft.away },
-        }, RANK[fm.status] || 3);
-      });
-    }
-  } catch (_) {}
+  // Build a card from a football-data-shaped match (scores feed or full list)
+  const liveSet = ['FINISHED', 'IN_PLAY', 'PAUSED'];
+  const addFeedMatch = (fm) => {
+    if (!fm || !fm.homeTeam || !fm.awayTeam) return;
+    const ft = (fm.score && fm.score.fullTime) || {};
+    const played = liveSet.includes(fm.status);
+    add({
+      id: 'wc-' + (fm.homeTeam.tla || _normTeam(fm.homeTeam.name)) + '-' + (fm.awayTeam.tla || _normTeam(fm.awayTeam.name)),
+      group: _groupLetter(fm.group),
+      date: fm.utcDate,
+      home: { name: fm.homeTeam.name, tla: fm.homeTeam.tla, crest: fm.homeTeam.crest },
+      away: { name: fm.awayTeam.name, tla: fm.awayTeam.tla, crest: fm.awayTeam.crest },
+      status: fm.status,
+      score: (played && ft.home != null) ? { home: ft.home, away: ft.away } : null,
+    }, played ? 3 : RANK.UPCOMING);
+  };
 
-  // 2) Upcoming fixtures (filter to WC by matching both team names)
-  try {
-    const r = await fetch(WC_UPCOMING_URL, { cache: 'no-store' });
-    const j = await r.json();
-    (j && j.data || []).forEach(m => {
-      const hn = m.teams && m.teams.home && m.teams.home.name;
-      const an = m.teams && m.teams.away && m.teams.away.name;
-      if (!hn || !an) return;
-      if (wcNames.size && (!wcNames.has(_normTeam(hn)) || !wcNames.has(_normTeam(an)))) return;
-      add({
-        id: 'wcup-' + _normTeam(hn) + '-' + _normTeam(an),
-        group: nameToGroup[_normTeam(hn)] || nameToGroup[_normTeam(an)] || '',
-        date: new Date(m.date).toISOString(),
-        home: { name: hn, crest: (m.teams.home.badge || m.poster || '') },
-        away: { name: an, crest: (m.teams.away.badge || '') },
-        status: 'TIMED', score: null,
-      }, RANK.UPCOMING);
-    });
-  } catch (_) {}
+  // 1) Finished + live (real scores, every group)
+  [...(wc.live || []), ...(wc.finished || [])].forEach(addFeedMatch);
+
+  // 2a) Full real schedule (proxy mode): every not-yet-played fixture
+  (wc.all || []).filter(x => !liveSet.includes(x.status)).forEach(addFeedMatch);
+
+  // 2b) Fallback near-term fixtures (SportSRC, name-only)
+  (wc.upcoming || []).forEach(m => {
+    const hn = m.teams && m.teams.home && m.teams.home.name;
+    const an = m.teams && m.teams.away && m.teams.away.name;
+    if (!hn || !an) return;
+    if (wcNames.size && (!wcNames.has(_normTeam(hn)) || !wcNames.has(_normTeam(an)))) return;
+    add({
+      id: 'wcup-' + _normTeam(hn) + '-' + _normTeam(an),
+      group: nameToGroup[_normTeam(hn)] || nameToGroup[_normTeam(an)] || '',
+      date: new Date(m.date).toISOString(),
+      home: { name: hn, crest: (m.teams.home.badge || m.poster || '') },
+      away: { name: an, crest: (m.teams.away.badge || '') },
+      status: 'TIMED', score: null,
+    }, RANK.UPCOMING);
+  });
 
   // 3) Our own fixtures — keep predictions + correct flags for the 4 teams
   MATCHES.forEach(m => {
