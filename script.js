@@ -1272,7 +1272,17 @@ function tickFeaturedCountdown() {
    scores appear automatically the moment a match goes live or finishes. */
 const WC_SCORES_URL = 'https://api.sportsrc.org/?data=results&category=scores&league=WC';
 
-function _normTeam(s) { return (s || '').toString().trim().toLowerCase(); }
+function _normTeam(s) {
+  let t = (s || '').toString().toLowerCase();
+  t = t.replace(/\b(islands?|republic of|the)\b/g, ' ').replace(/[^a-z]/g, '');
+  const A = {
+    unitedstates: 'usa', korearepublic: 'korea', southkorea: 'korea',
+    czechrepublic: 'czechia', bosniaandherzegovina: 'bosnia', bosniaherzegovina: 'bosnia',
+    cotedivoire: 'ivorycoast', turkiye: 'turkey', caboverde: 'capeverde',
+    congodr: 'congo', drcongo: 'congo',
+  };
+  return A[t] || t;
+}
 
 /* Find the local MATCHES entry that corresponds to a feed match. */
 function _feedToLocalMatch(fm) {
@@ -1367,21 +1377,45 @@ const WC_UPCOMING_URL = 'https://api.sportsrc.org/?data=matches&category=footbal
 function _groupLetter(g) { return (g || '').toString().replace(/^group[_\s]*/i, '').trim(); }
 
 async function syncAllMatches() {
-  // Team-name → group letter map (from standings) for fixtures that lack a group
+  // Name → group + name → TLA maps (from standings) so fixtures missing those
+  // can be matched. Dedup keys on TLA/code (stable) — not display names, which
+  // differ across feeds (e.g. "Cape Verde" vs "Cape Verde Islands").
   const standings = readGroupStandings() || [];
   const nameToGroup = {};
+  const nameToTla = {};
   const wcNames = new Set();
   standings.forEach(g => g.teams.forEach(t => {
-    nameToGroup[_normTeam(t.name)] = g.name;
-    wcNames.add(_normTeam(t.name));
+    const n = _normTeam(t.name);
+    nameToGroup[n] = g.name;
+    nameToTla[n] = t.tla;
+    wcNames.add(n);
   }));
+
+  // A team's stable id: its TLA/code if known, else resolved from name.
+  const canonId = (team) =>
+    team.tla || team.code || nameToTla[_normTeam(team.name)] || _normTeam(team.name);
+  const canonKey = (card) => [canonId(card.home), canonId(card.away)].sort().join('|');
 
   const RANK = { FINISHED: 3, IN_PLAY: 3, PAUSED: 3, STATIC: 2, UPCOMING: 1 };
   const byPair = new Map();
   const add = (card, rank) => {
-    const key = [_normTeam(card.home.name), _normTeam(card.away.name)].sort().join('|');
+    const key = canonKey(card);
     const prev = byPair.get(key);
-    if (!prev || rank > prev._rank) { card._rank = rank; byPair.set(key, card); }
+    if (!prev || rank > prev._rank) {
+      // Carry venue/predict info forward so the winning card keeps them
+      if (prev) {
+        card.venue = card.venue || prev.venue;
+        card.city = card.city || prev.city;
+        card.localMatchId = card.localMatchId || prev.localMatchId;
+      }
+      card._rank = rank;
+      byPair.set(key, card);
+    } else {
+      // Keep the higher-rank card but enrich it from this one
+      prev.venue = prev.venue || card.venue;
+      prev.city = prev.city || card.city;
+      prev.localMatchId = prev.localMatchId || card.localMatchId;
+    }
   };
 
   // 1) Finished + live (real scores, every group)
