@@ -666,8 +666,10 @@ function renderHeroVideos() {
   let idx = 0, timer = null, startX = 0, dragging = false, moved = false;
 
   const playOnly = (n) => videoEls.forEach((v, i) => {
-    if (i === n) { const p = v.play(); if (p && p.catch) p.catch(() => {}); }
-    else { try { v.pause(); } catch (_) {} }
+    if (i === n) {
+      try { v.currentTime = 0; } catch (_) {}   // each video plays fresh from the start
+      const p = v.play(); if (p && p.catch) p.catch(() => {});
+    } else { try { v.pause(); } catch (_) {} }
   });
   const show = (n) => {
     idx = (n + vids.length) % vids.length;
@@ -676,7 +678,7 @@ function renderHeroVideos() {
     playOnly(idx);
   };
   const stop  = () => { if (timer) { clearInterval(timer); timer = null; } };
-  const start = () => { if (!timer && vids.length > 1) timer = setInterval(() => show(idx + 1), 4500); };
+  const start = () => { if (!timer && vids.length > 1) timer = setInterval(() => show(idx + 1), 5000); };
   const restart = () => { stop(); start(); };
 
   // Tap play → open big modal (ignored right after a drag)
@@ -2114,18 +2116,15 @@ function initMatchHubCollapse() {
   if (!section || !toggle) return;
   const MOBILE = () => window.matchMedia('(max-width: 768px)').matches;
 
-  // Start collapsed on phones, open on desktop
+  // Start collapsed on phones, open on desktop — but hideable on both.
   const setCollapsed = (c) => {
     section.classList.toggle('collapsed', c);
     toggle.setAttribute('aria-expanded', String(!c));
-    toggle.querySelector('span').textContent = c ? 'Tap to view fixtures' : 'Hide fixtures';
+    toggle.querySelector('span').textContent = c ? 'View fixtures' : 'Hide fixtures';
   };
   setCollapsed(MOBILE());
 
   toggle.addEventListener('click', () => setCollapsed(!section.classList.contains('collapsed')));
-
-  // Keep desktop always expanded if the viewport grows
-  window.addEventListener('resize', () => { if (!MOBILE()) setCollapsed(false); });
 }
 
 /* ---------- Match tabs ---------- */
