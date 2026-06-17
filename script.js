@@ -1536,7 +1536,18 @@ function renderMatchGrid() {
     ? `<img class="flag-img" src="${t.crest}" alt="${t.name}" loading="lazy" />`
     : (t.code ? flagImg(t.code) : '');
 
+  // Admin-entered / live-overlay results — used to fill in scores the public
+  // feed hasn't posted yet (it sometimes lags). Keyed by our MATCHES id.
+  const results = mergedResults();
+
   grid.innerHTML = cards.map(m => {
+    // If the feed has no score but we have one for this fixture (admin or live
+    // overlay), apply it so the card shows the result instead of "pending".
+    if (!m.score && m.localMatchId && results[m.localMatchId]) {
+      const r = results[m.localMatchId];
+      m = { ...m, score: { home: r.homeScore, away: r.awayScore },
+            status: r.live ? 'IN_PLAY' : 'FINISHED' };
+    }
     const hCode = m.home.code || m.home.tla;
     const aCode = m.away.code || m.away.tla;
     const hasOurJersey = !!(COUNTRY_TO_JERSEY[hCode] || COUNTRY_TO_JERSEY[aCode]);
