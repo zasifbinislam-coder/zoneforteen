@@ -649,8 +649,8 @@ function renderHeroVideos() {
   track.innerHTML = vids.map(v => `
     <div class="hero-video-slide">
       <button type="button" class="hero-video-tile" data-hero-vid="${v.id}" aria-label="Play video">
-        <video src="${v.videoUrl}#t=0.1"${v.posterUrl ? ` poster="${v.posterUrl}"` : ''}
-               muted loop playsinline preload="metadata"></video>
+        <video src="${v.videoUrl}"${v.posterUrl ? ` poster="${v.posterUrl}"` : ''}
+               muted loop playsinline preload="auto"></video>
       </button>
     </div>
   `).join('');
@@ -663,11 +663,14 @@ function renderHeroVideos() {
 
   const videoEls = [...track.querySelectorAll('video')];
   const dotEls   = dotsWrap ? [...dotsWrap.children] : [];
-  let idx = 0, timer = null, startX = 0, dragging = false, moved = false;
+  const vp = viewport || track;
+  let idx = 0, timer = null;
 
   const playOnly = (n) => videoEls.forEach((v, i) => {
+    v.muted = true;                 // set the PROPERTY so muted autoplay is allowed
+    v.playsInline = true;
     if (i === n) {
-      try { v.currentTime = 0; } catch (_) {}   // each video plays fresh from the start
+      try { if (v.readyState > 0) v.currentTime = 0; } catch (_) {}  // fresh start when ready
       const p = v.play(); if (p && p.catch) p.catch(() => {});
     } else { try { v.pause(); } catch (_) {} }
   });
@@ -681,10 +684,10 @@ function renderHeroVideos() {
   const start = () => { if (!timer && vids.length > 1) timer = setInterval(() => show(idx + 1), 5000); };
   const restart = () => { stop(); start(); };
 
-  // Tap play → open big modal (ignored right after a drag)
+  // Tap a tile → open big modal (ignored if the gesture was a swipe)
   track.querySelectorAll('[data-hero-vid]').forEach(btn => {
     btn.addEventListener('click', () => {
-      if (moved) return;
+      if (vp && vp._heroMoved) return;
       const v = vids.find(x => x.id === btn.dataset.heroVid);
       if (v) openVideoModal({ url: v.videoUrl, poster: v.posterUrl || '', title: '', subtitle: '' });
     });
@@ -693,33 +696,35 @@ function renderHeroVideos() {
   // Dots → jump
   dotEls.forEach(d => d.addEventListener('click', () => { show(+d.dataset.dot); restart(); }));
 
-  // Swipe / drag (pointer events cover touch + mouse)
-  const vp = viewport || track;
-  const onDown = (e) => { dragging = true; moved = false; startX = e.clientX; stop(); };
-  const onMove = (e) => { if (dragging && Math.abs(e.clientX - startX) > 8) moved = true; };
-  const onUp   = (e) => {
-    if (!dragging) return;
-    dragging = false;
-    const dx = e.clientX - startX;
-    if (Math.abs(dx) > 40) show(idx + (dx < 0 ? 1 : -1));
-    restart();
-  };
-  vp.addEventListener('pointerdown', onDown);
-  vp.addEventListener('pointermove', onMove);
-  vp.addEventListener('pointerup', onUp);
-  vp.addEventListener('pointercancel', () => { dragging = false; restart(); });
-  vp.addEventListener('pointerleave', () => { if (dragging) { dragging = false; restart(); } });
-
   // Pause cycling while the tab is hidden
   const onVis = () => { if (document.hidden) stop(); else { playOnly(idx); start(); } };
   document.addEventListener('visibilitychange', onVis);
 
+  // Expose the current carousel so the once-bound gesture handlers drive it
   _heroCarousel = {
-    destroy() {
-      stop();
-      document.removeEventListener('visibilitychange', onVis);
-    },
+    show, restart, stop, getIdx: () => idx,
+    destroy() { stop(); document.removeEventListener('visibilitychange', onVis); },
   };
+
+  // Swipe / drag — bound ONCE to the viewport (never stacks across re-renders),
+  // always controls whichever carousel is current.
+  if (vp && !vp.dataset.heroWired) {
+    vp.dataset.heroWired = '1';
+    let sx = 0, dragging = false, moved = false;
+    vp.addEventListener('pointerdown', e => { const c = _heroCarousel; if (!c) return; dragging = true; moved = false; sx = e.clientX; c.stop(); });
+    vp.addEventListener('pointermove', e => { if (dragging && Math.abs(e.clientX - sx) > 8) moved = true; });
+    vp.addEventListener('pointerup', e => {
+      const c = _heroCarousel; if (!c || !dragging) return;
+      dragging = false;
+      const dx = e.clientX - sx;
+      vp._heroMoved = moved;
+      if (Math.abs(dx) > 40) c.show(c.getIdx() + (dx < 0 ? 1 : -1));
+      c.restart();
+      setTimeout(() => { vp._heroMoved = false; }, 60);
+    });
+    vp.addEventListener('pointercancel', () => { dragging = false; const c = _heroCarousel; if (c) c.restart(); });
+    vp.addEventListener('pointerleave', () => { if (dragging) { dragging = false; const c = _heroCarousel; if (c) c.restart(); } });
+  }
 
   show(0);
   start();
