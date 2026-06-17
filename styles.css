@@ -282,18 +282,19 @@ h1, h2, h3, .display {
    subtle "lighting change" instead of a hard cut — masks the swap entirely. */
 .hero-poster {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: calc(50% - 1.1%) center;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(70vw, 480px);
+  height: auto;
+  object-fit: contain;          /* show the whole logo, never crop/stretch */
   z-index: 0;
-  filter: saturate(0.95) brightness(0.7);
-  transition: filter 0.5s ease, opacity 1.2s ease;
+  filter: drop-shadow(0 12px 40px rgba(0, 0, 0, 0.5));
+  transition: opacity 1s ease, transform 1s ease;
   pointer-events: none;
 }
-.hero-poster.dimming { filter: saturate(0.85) brightness(0.45); }
-.hero-poster.fade-out { opacity: 0; }
+.hero-poster.dimming { opacity: 0.8; }
+.hero-poster.fade-out { opacity: 0; transform: translate(-50%, -50%) scale(1.04); }
 
 /* Cinematic background video — sits above the poster, fades in once ready */
 .hero-video {
@@ -2545,9 +2546,8 @@ h1, h2, h3, .display {
   .hero { padding: 100px 0 80px; }
   .hero-title { font-size: clamp(40px, 12vw, 80px); }
 
-  /* Centre the logo crest on narrow phones — the raw image sits slightly
-     right-of-centre, so we nudge object-position left to compensate. */
-  .hero-poster { object-position: calc(50% - 3%) center; }
+  /* Centred logo splash on phones — a touch larger so it reads well. */
+  .hero-poster { width: min(78vw, 380px); }
 
   /* Watermark: bigger leftward nudge on mobile — the logo in the image
      is inherently right-of-centre, so we push harder than desktop's 1.1%. */
