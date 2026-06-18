@@ -1079,6 +1079,29 @@
     </div>
   </div>
 
+  <!-- ============ OFFER / BUNDLE BUILDER ============ -->
+  <div id="offerBuilder" class="offer-builder" role="dialog" aria-modal="true" aria-labelledby="obTitle">
+    <div class="ob-card">
+      <header class="ob-head">
+        <div>
+          <h3 id="obTitle">Build your bundle</h3>
+          <p id="obSub">Pick your jerseys</p>
+        </div>
+        <button type="button" class="ob-close" data-ob-close aria-label="Close">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </header>
+      <div class="ob-grid" id="obGrid"><!-- jersey pickers injected by JS --></div>
+      <footer class="ob-foot">
+        <div class="ob-summary">
+          <span id="obCount">0 selected</span>
+          <span id="obTotal"></span>
+        </div>
+        <button type="button" class="btn btn-primary btn-lg" id="obProceed" disabled>Proceed to Checkout</button>
+      </footer>
+    </div>
+  </div>
+
   <!-- ============ IMAGE LIGHTBOX (zoom + swipe) ============ -->
   <div id="imgLightbox" class="img-lightbox" role="dialog" aria-modal="true" aria-label="Product image viewer">
     <button class="lb-close" data-lb-close aria-label="Close">&times;</button>

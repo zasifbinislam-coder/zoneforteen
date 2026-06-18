@@ -27,10 +27,25 @@ document.addEventListener('DOMContentLoaded', () => {
   hookPayment();
   hookPlaceOrder();
   hookSuccessModal();
+  applyPendingOffer();   // auto-apply a bundle offer chosen on the homepage
 
   rerender();
   window.addEventListener('cart:change', rerender);
 });
+
+/* A bundle offer (Buy 2 Get 1 / Full Team Set) selected on the homepage is
+   stashed in sessionStorage by the offer builder — apply it as the promo here. */
+function applyPendingOffer() {
+  let offer = null;
+  try { offer = JSON.parse(sessionStorage.getItem('zone14_offer') || 'null'); } catch (_) {}
+  if (!offer || !offer.type) return;
+  sessionStorage.removeItem('zone14_offer');
+  state.promo = offer;   // { code, label, type, value }
+  const input = document.getElementById('promoInput');
+  const fb    = document.getElementById('promoFeedback');
+  if (input) input.value = offer.code || '';
+  if (fb) { fb.textContent = '✓ ' + (offer.label || 'Offer applied'); fb.className = 'promo-feedback ok'; }
+}
 
 /* ---------- Render ---------- */
 function rerender() {

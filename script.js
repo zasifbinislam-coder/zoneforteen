@@ -2207,19 +2207,166 @@ function renderOffers() {
     const cls    = o.featured ? 'offer-card reveal offer-featured' : 'offer-card reveal';
     const btnCls = (i === 0 || o.featured) ? 'btn btn-primary' : 'btn btn-ghost';
     const isExt  = /^https?:\/\//.test(o.ctaUrl || '');
+    const offerKey = _offerKeyFromUrl(o.ctaUrl);
     return `
       <article class="${cls}">
         <div class="offer-tag">${o.tag || ''}</div>
         <h3>${o.title || ''} ${o.accent ? `<span class="accent">${o.accent}</span>` : ''}</h3>
         <p>${o.description || ''}</p>
         <div class="offer-price">${o.priceLine || ''}</div>
-        <a href="${o.ctaUrl || '#'}" ${isExt ? 'target="_blank" rel="noopener"' : ''} class="${btnCls}">${o.ctaText || 'Claim'}</a>
+        <a href="${o.ctaUrl || '#'}" ${isExt ? 'target="_blank" rel="noopener"' : ''}${offerKey ? ` data-offer="${offerKey}"` : ''} class="${btnCls}">${o.ctaText || 'Claim'}</a>
       </article>
     `;
   }).join('');
+
+  // Bundle-builder offers open the picker instead of navigating
+  grid.querySelectorAll('[data-offer]').forEach(btn => {
+    btn.addEventListener('click', e => { e.preventDefault(); openOfferBuilder(btn.dataset.offer); });
+  });
+
   if (typeof revealObserver !== 'undefined') {
     grid.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
   }
+}
+
+/* ctaUrl like "#offer:buy2get1" → "buy2get1" (a bundle builder), else null */
+function _offerKeyFromUrl(url) {
+  const m = /^#offer:(\w+)/.exec(url || '');
+  return m && OFFER_CONFIGS[m[1]] ? m[1] : null;
+}
+
+/* ============================================================
+   OFFER / BUNDLE BUILDER — pick jerseys, auto-apply the deal, go to checkout
+   ============================================================ */
+const OFFER_CONFIGS = {
+  buy2get1: {
+    title: 'Buy 2 Get 1 FREE', sub: 'Pick any 3 jerseys — the cheapest one is on us.',
+    need: 3, exact: true, kind: 'cheapestFree',
+    promo: { code: 'BUY2GET1', type: 'flat', label: 'Buy 2 Get 1 — cheapest free' },
+  },
+  teamset: {
+    title: 'Full Team Set · −25%', sub: 'Pick 5 or more jerseys — 25% off the lot.',
+    need: 5, exact: false, kind: 'pct25',
+    promo: { code: 'TEAMSET', type: 'pct', value: 25, label: 'Full Team Set −25%' },
+  },
+};
+
+let _obState = null;   // { key, cfg, picks: { [jerseyId]: { size, qty } } }
+
+function openOfferBuilder(key) {
+  const cfg = OFFER_CONFIGS[key];
+  const modal = document.getElementById('offerBuilder');
+  const gridEl = document.getElementById('obGrid');
+  if (!cfg || !modal || !gridEl) return;
+
+  _obState = { key, cfg, picks: {} };
+  document.getElementById('obTitle').textContent = cfg.title;
+  document.getElementById('obSub').textContent = cfg.sub;
+
+  const stock = JERSEYS.filter(j => j.inStock);
+  gridEl.innerHTML = stock.map(j => `
+    <div class="ob-item" data-id="${j.id}">
+      <div class="ob-thumb">${jerseySVG(j)}${getCardImages(j)[0] ? `<img src="${getCardImages(j)[0]}" alt="" loading="lazy" onerror="this.remove()"/>` : ''}</div>
+      <div class="ob-info">
+        <strong>${j.country}</strong>
+        <span>${fmtBDT(salePrice(j))}</span>
+      </div>
+      <select class="ob-size" aria-label="Size">
+        ${['M','L','XL','XXL'].map(s => `<option value="${s}">${s}</option>`).join('')}
+      </select>
+      <div class="ob-qty">
+        <button type="button" data-q="dec" aria-label="Less">−</button>
+        <span class="ob-q">0</span>
+        <button type="button" data-q="inc" aria-label="More">+</button>
+      </div>
+    </div>
+  `).join('');
+
+  gridEl.querySelectorAll('.ob-item').forEach(row => {
+    const id = row.dataset.id;
+    const qEl = row.querySelector('.ob-q');
+    const sizeEl = row.querySelector('.ob-size');
+    row.querySelectorAll('[data-q]').forEach(b => b.addEventListener('click', () => {
+      let q = parseInt(qEl.textContent, 10) || 0;
+      q = b.dataset.q === 'inc' ? Math.min(20, q + 1) : Math.max(0, q - 1);
+      qEl.textContent = q;
+      row.classList.toggle('picked', q > 0);
+      if (q > 0) _obState.picks[id] = { size: sizeEl.value, qty: q };
+      else delete _obState.picks[id];
+      _obUpdate();
+    }));
+    sizeEl.addEventListener('change', () => { if (_obState.picks[id]) _obState.picks[id].size = sizeEl.value; });
+  });
+
+  _obUpdate();
+  modal.classList.add('show');
+  document.body.style.overflow = 'hidden';
+
+  modal.querySelectorAll('[data-ob-close]').forEach(b => b.onclick = closeOfferBuilder);
+  modal.onclick = e => { if (e.target === modal) closeOfferBuilder(); };
+  document.getElementById('obProceed').onclick = _obProceed;
+}
+
+function closeOfferBuilder() {
+  const modal = document.getElementById('offerBuilder');
+  if (modal) modal.classList.remove('show');
+  document.body.style.overflow = '';
+  _obState = null;
+}
+
+/* Recompute count, total, discount + enable/disable Proceed */
+function _obTotals() {
+  const units = [];
+  Object.entries(_obState.picks).forEach(([id, p]) => {
+    const j = getJersey(id);
+    for (let i = 0; i < p.qty; i++) units.push(salePrice(j));
+  });
+  const count = units.length;
+  const subtotal = units.reduce((s, n) => s + n, 0);
+  let discount = 0;
+  if (_obState.cfg.kind === 'cheapestFree' && count >= 3) discount = Math.min(...units);
+  else if (_obState.cfg.kind === 'pct25' && count >= _obState.cfg.need) discount = Math.round(subtotal * 0.25);
+  return { count, subtotal, discount, total: subtotal - discount };
+}
+
+function _obUpdate() {
+  const { count, total, discount } = _obTotals();
+  const cfg = _obState.cfg;
+  const need = cfg.need;
+  const met = cfg.exact ? count === need : count >= need;
+
+  const countEl = document.getElementById('obCount');
+  const totalEl = document.getElementById('obTotal');
+  const btn = document.getElementById('obProceed');
+
+  countEl.textContent = cfg.exact
+    ? `${count} / ${need} selected`
+    : `${count} selected (min ${need})`;
+  totalEl.innerHTML = count
+    ? `Total: <strong>${fmtBDT(total)}</strong>${discount > 0 ? ` <span class="ob-save">save ${fmtBDT(discount)}</span>` : ''}`
+    : '';
+  btn.disabled = !met;
+  btn.textContent = met ? `Proceed to Checkout · ${fmtBDT(total)}`
+    : (cfg.exact ? `Pick ${need - count} more` : `Pick ${Math.max(0, need - count)} more`);
+}
+
+function _obProceed() {
+  if (!_obState) return;
+  const { count, discount } = _obTotals();
+  const cfg = _obState.cfg;
+  const met = cfg.exact ? count === cfg.need : count >= cfg.need;
+  if (!met) return;
+
+  // Replace cart with the picked jerseys
+  clearCart();
+  Object.entries(_obState.picks).forEach(([id, p]) => addToCart(id, p.size, p.qty));
+
+  // Stash the offer so the checkout auto-applies the discount
+  const promo = { ...cfg.promo };
+  if (cfg.kind === 'cheapestFree') promo.value = discount;   // flat = cheapest unit price
+  try { sessionStorage.setItem('zone14_offer', JSON.stringify(promo)); } catch (_) {}
+
+  window.location.href = 'order.html';
 }
 
 /* Sync footer Contact + Social link DOM with CONTACT/SOCIAL settings objects */
