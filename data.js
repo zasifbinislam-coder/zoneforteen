@@ -1112,6 +1112,15 @@ async function cloudDelete(asset) {
   try { await sb.from('jersey_media').delete().eq('id', asset.id); } catch (_) {}
 }
 
+/* Persist a new image order — sort_order ascending (0 = first/primary). */
+async function pushMediaSortOrder(assets) {
+  const sb = getSupabase();
+  if (!sb) return;
+  for (let i = 0; i < assets.length; i++) {
+    try { await sb.from('jersey_media').update({ sort_order: i }).eq('id', assets[i].id); } catch (_) {}
+  }
+}
+
 const MEDIA_KEY = 'zone14_media_v1';
 function readMedia() {
   try { return JSON.parse(localStorage.getItem(MEDIA_KEY)) || {}; }

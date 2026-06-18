@@ -318,22 +318,41 @@ function renderMediaGallery() {
 
   wrap.innerHTML = Object.entries(byJersey).map(([jid, assets]) => {
     const j = getJersey(jid);
+    const imgAssets = assets.filter(a => a.type === 'image');
     return `
       <div class="media-group">
-        <h4>${j ? `${j.country} · ${j.edition}` : jid} <span>${assets.length} file${assets.length === 1 ? '' : 's'}</span></h4>
+        <h4>${j ? `${j.country} · ${j.edition}` : jid} <span>${assets.length} file${assets.length === 1 ? '' : 's'} · ◀▶ reorder, 1st = main photo</span></h4>
         <div class="media-tiles">
-          ${assets.map(a => `
-            <div class="media-tile" data-jid="${jid}" data-aid="${a.id}">
-              ${a.type === 'image'
+          ${assets.map(a => {
+            const isImg = a.type === 'image';
+            const ii = isImg ? imgAssets.indexOf(a) : -1;
+            const showOrder = isImg && imgAssets.length > 1;
+            return `
+            <div class="media-tile${ii === 0 ? ' is-primary' : ''}" data-jid="${jid}" data-aid="${a.id}">
+              ${isImg
                 ? `<img src="${a.url}" alt="${a.name}" />`
                 : `<video src="${a.url}" muted preload="metadata"></video><span class="media-tile-play">▶</span>`}
+              ${ii === 0 ? `<span class="media-tile-badge">MAIN</span>` : ''}
+              ${showOrder ? `
+                <div class="media-tile-order">
+                  <button type="button" class="mt-move" data-mv="up" title="Move left"${ii === 0 ? ' disabled' : ''}>◀</button>
+                  <button type="button" class="mt-move" data-mv="down" title="Move right"${ii === imgAssets.length - 1 ? ' disabled' : ''}>▶</button>
+                </div>` : ''}
               <button type="button" class="media-tile-del" title="Delete">×</button>
               <span class="media-tile-name">${a.name}</span>
-            </div>
-          `).join('')}
+            </div>`;
+          }).join('')}
         </div>
       </div>`;
   }).join('');
+
+  wrap.querySelectorAll('.mt-move').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const tile = btn.closest('.media-tile');
+      moveMedia(tile.dataset.jid, tile.dataset.aid, btn.dataset.mv === 'up' ? -1 : 1);
+    });
+  });
 
   wrap.querySelectorAll('.media-tile-del').forEach(btn => {
     btn.addEventListener('click', confirmTwoClicks(btn, async () => {
@@ -355,6 +374,28 @@ function renderMediaGallery() {
     const media = tile.querySelector('img, video');
     if (media) tile.addEventListener('click', () => window.open(media.src, '_blank'));
   });
+}
+
+/* Reorder a jersey's photos — first photo becomes the card's main image.
+   Updates the local cache (instant) + persists sort_order to Supabase. */
+let _mediaMoveBusy = false;
+async function moveMedia(jerseyId, assetId, dir) {
+  if (_mediaMoveBusy) return;
+  const m = readMedia();
+  const bucket = m[jerseyId];
+  if (!bucket || !Array.isArray(bucket.images)) return;
+  const imgs = bucket.images;
+  const i = imgs.findIndex(a => a.id === assetId);
+  const k = i + dir;
+  if (i < 0 || k < 0 || k >= imgs.length) return;
+  [imgs[i], imgs[k]] = [imgs[k], imgs[i]];
+  m[jerseyId].images = imgs;
+
+  _mediaMoveBusy = true;
+  writeMedia(m);                       // instant: re-renders gallery + homepage cards
+  try { await pushMediaSortOrder(imgs); } // persist order to Supabase
+  catch (err) { console.warn('Reorder save failed (kept locally):', err.message || err); }
+  finally { _mediaMoveBusy = false; }
 }
 
 function formatBytes(n) {

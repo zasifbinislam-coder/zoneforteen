@@ -4861,6 +4861,47 @@ h1, h2, h3, .display {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Reorder controls + main-photo badge */
+.media-tile.is-primary { outline: 2px solid var(--neon); outline-offset: -2px; }
+.media-tile-badge {
+  position: absolute;
+  top: 6px; left: 6px;
+  padding: 2px 7px;
+  background: var(--neon);
+  color: #052424;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  border-radius: 5px;
+  z-index: 2;
+}
+.media-tile-order {
+  position: absolute;
+  bottom: 28px; left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.media-tile:hover .media-tile-order { opacity: 1; }
+.mt-move {
+  width: 30px; height: 28px;
+  display: grid; place-items: center;
+  background: rgba(6,10,14,0.85);
+  border: 1px solid var(--border-hi);
+  color: var(--neon);
+  border-radius: 7px;
+  font-size: 12px;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+}
+.mt-move:hover:not(:disabled) { background: var(--neon); color: #052424; }
+.mt-move:disabled { opacity: 0.3; cursor: not-allowed; }
+@media (max-width: 768px) {
+  .media-tile-order { opacity: 1; bottom: 26px; }   /* always visible on touch */
+}
 
 /* ============================================================
    LANDING-PAGE VIDEO SHOWCASE
