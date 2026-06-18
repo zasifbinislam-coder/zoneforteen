@@ -136,14 +136,14 @@ let OFFERS = [
     description: 'Pick any three jerseys. Pay for two. Cheapest one is on us.',
     priceLine: '<span class="strike">৳4,497</span> ৳4,000',
     ctaText: 'Claim Offer',
-    ctaUrl: 'https://wa.me/8801723360078?text=Hi%20Zone14%2C%20I%20want%20the%20Buy%202%20Get%201%20Free%20offer.',
+    ctaUrl: '#jerseys',
   },
   {
     tag: 'Squad Goals', title: 'Full Team Set', accent: '−25%', featured: false,
     description: 'Buy 5 or more jerseys in one order. Perfect for clubs and friends.',
     priceLine: '<span class="strike">৳7,495</span> ৳6,500',
     ctaText: 'Order Team Set',
-    ctaUrl: 'https://wa.me/8801723360078?text=Hi%20Zone14%2C%20I%20want%20the%20Full%20Team%20Set%20discount.',
+    ctaUrl: '#jerseys',
   },
   {
     tag: 'Limited Time', title: 'World Cup', accent: '10% OFF', featured: false,
