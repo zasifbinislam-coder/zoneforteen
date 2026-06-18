@@ -2240,14 +2240,14 @@ function _offerKeyFromUrl(url) {
    ============================================================ */
 const OFFER_CONFIGS = {
   buy2get1: {
-    title: 'Buy 2 Get 1 FREE', sub: 'Pick any 3 jerseys — the cheapest one is on us.',
-    need: 3, exact: true, kind: 'cheapestFree',
-    promo: { code: 'BUY2GET1', type: 'flat', label: 'Buy 2 Get 1 — cheapest free' },
+    title: 'Buy 3 Jerseys · ৳4,000', sub: 'Pick any 3 jerseys — flat ৳4,000.',
+    need: 3, exact: true, kind: 'fixed', price: 4000,
+    promo: { code: 'BUY3', type: 'flat', label: 'Buy 3 — flat ৳4,000' },
   },
   teamset: {
-    title: 'Full Team Set · −25%', sub: 'Pick 5 or more jerseys — 25% off the lot.',
-    need: 5, exact: false, kind: 'pct25',
-    promo: { code: 'TEAMSET', type: 'pct', value: 25, label: 'Full Team Set −25%' },
+    title: 'Full Team Set · ৳6,500', sub: 'Pick exactly 5 jerseys — flat ৳6,500.',
+    need: 5, exact: true, kind: 'fixed', price: 6500,
+    promo: { code: 'TEAMSET5', type: 'flat', label: 'Full Team Set — ৳6,500 for 5' },
   },
 };
 
@@ -2287,8 +2287,15 @@ function openOfferBuilder(key) {
     const qEl = row.querySelector('.ob-q');
     const sizeEl = row.querySelector('.ob-size');
     row.querySelectorAll('[data-q]').forEach(b => b.addEventListener('click', () => {
+      const cfg = _obState.cfg;
+      const curTotal = Object.values(_obState.picks).reduce((s, p) => s + p.qty, 0);
       let q = parseInt(qEl.textContent, 10) || 0;
-      q = b.dataset.q === 'inc' ? Math.min(20, q + 1) : Math.max(0, q - 1);
+      if (b.dataset.q === 'inc') {
+        if (cfg.exact && curTotal >= cfg.need) return;   // hard cap at the required count
+        q = Math.min(cfg.need, q + 1);
+      } else {
+        q = Math.max(0, q - 1);
+      }
       qEl.textContent = q;
       row.classList.toggle('picked', q > 0);
       if (q > 0) _obState.picks[id] = { size: sizeEl.value, qty: q };
@@ -2323,9 +2330,10 @@ function _obTotals() {
   });
   const count = units.length;
   const subtotal = units.reduce((s, n) => s + n, 0);
+  const cfg = _obState.cfg;
   let discount = 0;
-  if (_obState.cfg.kind === 'cheapestFree' && count >= 3) discount = Math.min(...units);
-  else if (_obState.cfg.kind === 'pct25' && count >= _obState.cfg.need) discount = Math.round(subtotal * 0.25);
+  // Fixed bundle price: discount whatever it takes to land on cfg.price
+  if (cfg.kind === 'fixed' && count === cfg.need) discount = Math.max(0, subtotal - cfg.price);
   return { count, subtotal, discount, total: subtotal - discount };
 }
 
@@ -2339,15 +2347,17 @@ function _obUpdate() {
   const totalEl = document.getElementById('obTotal');
   const btn = document.getElementById('obProceed');
 
-  countEl.textContent = cfg.exact
-    ? `${count} / ${need} selected`
-    : `${count} selected (min ${need})`;
+  countEl.textContent = `${count} / ${need} selected`;
   totalEl.innerHTML = count
-    ? `Total: <strong>${fmtBDT(total)}</strong>${discount > 0 ? ` <span class="ob-save">save ${fmtBDT(discount)}</span>` : ''}`
+    ? `Total: <strong>${fmtBDT(met ? total : total)}</strong>${discount > 0 ? ` <span class="ob-save">save ${fmtBDT(discount)}</span>` : ''}`
     : '';
   btn.disabled = !met;
-  btn.textContent = met ? `Proceed to Checkout · ${fmtBDT(total)}`
-    : (cfg.exact ? `Pick ${need - count} more` : `Pick ${Math.max(0, need - count)} more`);
+  btn.textContent = met ? `Proceed to Checkout · ${fmtBDT(cfg.price)}`
+    : `Pick ${Math.max(0, need - count)} more`;
+
+  // Hard cap: once the required number is chosen, block adding more
+  const atCap = count >= need;
+  document.querySelectorAll('#obGrid [data-q="inc"]').forEach(b => { b.disabled = atCap; });
 }
 
 function _obProceed() {
@@ -2363,7 +2373,7 @@ function _obProceed() {
 
   // Stash the offer so the checkout auto-applies the discount
   const promo = { ...cfg.promo };
-  if (cfg.kind === 'cheapestFree') promo.value = discount;   // flat = cheapest unit price
+  promo.value = discount;   // flat discount = (subtotal − fixed bundle price)
   try { sessionStorage.setItem('zone14_offer', JSON.stringify(promo)); } catch (_) {}
 
   window.location.href = 'order.html';
