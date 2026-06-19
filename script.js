@@ -245,10 +245,12 @@ function initFilters() {
 }
 
 /* ---------- COUNTDOWN ---------- */
+/* Next upcoming fixture from the REAL feed (falls back to static when offline) */
 function nextUpcomingMatch() {
-  return MATCHES
-    .map(m => ({ ...m, ts: new Date(m.date).getTime() }))
-    .filter(m => m.ts > Date.now())
+  const now = Date.now();
+  return (typeof getDisplayMatches === 'function' ? getDisplayMatches() : [])
+    .map(c => ({ ...c, ts: new Date(c.date).getTime() }))
+    .filter(c => c.ts > now)
     .sort((a, b) => a.ts - b.ts)[0] || null;
 }
 
@@ -263,8 +265,8 @@ function updateCountdown() {
   const cap = document.getElementById('cdCaption');
   if (cap) {
     if (nm) {
-      const h = (COUNTRY[nm.home] || {}).name || nm.home;
-      const a = (COUNTRY[nm.away] || {}).name || nm.away;
+      const h = (nm.home && nm.home.name) || nm.home;
+      const a = (nm.away && nm.away.name) || nm.away;
       cap.innerHTML = `Next up · <strong>${h}</strong> vs <strong>${a}</strong> · ${formatMatchDate(nm.date)}, ${formatBdLocalTime(nm.date)}`;
     } else {
       cap.textContent = 'World Cup 2026 · Group Stage underway';
@@ -1370,18 +1372,26 @@ function getKitHref(code) {
 function renderFeatured() {
   const wrap = document.getElementById('featuredMatch');
   if (!wrap) return;
-  const next = MATCHES
-    .map(m => ({ ...m, ts: new Date(m.date).getTime() }))
-    .sort((a, b) => a.ts - b.ts)
-    .find(m => m.ts > Date.now()) || MATCHES[0];
 
-  const home = COUNTRY[next.home] || {};
-  const away = COUNTRY[next.away] || {};
+  // Real fixtures (live feed). Prefer the next match involving a team we sell,
+  // else the genuinely next match overall.
+  const now = Date.now();
+  const upcoming = getDisplayMatches()
+    .map(c => ({ ...c, ts: new Date(c.date).getTime() }))
+    .filter(c => c.ts > now)
+    .sort((a, b) => a.ts - b.ts);
+  const isOurs = c => COUNTRY_TO_JERSEY[c.home.code || c.home.tla] || COUNTRY_TO_JERSEY[c.away.code || c.away.tla];
+  const next = upcoming.find(isOurs) || upcoming[0];
+  if (!next) { wrap.innerHTML = ''; return; }
+
+  const flag = t => t.crest
+    ? `<img class="flag-img" src="${t.crest}" alt="${t.name}" loading="lazy" />`
+    : flagImg(t.code || t.tla);
 
   wrap.innerHTML = `
     <div class="mf-team home">
-      <div class="mf-flag">${flagImg(next.home)}</div>
-      <div class="mf-name">${home.name || next.home}</div>
+      <div class="mf-flag">${flag(next.home)}</div>
+      <div class="mf-name">${next.home.name}</div>
     </div>
     <div class="mf-center">
       <span class="mf-vs">VS</span>
@@ -1394,18 +1404,15 @@ function renderFeatured() {
         <span class="mf-cd-sep">:</span>
         <div class="mf-cd-box"><span class="mf-cd-num" data-cd="s">--</span><span class="mf-cd-lbl">S</span></div>
       </div>
-      <p class="mf-meta">${next.stage} · <strong>${next.venue}</strong>, ${next.city}<br/>Kick-off · ${formatBdLocalTime(next.date)}</p>
+      <p class="mf-meta">${next.group ? 'Group ' + next.group + ' · ' : ''}Kick-off · ${formatMatchDate(next.date)}, ${formatBdLocalTime(next.date)}</p>
       <div class="mf-actions">
-        <a href="${setReminderHref(next)}" target="_blank" rel="noopener" class="btn btn-ghost">⏰ Remind Me</a>
-        ${(getKitHref(next.home) || getKitHref(next.away))
-          ? `<a href="#jerseys" class="btn btn-primary">Get a Kit</a>`
-          : ''
-        }
+        <a href="${cardReminderHref(next)}" target="_blank" rel="noopener" class="btn btn-ghost">⏰ Remind Me</a>
+        ${isOurs(next) ? `<a href="#jerseys" class="btn btn-primary">Get a Kit</a>` : ''}
       </div>
     </div>
     <div class="mf-team away">
-      <div class="mf-flag">${flagImg(next.away)}</div>
-      <div class="mf-name">${away.name || next.away}</div>
+      <div class="mf-flag">${flag(next.away)}</div>
+      <div class="mf-name">${next.away.name}</div>
     </div>
   `;
 }
@@ -1803,8 +1810,7 @@ function renderMatchGrid() {
         </div>
         <div class="mc-foot">
           <div class="mc-venue">
-            ${m.venue ? `<strong>${m.venue}</strong>` : ''}
-            ${m.city ? m.city + ' · ' : ''}${formatBdLocalTime(m.date)}
+            ${m.group ? `<strong>Group ${m.group}</strong> · ` : ''}${formatBdLocalTime(m.date)}
           </div>
           <div class="mc-actions">
             ${isUpcoming ? `<span class="mc-countdown-pill" data-mc-cd="${ts}">${compactCountdown(ms)}</span>` : ''}
@@ -2608,7 +2614,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Live group standings (all 12 groups) re-render on their own feed
   window.addEventListener('groups:change', renderGroups);
   // Full match list (every group) re-renders on its own feed
-  window.addEventListener('allmatches:change', renderMatchGrid);
+  window.addEventListener('allmatches:change', () => { renderMatchGrid(); renderFeatured(); });
 
   // Live World Cup data — fetch now, then poll every 60s for auto-updates.
   // Standings first so the all-matches sync can map fixtures → groups.
