@@ -1574,11 +1574,33 @@ async function syncGroupStandings() {
 /* Teams we sell kits for — highlighted in the standings table. */
 const OUR_TLAS = ['BRA', 'ARG', 'ESP', 'FRA'];
 
-/* Pull EVERY WC match (all 12 groups): finished + live from the scores feed,
-   upcoming from the near-term fixtures feed, plus our own static fixtures —
-   merged & deduped so the Matches grid shows the whole tournament, not just
-   the four teams we sell. */
+/* Pull EVERY WC match (all 12 groups): finished + live + upcoming straight from
+   the live feed (SportSRC), merged & deduped so the Matches grid shows the whole
+   tournament with REAL pairings, dates and kick-off times. We no longer inject
+   our hand-written fixtures into the grid — those were best-guess pairings/dates
+   and were polluting it. Instead each real card is tagged with the matching
+   static id (when it's one of our four teams) so predictions + scoring still
+   work and admin/live score overlays still apply. */
 function _groupLetter(g) { return (g || '').toString().replace(/^group[_\s]*/i, '').trim(); }
+
+/* Tie a real feed match back to our static MATCHES id (our 4 teams only) so
+   predictions/leaderboard + admin score overlays stay keyed consistently.
+   Matches on TLA/code when present, else on normalized team name. Returns null
+   for any match not involving a team we sell kits for. */
+function _matchLocalId(home, away) {
+  const hId = (home.tla || home.code || '').toUpperCase();
+  const aId = (away.tla || away.code || '').toUpperCase();
+  const hN = _normTeam(home.name), aN = _normTeam(away.name);
+  const found = MATCHES.find(m => {
+    const byCode = hId && aId &&
+      ((m.home === hId && m.away === aId) || (m.home === aId && m.away === hId));
+    const mhN = _normTeam((COUNTRY[m.home] || {}).name || m.home);
+    const maN = _normTeam((COUNTRY[m.away] || {}).name || m.away);
+    const byName = (mhN === hN && maN === aN) || (mhN === aN && maN === hN);
+    return byCode || byName;
+  });
+  return found ? found.id : null;
+}
 
 async function syncAllMatches() {
   const wc = await getWC();
@@ -1629,12 +1651,14 @@ async function syncAllMatches() {
     if (!fm || !fm.homeTeam || !fm.awayTeam) return;
     const ft = (fm.score && fm.score.fullTime) || {};
     const played = liveSet.includes(fm.status);
+    const home = { name: fm.homeTeam.name, tla: fm.homeTeam.tla, crest: fm.homeTeam.crest };
+    const away = { name: fm.awayTeam.name, tla: fm.awayTeam.tla, crest: fm.awayTeam.crest };
     add({
       id: 'wc-' + (fm.homeTeam.tla || _normTeam(fm.homeTeam.name)) + '-' + (fm.awayTeam.tla || _normTeam(fm.awayTeam.name)),
+      localMatchId: _matchLocalId(home, away),
       group: _groupLetter(fm.group),
       date: fm.utcDate,
-      home: { name: fm.homeTeam.name, tla: fm.homeTeam.tla, crest: fm.homeTeam.crest },
-      away: { name: fm.awayTeam.name, tla: fm.awayTeam.tla, crest: fm.awayTeam.crest },
+      home, away,
       status: fm.status,
       score: (played && ft.home != null) ? { home: ft.home, away: ft.away } : null,
     }, played ? 3 : RANK.UPCOMING);
@@ -1654,6 +1678,7 @@ async function syncAllMatches() {
     if (wcNames.size && (!wcNames.has(_normTeam(hn)) || !wcNames.has(_normTeam(an)))) return;
     add({
       id: 'wcup-' + _normTeam(hn) + '-' + _normTeam(an),
+      localMatchId: _matchLocalId({ name: hn }, { name: an }),
       group: nameToGroup[_normTeam(hn)] || nameToGroup[_normTeam(an)] || '',
       date: new Date(m.date).toISOString(),
       home: { name: hn, crest: (m.teams.home.badge || m.poster || '') },
@@ -1662,16 +1687,11 @@ async function syncAllMatches() {
     }, RANK.UPCOMING);
   });
 
-  // 3) Our own fixtures — keep predictions + correct flags for the 4 teams
-  MATCHES.forEach(m => {
-    add({
-      id: m.id, localMatchId: m.id,
-      group: m.group || '', date: m.date, venue: m.venue, city: m.city,
-      home: { name: (COUNTRY[m.home] || {}).name || m.home, code: m.home },
-      away: { name: (COUNTRY[m.away] || {}).name || m.away, code: m.away },
-      status: 'SCHEDULED', score: null,
-    }, RANK.STATIC);
-  });
+  // NOTE: we deliberately do NOT inject our static MATCHES as grid cards anymore.
+  // Their matchday-2/3 pairings & dates were best-guesses and were showing up as
+  // wrong/duplicate fixtures. The grid is now 100% real feed data; static fixtures
+  // survive only as the offline fallback in getDisplayMatches() and as the
+  // prediction/scoring backbone (via _matchLocalId tagging above).
 
   const all = [...byPair.values()].sort((a, b) => new Date(a.date) - new Date(b.date));
   all.forEach(c => { delete c._rank; });

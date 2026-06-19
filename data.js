@@ -154,14 +154,20 @@ let OFFERS = [
   },
 ];
 
-/* ---------- WORLD CUP 2026 MATCH HUB ----------
-   Real group-stage fixtures for the four teams we sell jerseys for, from the
-   actual WC 2026 draw: Brazil (Group C), Spain (Group H), France (Group I),
-   Argentina (Group J). Matchday-1 dates/times are confirmed from the live feed.
-   Matchday-2 & 3 dates are best-estimates within the official matchday windows —
-   the live auto-score sync (syncLiveScores) overrides scores + results with real
-   data the moment each match kicks off / finishes, so accuracy is self-healing.
-   Each match carries `group` so the standings table can compute live. */
+/* ---------- WORLD CUP 2026 — our four teams (prediction/scoring backbone) ----------
+   These are the three group-stage matches for each team we sell kits for:
+   Brazil (Group C), Spain (Group H), France (Group I), Argentina (Group J).
+   The OPPONENTS (group members) are from the real WC 2026 draw and are correct;
+   the per-match DATES here are only rough placeholders.
+
+   IMPORTANT: these are NOT what the public Match Hub grid renders. The grid is
+   driven entirely by the live feed (syncAllMatches) so it shows REAL pairings,
+   dates and BD kick-off times. This list serves three jobs only:
+     1) the stable id each prediction / leaderboard entry is keyed to,
+     2) the team each admin-entered / live score overlay attaches to,
+     3) an offline fallback so the hub is never blank if the feed is down.
+   syncAllMatches() ties each real feed match back to the right id via team pair,
+   so the placeholder dates below never reach the screen while the feed is up. */
 const MATCHES = [
   /* ----- Group C · Brazil ----- */
   { id:'c-bra-mar', group:'C', date:'2026-06-13T22:00:00Z', stage:'Group C · Matchday 1', home:'BRA', away:'MAR', venue:'SoFi Stadium',        city:'Los Angeles' },
