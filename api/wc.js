@@ -116,9 +116,16 @@ export default async function handler(req, res) {
     if (!all.length && !standings.length) {
       // Key valid but no data (wrong league/season, or plan doesn't cover WC) —
       // signal failure so the client falls back to SportSRC instead of blanking.
+      // Surface API-Football's own diagnostics (errors/results) — no key leaked —
+      // so we can tell a plan/season restriction from a quota or param problem.
       res.status(200).json({
         success: false,
         error: 'API-Football returned no WC data (check league/season/plan)',
+        debug: {
+          league, season, host,
+          fixtures: { results: fJson.results, errors: fJson.errors, paging: fJson.paging },
+          standings: { results: sJson.results, errors: sJson.errors },
+        },
         data: empty,
       });
       return;
