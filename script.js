@@ -1384,9 +1384,11 @@ function renderFeatured() {
   const next = upcoming.find(isOurs) || upcoming[0];
   if (!next) { wrap.innerHTML = ''; return; }
 
-  const flag = t => t.crest
+  // Prefer the real national flag (flagcdn via flagImg); fall back to the feed
+  // crest only for any team we don't have an iso2 for.
+  const flag = t => (flagImg(t.code || t.tla)) || (t.crest
     ? `<img class="flag-img" src="${t.crest}" alt="${t.name}" loading="lazy" />`
-    : flagImg(t.code || t.tla);
+    : '');
 
   wrap.innerHTML = `
     <div class="mf-team home">
@@ -1681,8 +1683,8 @@ async function syncAllMatches() {
       localMatchId: _matchLocalId({ name: hn }, { name: an }),
       group: nameToGroup[_normTeam(hn)] || nameToGroup[_normTeam(an)] || '',
       date: new Date(m.date).toISOString(),
-      home: { name: hn, crest: (m.teams.home.badge || m.poster || '') },
-      away: { name: an, crest: (m.teams.away.badge || '') },
+      home: { name: hn, code: nameToTla[_normTeam(hn)], crest: (m.teams.home.badge || m.poster || '') },
+      away: { name: an, code: nameToTla[_normTeam(an)], crest: (m.teams.away.badge || '') },
       status: 'TIMED', score: null,
     }, RANK.UPCOMING);
   });
@@ -1756,9 +1758,11 @@ function renderMatchGrid() {
   if (!grid) return;
   const cards = getDisplayMatches().slice().sort((a, b) => new Date(a.date) - new Date(b.date));
 
-  const flag = t => t.crest
+  // Prefer the real national flag (flagcdn via flagImg); fall back to the feed
+  // crest only for any team we don't have an iso2 for.
+  const flag = t => (flagImg(t.code || t.tla)) || (t.crest
     ? `<img class="flag-img" src="${t.crest}" alt="${t.name}" loading="lazy" />`
-    : (t.code ? flagImg(t.code) : '');
+    : '');
 
   // Admin-entered / live-overlay results — used to fill in scores the public
   // feed hasn't posted yet (it sometimes lags). Keyed by our MATCHES id.
@@ -2098,9 +2102,9 @@ function renderGroups() {
         </thead>
         <tbody>
           ${g.rows.map(t => {
-            const flag = t.crest
+            const flag = (flagImg(t.code)) || (t.crest
               ? `<img class="flag-img" src="${t.crest}" alt="${t.name}" loading="lazy" />`
-              : (t.code ? flagImg(t.code) : '');
+              : '');
             return `
               <tr class="${t.ours ? 'team-highlight' : ''}">
                 <td>

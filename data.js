@@ -278,6 +278,24 @@ const COUNTRY = {
   ALG: { name:'Algeria',       iso2:'dz',     bg:'#006233', fg:'#d21034' },
   AUT: { name:'Austria',       iso2:'at',     bg:'#ed2939', fg:'#ffffff' },
   JOR: { name:'Jordan',        iso2:'jo',     bg:'#007a3d', fg:'#ce1126' },
+  /* Remaining WC 2026 nations — so every team gets a real flagcdn flag */
+  KOR: { name:'South Korea',   iso2:'kr',     bg:'#ffffff', fg:'#cd2e3a' },
+  CZE: { name:'Czechia',       iso2:'cz',     bg:'#11457e', fg:'#ffffff' },
+  RSA: { name:'South Africa',  iso2:'za',     bg:'#007749', fg:'#ffffff' },
+  BIH: { name:'Bosnia & Herz.',iso2:'ba',     bg:'#002395', fg:'#fecb00' },
+  QAT: { name:'Qatar',         iso2:'qa',     bg:'#8a1538', fg:'#ffffff' },
+  TUR: { name:'Türkiye',       iso2:'tr',     bg:'#e30a17', fg:'#ffffff' },
+  PAR: { name:'Paraguay',      iso2:'py',     bg:'#d52b1e', fg:'#0038a8' },
+  ECU: { name:'Ecuador',       iso2:'ec',     bg:'#ffdd00', fg:'#034ea2' },
+  CUW: { name:'Curaçao',       iso2:'cw',     bg:'#002b7f', fg:'#f9d90f' },
+  SWE: { name:'Sweden',        iso2:'se',     bg:'#006aa7', fg:'#fecc00' },
+  NZL: { name:'New Zealand',   iso2:'nz',     bg:'#00247d', fg:'#ffffff' },
+  IRN: { name:'Iran',          iso2:'ir',     bg:'#239f40', fg:'#da0000' },
+  BEL: { name:'Belgium',       iso2:'be',     bg:'#000000', fg:'#fdda24' },
+  COL: { name:'Colombia',      iso2:'co',     bg:'#fcd116', fg:'#003893' },
+  COD: { name:'DR Congo',      iso2:'cd',     bg:'#007fff', fg:'#f7d618' },
+  UZB: { name:'Uzbekistan',    iso2:'uz',     bg:'#1eb53a', fg:'#ffffff' },
+  GHA: { name:'Ghana',         iso2:'gh',     bg:'#006b3f', fg:'#fcd116' },
 };
 
 /* Real country flag (from flagcdn.com — works under file:// too) */
