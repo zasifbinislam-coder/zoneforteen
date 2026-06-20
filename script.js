@@ -1937,6 +1937,14 @@ function initPredictionModal() {
     const home = COUNTRY[m.home] || { name: m.home };
     const away = COUNTRY[m.away] || { name: m.away };
 
+    // The static MATCHES date is only a placeholder — pull the REAL kick-off
+    // (and group) from the live feed card for this fixture, so "when" is always
+    // correct here too. Falls back to the static date only if the feed lacks it.
+    const liveCard = (typeof getDisplayMatches === 'function')
+      ? getDisplayMatches().find(c => c.localMatchId === matchId) : null;
+    const dateIso = (liveCard && liveCard.date) || m.date;
+    const grp     = (liveCard && liveCard.group) || m.group;
+
     headline.innerHTML = `
       ${flagImg(m.home)}
       <span>${home.name}</span>
@@ -1944,7 +1952,7 @@ function initPredictionModal() {
       <span>${away.name}</span>
       ${flagImg(m.away)}
     `;
-    meta.textContent = `${m.stage} · ${formatMatchDate(m.date)} · ${formatBdLocalTime(m.date)}`;
+    meta.textContent = `${grp ? 'Group ' + grp + ' · ' : ''}${formatMatchDate(dateIso)} · ${formatBdLocalTime(dateIso)}`;
 
     const myPred = getMyPrediction(m.id);
     current = { matchId: m.id, choice: myPred ? myPred.choice : null };
