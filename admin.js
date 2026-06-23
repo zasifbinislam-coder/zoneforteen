@@ -86,6 +86,7 @@ function bootDashboard() {
   initHeroVideosAdmin();
   initJerseysAdmin();
   initSettingsAdmin();
+  initCollapsibleSections();
   window.addEventListener('storage', () => { render(); renderResults(); renderMediaGallery(); renderAdminReviewsList(); renderAdminShowcaseList(); renderAdminHeroVideoList(); renderAdminJerseysList(); });
   window.addEventListener('predictions:change', renderResults);
   window.addEventListener('results:change',     renderResults);
@@ -104,6 +105,35 @@ function bootDashboard() {
   // for realtime updates so admin sees customer activity live.
   syncFromSupabase().then(ok => { if (ok) renderResults(); });
   subscribeToSupabaseChanges();
+}
+
+/* ---------- Collapsible edit sections ----------
+   Every titled admin section starts collapsed: only its title shows. Click the
+   title (or press Enter/Space) to reveal it for editing, click again to hide.
+   Sections without a header (KPIs, filters, orders) are left untouched. */
+function initCollapsibleSections() {
+  const main = document.querySelector('.admin-main');
+  if (!main) return;
+
+  main.querySelectorAll(':scope > section').forEach(sec => {
+    const head = sec.querySelector(':scope > .admin-section-head');
+    const h2   = head && head.querySelector('h2');
+    if (!head || !h2) return;            // skip sections with no title
+
+    sec.classList.add('admin-collapsible', 'collapsed');
+    h2.setAttribute('role', 'button');
+    h2.setAttribute('tabindex', '0');
+    h2.setAttribute('aria-expanded', 'false');
+
+    const toggle = () => {
+      const open = sec.classList.toggle('collapsed') === false;
+      h2.setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
+    h2.addEventListener('click', toggle);
+    h2.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+    });
+  });
 }
 
 /* ============================================================
@@ -1164,12 +1194,43 @@ async function handleSeedJerseys() {
   }
 }
 
+/* Total jersey count + how many jerseys each team (country) has.
+   Grouped by j.country, sorted by count desc then name. */
+function renderJerseysBreakdown() {
+  const box = document.getElementById('jerseysBreakdown');
+  if (!box) return;
+
+  if (JERSEYS.length === 0) { box.innerHTML = ''; return; }
+
+  const byTeam = {};
+  JERSEYS.forEach(j => {
+    const team = (j.country || 'Unknown').trim() || 'Unknown';
+    byTeam[team] = (byTeam[team] || 0) + 1;
+  });
+  const teams = Object.keys(byTeam).sort((a, b) => byTeam[b] - byTeam[a] || a.localeCompare(b));
+
+  box.innerHTML = `
+    <div class="jb-total">
+      <span class="jb-total-num">${JERSEYS.length}</span>
+      <span class="jb-total-lbl">total jersey${JERSEYS.length === 1 ? '' : 's'} · ${teams.length} team${teams.length === 1 ? '' : 's'}</span>
+    </div>
+    <div class="jb-teams">
+      ${teams.map(t => `
+        <span class="jb-chip">
+          <span class="jb-chip-team">${escapeAttr(t)}</span>
+          <span class="jb-chip-count">${byTeam[t]}</span>
+        </span>`).join('')}
+    </div>`;
+}
+
 function renderAdminJerseysList() {
   const wrap  = document.getElementById('adminJerseysList');
   const count = document.getElementById('jerseysCount');
   if (!wrap) return;
 
   count.textContent = `${JERSEYS.length} jersey${JERSEYS.length === 1 ? '' : 's'}`;
+
+  renderJerseysBreakdown();
 
   if (JERSEYS.length === 0) {
     wrap.innerHTML = `

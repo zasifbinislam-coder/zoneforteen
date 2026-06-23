@@ -6084,6 +6084,85 @@ h1, h2, h3, .display {
 }
 .admin-section-head p { color: var(--text-dim); font-size: 13px; margin-bottom: 18px; }
 
+/* ============ COLLAPSIBLE EDIT SECTIONS ============
+   Titled admin sections fold down to just their heading. The title acts as a
+   click target with a chevron that rotates when open. */
+.admin-collapsible { margin-bottom: 18px; }
+.admin-collapsible > .admin-section-head h2 {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  user-select: none;
+  transition: color 0.2s var(--ease-out);
+}
+.admin-collapsible > .admin-section-head h2:hover { color: var(--neon); }
+.admin-collapsible > .admin-section-head h2:focus-visible {
+  outline: 2px solid var(--neon);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+.admin-collapsible > .admin-section-head h2::after {
+  content: '▾';
+  margin-left: auto;
+  font-family: 'Inter', sans-serif;
+  font-size: 18px;
+  color: var(--text-mute);
+  transition: transform 0.25s var(--ease-out), color 0.2s var(--ease-out);
+}
+.admin-collapsible > .admin-section-head h2:hover::after { color: var(--neon); }
+.admin-collapsible.collapsed > .admin-section-head h2 { margin-bottom: 0; }
+.admin-collapsible.collapsed > .admin-section-head h2::after { transform: rotate(-90deg); }
+/* Collapsed: hide the description and every non-header child of the section */
+.admin-collapsible.collapsed > .admin-section-head p { display: none; }
+.admin-collapsible.collapsed > :not(.admin-section-head) { display: none; }
+
+/* ============ JERSEYS — TOTAL + PER-TEAM BREAKDOWN ============ */
+.jerseys-breakdown { margin-bottom: 18px; }
+.jb-total {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.jb-total-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 44px;
+  line-height: 1;
+  color: var(--neon);
+}
+.jb-total-lbl {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+}
+.jb-teams { display: flex; flex-wrap: wrap; gap: 8px; }
+.jb-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px 5px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 13px;
+}
+.jb-chip-team { color: var(--text); font-weight: 500; }
+.jb-chip-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  background: var(--neon);
+  color: #04121a;
+  font-weight: 700;
+  font-size: 12px;
+  border-radius: 999px;
+}
+
 /* Two-click delete confirmation state — applied by JS to ANY delete button
    on first click. The visual change (red glow + animated outline) tells Sir
    "I heard the click, click again to actually delete." Auto-reverts in ~3.5s. */
