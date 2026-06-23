@@ -53,8 +53,8 @@ function bootAccounts() {
 
   window.addEventListener('expenses:change', renderAll);
   window.addEventListener('sales:change', () => { renderAll(); renderSalesList(); });
-  window.addEventListener('stock:change', renderStockGrid);
-  window.addEventListener('jerseys:change', () => { refreshSaleJerseyDropdown(); renderStockGrid(); });
+  window.addEventListener('stock:change', () => { renderStockGrid(); renderInventory(); });
+  window.addEventListener('jerseys:change', () => { refreshSaleJerseyDropdown(); renderStockGrid(); renderInventory(); });
 
   // Pull latest from Supabase, then keep in sync
   if (typeof syncFromSupabase === 'function') syncFromSupabase().then(() => {
@@ -339,8 +339,33 @@ function renderAll() {
     `;
   }
 
+  renderInventory();
   renderCategoryBreakdown(a);
   renderExpenseList();
+}
+
+/* Inventory snapshot — how many jerseys are in stock right now, and how many
+   units have been sold (sum of qty across every recorded sale). Both tick
+   automatically as stock is edited and sales are added. */
+function renderInventory() {
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+
+  // Total stock units on hand = sum of every size of every jersey
+  const stock = readStock();
+  let stockUnits = 0;
+  Object.values(stock).forEach(sizes =>
+    Object.values(sizes || {}).forEach(q => { stockUnits += (parseInt(q, 10) || 0); }));
+
+  // Total jerseys sold = sum of qty across all sales
+  const sales = readSales();
+  const soldUnits = sales.reduce((sum, s) => sum + (parseInt(s.qty, 10) || 0), 0);
+
+  const designs = (typeof JERSEYS !== 'undefined' ? JERSEYS.length : 0);
+
+  set('acStock', stockUnits);
+  set('acStockSub', `${designs} design${designs === 1 ? '' : 's'} in catalog`);
+  set('acSold', soldUnits);
+  set('acSoldSub', `${sales.length} sale${sales.length === 1 ? '' : 's'} recorded`);
 }
 
 function renderCategoryBreakdown(a) {
