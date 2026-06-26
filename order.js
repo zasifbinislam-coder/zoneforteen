@@ -7,6 +7,32 @@ const state = {
   promo: null,   // { code, label, type, value }
 };
 
+/* ---------- Meta (Facebook) Pixel events ----------
+   Safe no-op if the pixel is blocked/missing — tracking must NEVER break
+   the checkout flow, so every call is wrapped and guarded. */
+function fbTrack(event, params) {
+  try {
+    if (typeof fbq === 'function') fbq('track', event, params || {});
+  } catch (_) { /* swallow — never let analytics interrupt an order */ }
+}
+
+/* Fire InitiateCheckout when the order page loads with items in the cart. */
+function fireInitiateCheckout() {
+  const cart = readCart();
+  if (!cart.length) return;
+  const value = cart.reduce((s, i) => {
+    const j = getJersey(i.id);
+    return s + (j ? salePrice(j) * i.qty : 0);
+  }, 0);
+  fbTrack('InitiateCheckout', {
+    value,
+    currency: 'BDT',
+    num_items: cart.reduce((s, i) => s + i.qty, 0),
+    content_type: 'product',
+    content_ids: cart.map(i => i.id),
+  });
+}
+
 /* PAY_NUMBERS now lives in data.js (let) and is overridable from the
    Settings admin panel via site_settings table. */
 
@@ -31,6 +57,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   rerender();
   window.addEventListener('cart:change', rerender);
+
+  // Meta Pixel — visitor reached checkout with items
+  fireInitiateCheckout();
 });
 
 /* A bundle offer (Buy 2 Get 1 / Full Team Set) selected on the homepage is
@@ -569,6 +598,16 @@ function hookPlaceOrder() {
       notes:   fd.get('notes') || '',
       promo:   state.promo ? state.promo.code : '',
       totals:  { subtotal, shipping, discount, grand, saleSavings },
+    });
+
+    // Meta Pixel — order placed (the conversion event for ads/ROAS)
+    fbTrack('Purchase', {
+      value: grand,
+      currency: 'BDT',
+      num_items: cart.reduce((s, i) => s + i.qty, 0),
+      content_type: 'product',
+      content_ids: cart.map(i => i.id),
+      order_id: ref,
     });
 
     // 3) EmailJS — fire admin + customer emails in the background. Silently no-ops
