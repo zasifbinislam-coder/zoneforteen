@@ -1478,6 +1478,21 @@ h1, h2, h3, .display {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.10), transparent 60%);
   z-index: 1;
 }
+/* Never-blank fallback: colored country-code chip when no flag image exists.
+   Fills whatever flag container it sits in (.mf-flag / .mc-flag / mini-flag). */
+.flag-code {
+  width: 100%; height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bohemian Typewriter', sans-serif;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  line-height: 1;
+}
+.group-table .team-mini-flag .flag-code { font-size: 9px; }
+
 .mc-team-name {
   font-family: 'Bohemian Typewriter', sans-serif;
   font-size: 14px;
@@ -1953,7 +1968,9 @@ h1, h2, h3, .display {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
-  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .size-3d-stage.dragging { cursor: grabbing; }
 .size-3d-stage.loaded .size-3d-loading,
@@ -1988,12 +2005,12 @@ h1, h2, h3, .display {
 }
 
 .size-3d-fallback {
-  display: none;
+  display: block;
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  padding: 12px;
+  padding: 18px;
 }
 
 /* Floating HUD with size / chest / length */
@@ -2046,7 +2063,7 @@ h1, h2, h3, .display {
 /* Size chips for the 3D viewer */
 .size-3d-controls {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 8px;
 }
 .size-3d-chip {

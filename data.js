@@ -298,11 +298,59 @@ const COUNTRY = {
   GHA: { name:'Ghana',         iso2:'gh',     bg:'#006b3f', fg:'#fcd116' },
 };
 
+/* Full FIFA 3-letter code → ISO-2 (flagcdn) for every WC 2026 contender, so a
+   team coming off the live feed still gets a real flag even when it's not in the
+   COUNTRY palette above. England/Scotland/Wales use flagcdn's sub-region codes. */
+const TLA_TO_ISO2 = {
+  // Hosts
+  USA:'us', MEX:'mx', CAN:'ca',
+  // UEFA
+  ARG:'ar', BRA:'br', FRA:'fr', ESP:'es', ENG:'gb-eng', SCO:'gb-sct', WAL:'gb-wls',
+  POR:'pt', NED:'nl', BEL:'be', GER:'de', ITA:'it', CRO:'hr', SUI:'ch', AUT:'at',
+  DEN:'dk', NOR:'no', SWE:'se', POL:'pl', UKR:'ua', SRB:'rs', TUR:'tr', CZE:'cz',
+  HUN:'hu', GRE:'gr', ROU:'ro', SVK:'sk', SVN:'si', ALB:'al', BIH:'ba', IRL:'ie',
+  ISL:'is', FIN:'fi', NIR:'gb-nir',
+  // CAF
+  MAR:'ma', SEN:'sn', TUN:'tn', ALG:'dz', EGY:'eg', NGA:'ng', CMR:'cm', GHA:'gh',
+  CIV:'ci', MLI:'ml', RSA:'za', CPV:'cv', COD:'cd', ANG:'ao', GAB:'ga', BFA:'bf',
+  GUI:'gn', ZAM:'zm',
+  // AFC
+  JPN:'jp', KOR:'kr', IRN:'ir', KSA:'sa', AUS:'au', QAT:'qa', IRQ:'iq', UAE:'ae',
+  UZB:'uz', JOR:'jo', OMN:'om', CHN:'cn', THA:'th', VIE:'vn', IND:'in', PLE:'ps',
+  // OFC
+  NZL:'nz',
+  // CONMEBOL
+  URU:'uy', COL:'co', ECU:'ec', PAR:'py', PER:'pe', CHI:'cl', BOL:'bo', VEN:'ve',
+  // CONCACAF
+  CRC:'cr', PAN:'pa', JAM:'jm', HON:'hn', SLV:'sv', GUA:'gt', HAI:'ht', TRI:'tt',
+  CUW:'cw', SUR:'sr',
+};
+
+/* Resolve a flagcdn iso-2 for a code: COUNTRY palette first, then the full map. */
+function iso2For(code) {
+  if (!code) return '';
+  const up = String(code).toUpperCase();
+  return (COUNTRY[up] && COUNTRY[up].iso2) || TLA_TO_ISO2[up] || '';
+}
+
 /* Real country flag (from flagcdn.com — works under file:// too) */
 function flagImg(code, alt) {
-  const c = COUNTRY[code];
-  if (!c || !c.iso2) return '';
-  return `<img class="flag-img" src="https://flagcdn.com/${c.iso2}.svg" alt="${alt || c.name}" loading="lazy" />`;
+  const iso = iso2For(code);
+  if (!iso) return '';
+  const name = (COUNTRY[String(code).toUpperCase()] || {}).name;
+  return `<img class="flag-img" src="https://flagcdn.com/${iso}.svg" alt="${alt || name || code}" loading="lazy" />`;
+}
+
+/* Flag for a feed team object — NEVER returns empty, so no blank boxes on mobile.
+   Order: real flagcdn flag → feed crest → colored country-code chip. */
+function teamFlag(t) {
+  if (!t) return '';
+  const code = t.code || t.tla || '';
+  const img = flagImg(code, t.name);
+  if (img) return img;
+  if (t.crest) return `<img class="flag-img" src="${t.crest}" alt="${t.name || code}" loading="lazy" />`;
+  const c = COUNTRY[String(code).toUpperCase()] || { bg:'#10171d', fg:'#5ee9e3' };
+  return `<span class="flag-img flag-code" style="background:${c.bg};color:${c.fg}">${(code || '—').toString().slice(0,3)}</span>`;
 }
 
 /* Which country codes have jerseys in our catalog (for the "Get the Kit" button) */

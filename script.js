@@ -1384,11 +1384,8 @@ function renderFeatured() {
   const next = upcoming.find(isOurs) || upcoming[0];
   if (!next) { wrap.innerHTML = ''; return; }
 
-  // Prefer the real national flag (flagcdn via flagImg); fall back to the feed
-  // crest only for any team we don't have an iso2 for.
-  const flag = t => (flagImg(t.code || t.tla)) || (t.crest
-    ? `<img class="flag-img" src="${t.crest}" alt="${t.name}" loading="lazy" />`
-    : '');
+  // Real national flag → feed crest → code chip. Never blank (see teamFlag).
+  const flag = teamFlag;
 
   wrap.innerHTML = `
     <div class="mf-team home">
@@ -1758,11 +1755,8 @@ function renderMatchGrid() {
   if (!grid) return;
   const cards = getDisplayMatches().slice().sort((a, b) => new Date(a.date) - new Date(b.date));
 
-  // Prefer the real national flag (flagcdn via flagImg); fall back to the feed
-  // crest only for any team we don't have an iso2 for.
-  const flag = t => (flagImg(t.code || t.tla)) || (t.crest
-    ? `<img class="flag-img" src="${t.crest}" alt="${t.name}" loading="lazy" />`
-    : '');
+  // Real national flag → feed crest → code chip. Never blank (see teamFlag).
+  const flag = teamFlag;
 
   // Admin-entered / live-overlay results — used to fill in scores the public
   // feed hasn't posted yet (it sometimes lags). Keyed by our MATCHES id.
@@ -2102,9 +2096,7 @@ function renderGroups() {
         </thead>
         <tbody>
           ${g.rows.map(t => {
-            const flag = (flagImg(t.code)) || (t.crest
-              ? `<img class="flag-img" src="${t.crest}" alt="${t.name}" loading="lazy" />`
-              : '');
+            const flag = teamFlag(t);
             return `
               <tr class="${t.ours ? 'team-highlight' : ''}">
                 <td>

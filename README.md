@@ -31,7 +31,6 @@ required to launch.
 ## Tech
 
 Pure HTML, CSS, and JavaScript. No build step, no npm dependencies.
-- Three.js loaded via CDN (UMD global) — works under `file://` too
 - Real country flags from [flagcdn.com](https://flagcdn.com)
 - Google Fonts: Bebas Neue + Inter
 
@@ -51,7 +50,6 @@ zone14/
 ├── script.js           # Landing-page interactions
 ├── order.js            # Checkout logic
 ├── admin.js            # Admin dashboard logic
-├── size3d.js           # Three.js mannequin viewer
 │
 ├── images/             # Product photos (see images/README.md)
 ├── videos/             # Product videos (see videos/README.md)
