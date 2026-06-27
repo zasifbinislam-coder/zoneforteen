@@ -1165,12 +1165,14 @@
       if (reduce || typeof Lenis === 'undefined') return;
 
       const lenis = new Lenis({
-        duration: 1.5,             // longer glide = smoother momentum
+        duration: 1.5,             // longer glide = smoother momentum (wheel)
         easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // expo-out glide
         smoothWheel: true,
-        smoothTouch: false,        // native scroll on touch devices
+        syncTouch: true,           // momentum smooth scrolling on mobile/touch too
+        syncTouchLerp: 0.08,       // touch smoothing amount
+        touchInertiaMultiplier: 28,
         wheelMultiplier: 0.95,
-        touchMultiplier: 1.5,
+        touchMultiplier: 1.2,
       });
       window.__lenis = lenis;
 
