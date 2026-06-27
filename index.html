@@ -1155,5 +1155,49 @@
       if (active) apply(active);
     })();
   </script>
+
+  <!-- Smooth momentum scrolling (Lenis). Desktop only — phones keep native
+       touch scroll; users with reduced-motion preference keep native scroll. -->
+  <script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js" defer></script>
+  <script>
+    window.addEventListener('load', function () {
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduce || typeof Lenis === 'undefined') return;
+
+      const lenis = new Lenis({
+        duration: 1.5,             // longer glide = smoother momentum
+        easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // expo-out glide
+        smoothWheel: true,
+        smoothTouch: false,        // native scroll on touch devices
+        wheelMultiplier: 0.95,
+        touchMultiplier: 1.5,
+      });
+      window.__lenis = lenis;
+
+      function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+      requestAnimationFrame(raf);
+
+      // In-page anchor links glide instead of jumping, offset for the sticky nav.
+      const navH = parseInt(getComputedStyle(document.documentElement)
+        .getPropertyValue('--nav-h'), 10) || 0;
+      document.addEventListener('click', function (e) {
+        const a = e.target.closest('a[href^="#"]');
+        if (!a) return;
+        const id = a.getAttribute('href');
+        if (id.length < 2) return;
+        const target = document.querySelector(id);
+        if (!target) return;
+        e.preventDefault();
+        lenis.scrollTo(target, { offset: -navH });
+      });
+
+      // Pause smooth-scroll whenever a modal locks the page (body overflow:hidden).
+      const syncLock = () => document.body.style.overflow === 'hidden'
+        ? lenis.stop() : lenis.start();
+      new MutationObserver(syncLock).observe(document.body, {
+        attributes: true, attributeFilter: ['style'],
+      });
+    });
+  </script>
 </body>
 </html>

@@ -295,13 +295,44 @@ function initNav() {
   const navbar = document.getElementById('navbar');
   const hamburger = document.getElementById('hamburger');
   const navLinks = document.getElementById('navLinks');
+  const hero = document.getElementById('home');
+  const heroInner = hero ? hero.querySelector('.hero-inner') : null;
+  const banner = document.querySelector('.hero-banner');   // the 2nd section
+  const backToTop = document.getElementById('backToTop');
 
-  const onScroll = () => {
-    navbar.classList.toggle('scrolled', window.scrollY > 30);
-    document.getElementById('backToTop').classList.toggle('show', window.scrollY > 600);
+  // One rAF-coalesced scroll pass: nav state + back-to-top + hero recede.
+  let ticking = false;
+  const update = () => {
+    ticking = false;
+    const y = window.scrollY;
+    const navH = navbar.offsetHeight;
+    const heroH = hero ? hero.offsetHeight : window.innerHeight;
+
+    // Nav goes solid black only once the 2nd section reaches the bar.
+    navbar.classList.toggle('scrolled', y > heroH - navH - 4);
+    if (backToTop) backToTop.classList.toggle('show', y > 600);
+
+    // Hero gently recedes as you scroll, so scrolling ALWAYS shows motion
+    // (no "frozen" feel) while the next section rises up over it. On laptop
+    // heights it also sits a touch higher so the whole hero clears the fold.
+    if (heroInner) {
+      const p = Math.min(1, Math.max(0, y / heroH));
+      const lift = (window.innerWidth >= 700 && window.innerHeight <= 980) ? 34 : 0;
+      heroInner.style.opacity = (1 - Math.min(1, p * 1.25)).toFixed(3);
+      heroInner.style.transform = `translateY(${(-lift - p * 64).toFixed(1)}px) scale(${(1 - p * 0.08).toFixed(3)})`;
+    }
+
+    // 2nd section (cinematic banner) cross-fades IN as it rises over the hero:
+    // dim while scrolling up (hero shows through), sharpening to full as it docks.
+    if (banner) {
+      const p2 = Math.min(1, Math.max(0, y / heroH));
+      banner.style.opacity = (0.12 + 0.88 * Math.min(1, p2 / 0.8)).toFixed(3);
+    }
   };
+  const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
   window.addEventListener('scroll', onScroll, { passive: true });
-  onScroll();
+  window.addEventListener('resize', update);
+  update();
 
   hamburger.addEventListener('click', () => {
     const open = navLinks.classList.toggle('active');
@@ -321,7 +352,8 @@ function initNav() {
 /* ---------- BACK TO TOP ---------- */
 function initBackToTop() {
   document.getElementById('backToTop').addEventListener('click', () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (window.__lenis) window.__lenis.scrollTo(0);
+    else window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 }
 

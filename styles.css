@@ -178,11 +178,9 @@ h1, h2, h3, .display {
   background: transparent;
 }
 .navbar.scrolled {
-  background: rgba(10, 10, 10, 0.85);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  background: #05070a;          /* solid black once past the hero */
   border-bottom: 1px solid var(--border);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.55);
 }
 
 .nav-inner {
@@ -265,15 +263,50 @@ h1, h2, h3, .display {
 
 /* ============ HERO ============ */
 .hero {
-  position: relative;
-  min-height: 100vh;
+  position: sticky;            /* pins the hero in place while the page scrolls over it */
+  top: 0;
+  z-index: -1;                 /* sits BEHIND the opaque sections so they slide up over it */
+  min-height: 100svh;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   background: var(--grad-hero);
-  padding: 120px 0 80px;
+  padding: calc(var(--nav-h) + 16px) 0 56px;
   isolation: isolate;          /* keeps the video layered correctly */
+}
+
+/* Short / laptop viewports: compress (zoom out) the hero so ALL of it — title,
+   countdown AND the Shop Now CTA + stats — fits one screen. The next section then
+   starts right after the fold, so the reveal begins immediately (no dead scroll). */
+@media (min-width: 700px) and (max-height: 980px) {
+  .hero       { padding: calc(var(--nav-h) - 4px) 0 22px; }
+  .hero-badge { margin-bottom: 10px; }
+  .hero-title { font-size: clamp(34px, 5vw, 64px); margin-bottom: 10px; line-height: 1.02; }
+  .hero-sub   { font-size: clamp(13px, 1.3vw, 16px); margin-bottom: 14px; }
+  .countdown  { padding: 9px 14px; margin-bottom: 8px; gap: 6px; }
+  .cd-num     { font-size: clamp(20px, 2.5vw, 28px); }
+  .cd-lbl     { font-size: 9px; }
+  .cd-sep     { font-size: clamp(18px, 2vw, 24px); }
+  .cd-caption { font-size: 12px; margin-bottom: 12px; }
+  .hero-cta   { margin-bottom: 16px; gap: 12px; }
+  .hero-cta .btn-lg { padding: 12px 22px; }
+  .hero-stats { gap: 34px; }
+  .hero-stats strong { font-size: 28px; }
+}
+
+/* Very short laptops (≈768px tall and under): squeeze further still. */
+@media (min-width: 700px) and (max-height: 780px) {
+  .hero       { padding: calc(var(--nav-h) - 12px) 0 16px; }
+  .hero-badge { margin-bottom: 8px; }
+  .hero-title { font-size: clamp(30px, 4.2vw, 52px); margin-bottom: 8px; }
+  .hero-sub   { margin-bottom: 10px; }
+  .countdown  { padding: 7px 12px; margin-bottom: 6px; }
+  .cd-num     { font-size: clamp(18px, 2.1vw, 24px); }
+  .cd-caption { margin-bottom: 9px; }
+  .hero-cta   { margin-bottom: 12px; }
+  .hero-stats { gap: 28px; }
+  .hero-stats strong { font-size: 24px; }
 }
 
 /* Brand poster — visible until the video has buffered and starts playing.
@@ -454,6 +487,7 @@ h1, h2, h3, .display {
   position: relative;
   z-index: 5;         /* always above video + every ambient layer */
   text-align: center;
+  will-change: transform, opacity;   /* scroll-driven recede stays GPU-smooth */
 }
 
 /* Hero watermark — main.png as a bold-but-restrained backdrop crest.
@@ -695,6 +729,7 @@ h1, h2, h3, .display {
   background: linear-gradient(180deg, var(--bg) 0%, #0a1a2e 50%, var(--bg) 100%);
   aspect-ratio: 21 / 9;
   max-height: 78vh;
+  will-change: opacity;        /* scroll-driven cross-fade as it rises over the hero */
 }
 .hero-banner-art {
   position: absolute;
@@ -824,6 +859,12 @@ h1, h2, h3, .display {
   opacity: 1;
   transform: translateY(0);
 }
+
+/* Lenis smooth (momentum) scrolling — only active once JS attaches .lenis */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: hidden; }
 
 /* ============ JERSEYS ============ */
 .section-jerseys {
