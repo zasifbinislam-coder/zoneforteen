@@ -34,15 +34,15 @@ let PROMOS = {
    overridable from the admin Settings panel via the `sale` site_settings key. */
 let SALE = {
   active:    true,
-  label:     'World Cup Sale',
-  amountOff: 100,                          // flat ৳ off each jersey
+  label:     '7-Day Flash Sale',
+  amountOff: 200,                          // flat ৳ off each jersey (৳1,499 → ৳1,299)
   pctOff:    0,                            // % off (used instead of amountOff when > 0)
-  endsAt:    '2026-06-25T23:59:59+06:00',  // 10-day campaign · 15–25 June 2026
+  endsAt:    '2026-07-05T23:59:59+06:00',  // 7-day campaign · 28 Jun – 5 Jul 2026
   popup: {
     enabled: true,
-    badge:   'LIMITED TIME · 10 DAYS ONLY',
-    title:   '৳100 OFF Every Jersey',
-    sub:     'World Cup 2026 kits now ৳1,399. Grab yours before the sale ends.',
+    badge:   'LIMITED TIME · 7 DAYS ONLY',
+    title:   '৳200 OFF Every Jersey',
+    sub:     'World Cup 2026 kits now ৳1,299. Grab yours before the sale ends.',
     cta:     'Shop the Sale',
     ctaUrl:  '#jerseys',
   },
