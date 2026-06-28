@@ -114,8 +114,10 @@
        load time by 5-10× and is ready by first paint. -->
   <link rel="preload" as="font" type="font/woff" href="fonts/BohemianTypewriter.woff" crossorigin fetchpriority="high" />
 
-  <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Courier+Prime:wght@400;700&family=Inter:wght@300;400;500;600;700;800&family=Oswald:wght@500;700&display=swap" rel="stylesheet" />
+  <!-- Fonts — loaded non-render-blocking (media=print → all onload) so first
+       paint isn't gated on Google Fonts. display=swap keeps text visible. -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Courier+Prime:wght@400;700&family=Inter:wght@300;400;500;600;700;800&family=Oswald:wght@500;700&display=swap" media="print" onload="this.media='all'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Courier+Prime:wght@400;700&family=Inter:wght@300;400;500;600;700;800&family=Oswald:wght@500;700&display=swap" /></noscript>
   <!-- Preconnect to the cdnfonts CDN since our @font-face rule fetches Bohemian Typewriter from there -->
   <link rel="preconnect" href="https://fonts.cdnfonts.com" crossorigin />
 
@@ -184,7 +186,7 @@
     <!-- Cinematic background video (~1.5 MB, web-optimized). preload="metadata"
          keeps it off the critical path so first paint isn't blocked; JS plays it
          and fades it in on the 'playing' event for a seamless cross-fade. -->
-    <video class="hero-video" id="heroVideo" autoplay muted loop playsinline preload="metadata" poster="logo/main.png" aria-hidden="true">
+    <video class="hero-video" id="heroVideo" muted loop playsinline preload="none" poster="logo/main.png" aria-hidden="true">
       <source src="videos/hero.mp4" type="video/mp4" />
     </video>
     <div class="hero-vignette" aria-hidden="true"></div>

@@ -318,14 +318,16 @@ function initNav() {
     // heights it also sits a touch higher so the whole hero clears the fold.
     // Mobile keeps a static hero + native scroll (no glitching), so we clear it.
     if (heroInner) {
+      const p = Math.min(1, Math.max(0, y / heroH));
       if (desktop) {
-        const p = Math.min(1, Math.max(0, y / heroH));
         const lift = (window.innerHeight <= 980) ? 34 : 0;
         heroInner.style.opacity = (1 - Math.min(1, p * 1.25)).toFixed(3);
         heroInner.style.transform = `translateY(${(-lift - p * 64).toFixed(1)}px) scale(${(1 - p * 0.08).toFixed(3)})`;
-      } else if (heroInner.style.transform) {
-        heroInner.style.opacity = '';
-        heroInner.style.transform = '';
+      } else {
+        // Mobile: hero scrolls away normally; add a gentle fade + scale so the
+        // exit has the same smooth motion as desktop (no sticky = no glitch).
+        heroInner.style.opacity = (1 - Math.min(1, p * 1.15)).toFixed(3);
+        heroInner.style.transform = `scale(${(1 - p * 0.05).toFixed(3)})`;
       }
     }
 
@@ -2511,6 +2513,16 @@ function initHeroVideo() {
   const video  = document.getElementById('heroVideo');
   const poster = document.getElementById('heroPoster');
   if (!video || !poster) return;
+
+  // Skip the ~1.6MB hero video on mobile / data-saver — the poster (main.png)
+  // stays as the hero backdrop. Saves bandwidth on slow connections AND removes
+  // the video-decode work that was making touch scrolling stutter.
+  const isMobile = window.matchMedia('(max-width: 699px)').matches;
+  const saveData = navigator.connection && navigator.connection.saveData;
+  if (isMobile || saveData) return;
+
+  // Desktop only: opt in to buffering + autoplay (HTML has preload=none).
+  video.preload = 'auto';
 
   let revealed = false;
   const reveal = () => {
