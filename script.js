@@ -375,7 +375,7 @@ function initReveal() {
   // showing everything immediately. (Throwing here would kill every init
   // that runs after it in DOMContentLoaded.)
   if (typeof IntersectionObserver === 'undefined') {
-    document.querySelectorAll('.reveal').forEach(el => el.classList.add('in-view'));
+    document.querySelectorAll('.reveal, .mobile-reveal').forEach(el => el.classList.add('in-view'));
     return;
   }
   revealObserver = new IntersectionObserver((entries) => {
@@ -387,7 +387,9 @@ function initReveal() {
     });
   }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
 
-  document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+  // Includes .mobile-reveal (e.g. the cinematic banner) — its reveal CSS is
+  // mobile-only, so observing it on desktop is a harmless no-op.
+  document.querySelectorAll('.reveal, .mobile-reveal').forEach(el => revealObserver.observe(el));
 }
 
 /* ---------- REVIEWS CAROUSEL ---------- */
