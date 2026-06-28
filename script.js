@@ -300,52 +300,44 @@ function initNav() {
   const banner = document.querySelector('.hero-banner');   // the 2nd section
   const backToTop = document.getElementById('backToTop');
 
-  // One rAF-coalesced scroll pass: nav state + back-to-top + hero recede.
-  let ticking = false;
-  const update = () => {
-    ticking = false;
+  // Drive all scroll-coupled effects from a CONTINUOUS rAF loop that reads the
+  // live scroll position every frame — NOT from throttled 'scroll' events. On
+  // mobile, scroll events fire in bursts during momentum flings, which made the
+  // recede + banner cross-fade step/stick. Reading scrollY each frame is smooth
+  // on every device, and is identical for mobile and desktop (same pinned hero).
+  let lastY = -1, lastVH = -1;
+  const apply = () => {
     const y = window.scrollY;
+    const vh = window.innerHeight;
+    if (y === lastY && vh === lastVH) return;   // nothing moved — skip work
+    lastY = y; lastVH = vh;
+
     const navH = navbar.offsetHeight;
-    const heroH = hero ? hero.offsetHeight : window.innerHeight;
-    const desktop = window.innerWidth >= 700;   // pinned-hero reveal is desktop-only
+    const heroH = hero ? hero.offsetHeight : vh;
+    const p = Math.min(1, Math.max(0, y / heroH));
 
     // Nav goes solid black only once the 2nd section reaches the bar.
     navbar.classList.toggle('scrolled', y > heroH - navH - 4);
     if (backToTop) backToTop.classList.toggle('show', y > 600);
 
-    // Hero gently recedes as you scroll, so scrolling ALWAYS shows motion
-    // (no "frozen" feel) while the next section rises up over it. On laptop
-    // heights it also sits a touch higher so the whole hero clears the fold.
-    // Mobile keeps a static hero + native scroll (no glitching), so we clear it.
+    // Hero recedes (fade + lift + scale) so scrolling always shows motion while
+    // the next section rises up over the pinned hero.
     if (heroInner) {
-      const p = Math.min(1, Math.max(0, y / heroH));
-      if (desktop) {
-        const lift = (window.innerHeight <= 980) ? 34 : 0;
-        heroInner.style.opacity = (1 - Math.min(1, p * 1.25)).toFixed(3);
-        heroInner.style.transform = `translateY(${(-lift - p * 64).toFixed(1)}px) scale(${(1 - p * 0.08).toFixed(3)})`;
-      } else {
-        // Mobile: hero scrolls away normally; add a gentle fade + scale so the
-        // exit has the same smooth motion as desktop (no sticky = no glitch).
-        heroInner.style.opacity = (1 - Math.min(1, p * 1.15)).toFixed(3);
-        heroInner.style.transform = `scale(${(1 - p * 0.05).toFixed(3)})`;
-      }
+      const lift = (window.innerWidth >= 700 && vh <= 980) ? 34 : 0;
+      heroInner.style.opacity = (1 - Math.min(1, p * 1.25)).toFixed(3);
+      heroInner.style.transform = `translateY(${(-lift - p * 64).toFixed(1)}px) scale(${(1 - p * 0.08).toFixed(3)})`;
     }
 
     // 2nd section (cinematic banner) cross-fades IN as it rises over the hero:
     // dim while scrolling up (hero shows through), sharpening to full as it docks.
     if (banner) {
-      if (desktop) {
-        const p2 = Math.min(1, Math.max(0, y / heroH));
-        banner.style.opacity = (0.12 + 0.88 * Math.min(1, p2 / 0.8)).toFixed(3);
-      } else if (banner.style.opacity) {
-        banner.style.opacity = '';
-      }
+      banner.style.opacity = (0.12 + 0.88 * Math.min(1, p / 0.8)).toFixed(3);
     }
   };
-  const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
-  window.addEventListener('scroll', onScroll, { passive: true });
-  window.addEventListener('resize', update);
-  update();
+  const loop = () => { requestAnimationFrame(loop); apply(); };
+  requestAnimationFrame(loop);
+  window.addEventListener('resize', () => { lastY = -1; });   // force a recompute
+  apply();
 
   hamburger.addEventListener('click', () => {
     const open = navLinks.classList.toggle('active');
@@ -377,7 +369,7 @@ function initReveal() {
   // showing everything immediately. (Throwing here would kill every init
   // that runs after it in DOMContentLoaded.)
   if (typeof IntersectionObserver === 'undefined') {
-    document.querySelectorAll('.reveal, .mobile-reveal').forEach(el => el.classList.add('in-view'));
+    document.querySelectorAll('.reveal').forEach(el => el.classList.add('in-view'));
     return;
   }
   revealObserver = new IntersectionObserver((entries) => {
@@ -389,9 +381,7 @@ function initReveal() {
     });
   }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
 
-  // Includes .mobile-reveal (e.g. the cinematic banner) — its reveal CSS is
-  // mobile-only, so observing it on desktop is a harmless no-op.
-  document.querySelectorAll('.reveal, .mobile-reveal').forEach(el => revealObserver.observe(el));
+  document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 }
 
 /* ---------- REVIEWS CAROUSEL ---------- */

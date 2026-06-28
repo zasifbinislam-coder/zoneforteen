@@ -295,24 +295,10 @@ h1, h2, h3, .display {
   .hero-stats strong { font-size: 28px; }
 }
 
-/* Mobile / touch: keep the SAME pinned-hero reveal as desktop. The 2nd section
-   rises over the still hero; its reveal is the IntersectionObserver one below
-   (fires once, no per-frame scroll coupling) so it can't glitch on touch flings. */
-@media (max-width: 699px) {
-  /* Mobile-safe reveal — fires once via IntersectionObserver (no per-frame
-     scroll coupling), so it can't glitch during touch flings. Echoes the
-     desktop cross-fade: starts dim + slightly risen, settles to fully clear. */
-  .mobile-reveal {
-    opacity: 0.1;
-    transform: translateY(28px) scale(1.02);
-    transition: opacity 1s var(--ease-out), transform 1s var(--ease-out);
-    will-change: opacity, transform;
-  }
-  .mobile-reveal.in-view {
-    opacity: 1;
-    transform: none;
-  }
-}
+/* Mobile keeps the SAME pinned-hero reveal as desktop — the hero stays still and
+   the 2nd section rises over it. The cross-fade is now driven by a continuous
+   rAF loop (reads scroll position every frame), so it stays smooth on touch and
+   the banner opacity tracks scroll instead of stepping on throttled events. */
 
 /* Very short laptops (≈768px tall and under): squeeze further still. */
 @media (min-width: 700px) and (max-height: 780px) {
