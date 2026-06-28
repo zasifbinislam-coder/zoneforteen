@@ -295,11 +295,10 @@ h1, h2, h3, .display {
   .hero-stats strong { font-size: 28px; }
 }
 
-/* Mobile / touch: drop the pinned-hero reveal entirely. The hero scrolls away
-   normally so native touch momentum stays buttery and nothing overlays/glitches. */
+/* Mobile / touch: keep the SAME pinned-hero reveal as desktop. The 2nd section
+   rises over the still hero; its reveal is the IntersectionObserver one below
+   (fires once, no per-frame scroll coupling) so it can't glitch on touch flings. */
 @media (max-width: 699px) {
-  .hero { position: relative; z-index: auto; }
-
   /* Mobile-safe reveal — fires once via IntersectionObserver (no per-frame
      scroll coupling), so it can't glitch during touch flings. Echoes the
      desktop cross-fade: starts dim + slightly risen, settles to fully clear. */
