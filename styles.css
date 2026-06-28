@@ -295,6 +295,12 @@ h1, h2, h3, .display {
   .hero-stats strong { font-size: 28px; }
 }
 
+/* Mobile / touch: drop the pinned-hero reveal entirely. The hero scrolls away
+   normally so native touch momentum stays buttery and nothing overlays/glitches. */
+@media (max-width: 699px) {
+  .hero { position: relative; z-index: auto; }
+}
+
 /* Very short laptops (≈768px tall and under): squeeze further still. */
 @media (min-width: 700px) and (max-height: 780px) {
   .hero       { padding: calc(var(--nav-h) - 12px) 0 16px; }

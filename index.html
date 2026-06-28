@@ -1168,11 +1168,9 @@
         duration: 1.5,             // longer glide = smoother momentum (wheel)
         easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // expo-out glide
         smoothWheel: true,
-        syncTouch: true,           // momentum smooth scrolling on mobile/touch too
-        syncTouchLerp: 0.08,       // touch smoothing amount
-        touchInertiaMultiplier: 28,
+        syncTouch: false,          // native momentum on mobile (smooth + glitch-free)
         wheelMultiplier: 0.95,
-        touchMultiplier: 1.2,
+        touchMultiplier: 1.5,
       });
       window.__lenis = lenis;
 

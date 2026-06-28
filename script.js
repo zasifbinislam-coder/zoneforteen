@@ -307,6 +307,7 @@ function initNav() {
     const y = window.scrollY;
     const navH = navbar.offsetHeight;
     const heroH = hero ? hero.offsetHeight : window.innerHeight;
+    const desktop = window.innerWidth >= 700;   // pinned-hero reveal is desktop-only
 
     // Nav goes solid black only once the 2nd section reaches the bar.
     navbar.classList.toggle('scrolled', y > heroH - navH - 4);
@@ -315,18 +316,28 @@ function initNav() {
     // Hero gently recedes as you scroll, so scrolling ALWAYS shows motion
     // (no "frozen" feel) while the next section rises up over it. On laptop
     // heights it also sits a touch higher so the whole hero clears the fold.
+    // Mobile keeps a static hero + native scroll (no glitching), so we clear it.
     if (heroInner) {
-      const p = Math.min(1, Math.max(0, y / heroH));
-      const lift = (window.innerWidth >= 700 && window.innerHeight <= 980) ? 34 : 0;
-      heroInner.style.opacity = (1 - Math.min(1, p * 1.25)).toFixed(3);
-      heroInner.style.transform = `translateY(${(-lift - p * 64).toFixed(1)}px) scale(${(1 - p * 0.08).toFixed(3)})`;
+      if (desktop) {
+        const p = Math.min(1, Math.max(0, y / heroH));
+        const lift = (window.innerHeight <= 980) ? 34 : 0;
+        heroInner.style.opacity = (1 - Math.min(1, p * 1.25)).toFixed(3);
+        heroInner.style.transform = `translateY(${(-lift - p * 64).toFixed(1)}px) scale(${(1 - p * 0.08).toFixed(3)})`;
+      } else if (heroInner.style.transform) {
+        heroInner.style.opacity = '';
+        heroInner.style.transform = '';
+      }
     }
 
     // 2nd section (cinematic banner) cross-fades IN as it rises over the hero:
     // dim while scrolling up (hero shows through), sharpening to full as it docks.
     if (banner) {
-      const p2 = Math.min(1, Math.max(0, y / heroH));
-      banner.style.opacity = (0.12 + 0.88 * Math.min(1, p2 / 0.8)).toFixed(3);
+      if (desktop) {
+        const p2 = Math.min(1, Math.max(0, y / heroH));
+        banner.style.opacity = (0.12 + 0.88 * Math.min(1, p2 / 0.8)).toFixed(3);
+      } else if (banner.style.opacity) {
+        banner.style.opacity = '';
+      }
     }
   };
   const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
