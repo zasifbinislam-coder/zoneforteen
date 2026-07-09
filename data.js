@@ -1049,109 +1049,72 @@ function compressVideo(file, opts, onProgress) {
   });
 }
 
-/* Upload a single file to Supabase Storage + insert the matching
-   jersey_media row. Returns the inserted row (with public url). */
+/* Compress a file in the browser, then upload it to Cloudflare R2 through the
+   /api/r2 serverless signer (which holds the R2 write keys — they never reach
+   the browser) and append it to the R2 media.json manifest. Returns the asset. */
 async function cloudUpload(jerseyId, file) {
-  const sb = getSupabase();
-  if (!sb) throw new Error('Supabase client not ready');
-
   // Shrink before upload — images to WebP, videos re-encoded via MediaRecorder
-  file = file.type && file.type.startsWith('video/')
-    ? await compressVideo(file)
-    : await compressImage(file);
-  const ext = (file.name.split('.').pop() || 'bin').toLowerCase();
-  const path = `${jerseyId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const isVideo = !!(file.type && file.type.startsWith('video/'));
+  file = isVideo ? await compressVideo(file) : await compressImage(file);
+  const name = file.name || (isVideo ? 'video.mp4' : 'photo.webp');
+  const kind = isVideo ? 'video' : 'image';
 
-  const { data: up, error: upErr } = await sb.storage
-    .from('media')
-    .upload(path, file, { contentType: file.type, upsert: false });
-  if (upErr) throw upErr;
+  const qs = `action=upload&jerseyId=${encodeURIComponent(jerseyId)}&kind=${kind}&filename=${encodeURIComponent(name)}`;
+  const res = await fetch(`/api/r2?${qs}`, {
+    method: 'POST',
+    headers: {
+      'x-admin-token': (typeof window !== 'undefined' && window.MEDIA_ADMIN_TOKEN) || '',
+      'content-type': file.type || 'application/octet-stream',
+    },
+    body: file,
+  });
+  if (!res.ok) throw new Error('R2 upload failed (' + res.status + '): ' + (await res.text()).slice(0, 200));
+  const { entry } = await res.json();
 
-  const { data: pub } = sb.storage.from('media').getPublicUrl(up.path);
-
-  const { data: row, error: rowErr } = await sb.from('jersey_media').insert({
-    jersey_id:    jerseyId,
-    type:         file.type.startsWith('video/') ? 'video' : 'image',
-    url:          pub.publicUrl,
-    storage_path: up.path,
-    name:         file.name,
-    size_bytes:   file.size,
-  }).select().single();
-  if (rowErr) {
-    // Clean up the orphaned storage object so we don't leak files
-    try { await sb.storage.from('media').remove([up.path]); } catch (_) {}
-    throw rowErr;
-  }
-  return row;
+  // Reflect in the local cache immediately so the admin gallery updates without a reload
+  const media = readMedia();
+  if (!media[jerseyId]) media[jerseyId] = { images: [], videos: [] };
+  media[jerseyId][isVideo ? 'videos' : 'images'].push(entry);
+  writeMedia(media);
+  return entry;
 }
 
-/* One-click migration: download each already-uploaded jersey photo, compress it
-   (WebP ~1400px), re-upload, repoint the row, and delete the old fat file.
-   Runs entirely in the admin browser. onProgress({done,total,optimized,saved}). */
+/* Obsolete: media is now stored pre-compressed on R2 (uploads shrink client-side
+   before they ever leave the browser), so there is nothing to bulk re-optimise.
+   Kept as a harmless no-op so any old admin button doesn't throw. */
 async function recompressExistingMedia(onProgress) {
-  const sb = getSupabase();
-  if (!sb) throw new Error('Supabase client not ready');
-  const { data: rows, error } = await sb.from('jersey_media').select('*').eq('type', 'image');
-  if (error) throw error;
-
-  const total = (rows || []).length;
-  let done = 0, optimized = 0, saved = 0;
-
-  for (const r of (rows || [])) {
-    try {
-      const resp = await fetch(r.url, { cache: 'no-store' });
-      const blob = await resp.blob();
-      const origSize = blob.size;
-      const file = new File([blob], r.name || 'photo.jpg', { type: blob.type || 'image/jpeg' });
-      const compressed = await compressImage(file);
-
-      // Only replace when meaningfully smaller (>8%)
-      if (compressed.size < origSize * 0.92) {
-        const ext = (compressed.name.split('.').pop() || 'webp').toLowerCase();
-        const path = `${r.jersey_id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-        const { data: up, error: upErr } = await sb.storage
-          .from('media').upload(path, compressed, { contentType: compressed.type, upsert: false });
-        if (upErr) throw upErr;
-        const { data: pub } = sb.storage.from('media').getPublicUrl(up.path);
-
-        const { error: updErr } = await sb.from('jersey_media').update({
-          url: pub.publicUrl, storage_path: up.path,
-          name: compressed.name, size_bytes: compressed.size,
-        }).eq('id', r.id);
-        if (updErr) { try { await sb.storage.from('media').remove([up.path]); } catch (_) {} throw updErr; }
-
-        if (r.storage_path) { try { await sb.storage.from('media').remove([r.storage_path]); } catch (_) {} }
-        optimized++; saved += (origSize - compressed.size);
-      }
-    } catch (e) {
-      console.warn('Recompress skipped for', r.id, e.message || e);
-    }
-    done++;
-    if (onProgress) onProgress({ done, total, optimized, saved });
-  }
-  return { total, optimized, saved };
+  const total = listAllAssets().filter(a => a.type === 'image').length;
+  if (onProgress) onProgress({ done: total, total, optimized: 0, saved: 0 });
+  return { total, optimized: 0, saved: 0 };
 }
 
-/* Delete both the row and the underlying storage object.
-   Each step is independently try/caught — Supabase's PostgrestFilterBuilder
-   is awaitable but doesn't implement .catch(), so chaining .catch() on
-   .eq(...) throws TypeError and silently breaks every delete button. */
-async function cloudDelete(asset) {
-  const sb = getSupabase();
-  if (!sb) return;
-  if (asset.storagePath) {
-    try { await sb.storage.from('media').remove([asset.storagePath]); } catch (_) {}
-  }
-  try { await sb.from('jersey_media').delete().eq('id', asset.id); } catch (_) {}
+const _mediaAdminToken = () => (typeof window !== 'undefined' && window.MEDIA_ADMIN_TOKEN) || '';
+
+/* Delete an asset from R2 (the object + its manifest entry) via /api/r2. */
+async function cloudDelete(asset, jerseyId) {
+  try {
+    await fetch('/api/r2?action=delete', {
+      method: 'POST',
+      headers: { 'x-admin-token': _mediaAdminToken(), 'content-type': 'application/json' },
+      body: JSON.stringify({
+        jerseyId: jerseyId || asset.jerseyId,
+        key: asset.id,
+        storagePath: asset.storagePath || asset.id,
+        hero: asset.hero || false,
+      }),
+    });
+  } catch (err) { console.warn('R2 delete failed:', err.message || err); }
 }
 
-/* Persist a new image order — sort_order ascending (0 = first/primary). */
-async function pushMediaSortOrder(assets) {
-  const sb = getSupabase();
-  if (!sb) return;
-  for (let i = 0; i < assets.length; i++) {
-    try { await sb.from('jersey_media').update({ sort_order: i }).eq('id', assets[i].id); } catch (_) {}
-  }
+/* Persist a new image order for a jersey (first = primary) to the R2 manifest. */
+async function pushMediaSortOrder(jerseyId, assets) {
+  try {
+    await fetch('/api/r2?action=sort', {
+      method: 'POST',
+      headers: { 'x-admin-token': _mediaAdminToken(), 'content-type': 'application/json' },
+      body: JSON.stringify({ jerseyId, orderIds: assets.map(a => a.id) }),
+    });
+  } catch (err) { console.warn('R2 reorder failed:', err.message || err); }
 }
 
 const MEDIA_KEY = 'zone14_media_v1';
@@ -1182,25 +1145,34 @@ const R2_PUBLIC = 'https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev';
    no cross-origin/CORS problem), and falling back to the same-origin static
    snapshot (`media.json`) shipped with the site. Images themselves are plain
    <img>/<video> off R2 — no CORS needed there. */
-async function _r2FetchJson(sources) {
+async function _r2FetchJson(sources, isValid) {
   for (const src of sources) {
     try {
       const res = await fetch(src, { cache: 'no-store' });
       if (!res.ok) continue;
-      return await res.json();
+      const data = await res.json();
+      if (isValid(data)) return data;
     } catch (_) { /* try next source */ }
   }
   return null;
 }
 async function hydrateMediaFromR2() {
-  // Product photos/videos per jersey → MEDIA_KEY (shape { [id]: {images,videos} })
-  const media = await _r2FetchJson(['/api/media', 'media.json']);
-  if (media && typeof media === 'object' && !Array.isArray(media)) {
-    writeMedia(media);                 // fires media:change → re-render jerseys
-  }
+  // Product photos/videos per jersey → MEDIA_KEY. Prefer the LIVE manifest
+  // (/api/r2 proxies R2 so admin uploads show at once); fall back to the
+  // same-origin static snapshot. An empty/misconfigured response is skipped so
+  // it can never blank the catalog.
+  const media = await _r2FetchJson(
+    ['/api/r2?action=media', 'media.json'],
+    (d) => d && typeof d === 'object' && !Array.isArray(d) && Object.keys(d).length > 0
+  );
+  if (media) writeMedia(media);        // fires media:change → re-render jerseys
+
   // Hero Video Band reels → HERO_VIDEOS_KEY (array of { id, videoUrl, posterUrl })
-  const hero = await _r2FetchJson(['/api/hero-videos', 'hero-videos.json']);
-  if (Array.isArray(hero)) {
+  const hero = await _r2FetchJson(
+    ['/api/r2?action=hero', 'hero-videos.json'],
+    (d) => Array.isArray(d) && d.length > 0
+  );
+  if (hero) {
     try {
       localStorage.setItem('zone14_hero_videos_v1', JSON.stringify(hero));
       window.dispatchEvent(new CustomEvent('herovideos:change'));

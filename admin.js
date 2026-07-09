@@ -8,6 +8,11 @@
 const ADMIN_PASS = 'Brazil2002@rz';
 const AUTH_KEY   = 'zone14_admin_auth';
 
+// Authorises media uploads/deletes to R2 via /api/r2. Reuses the existing admin
+// passcode (no new secret in the repo); the matching value goes in the Vercel
+// MEDIA_ADMIN_TOKEN env var. The real R2 keys stay server-side, never here.
+if (typeof window !== 'undefined') window.MEDIA_ADMIN_TOKEN = ADMIN_PASS;
+
 const STATUS_META = {
   pending:   { label: 'Pending',   color: '#ffb547' },
   confirmed: { label: 'Confirmed', color: '#5ee9e3' },
@@ -296,8 +301,8 @@ function renderMediaQueueList(queue) {
 }
 
 async function uploadOne(jerseyId, file, warnEl) {
-  if (!isCloudConfigured()) {
-    throw new Error('Supabase client not ready. Refresh and try again.');
+  if (typeof window === 'undefined' || !window.MEDIA_ADMIN_TOKEN) {
+    throw new Error('Upload not configured — missing R2 admin token. Refresh and try again.');
   }
   // Generous input cap — images + videos are compressed in the browser before
   // upload, so the file that actually reaches Supabase is far smaller.
@@ -327,7 +332,7 @@ function renderMediaGallery() {
   const pct = Math.round((usedBytes / MAX_LOCAL_TOTAL_BYTES) * 100);
 
   if (stats) {
-    stats.innerHTML = `${all.length} file${all.length === 1 ? '' : 's'} uploaded · ☁️ Supabase Storage (1 GB free tier)`;
+    stats.innerHTML = `${all.length} file${all.length === 1 ? '' : 's'} uploaded · ☁️ Cloudflare R2 (free egress)`;
   }
 
   if (all.length === 0) {
@@ -392,7 +397,7 @@ function renderMediaGallery() {
       const bucket = getJerseyMedia(jerseyId);
       const asset = [...bucket.images, ...bucket.videos].find(a => a.id === assetId);
       if (asset) {
-        await cloudDelete(asset);             // removes from Storage + DB
+        await cloudDelete(asset, jerseyId);   // removes the R2 object + manifest entry
       }
       removeAsset(jerseyId, assetId);          // removes from local cache
       renderMediaGallery();
@@ -423,7 +428,7 @@ async function moveMedia(jerseyId, assetId, dir) {
 
   _mediaMoveBusy = true;
   writeMedia(m);                       // instant: re-renders gallery + homepage cards
-  try { await pushMediaSortOrder(imgs); } // persist order to Supabase
+  try { await pushMediaSortOrder(jerseyId, imgs); } // persist order to the R2 manifest
   catch (err) { console.warn('Reorder save failed (kept locally):', err.message || err); }
   finally { _mediaMoveBusy = false; }
 }
