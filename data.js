@@ -639,39 +639,11 @@ async function syncFromSupabase() {
       window.dispatchEvent(new CustomEvent('expenses:change'));
     }
 
-    // hero videos error non-fatal — table may not exist yet on first deploy
-    if (!e8 && heroVids) {
-      const localHero = heroVids.map(r => ({
-        id:         r.id,
-        videoUrl:   r.video_url,
-        videoPath:  r.video_path,
-        posterUrl:  r.poster_url,
-        posterPath: r.poster_path,
-        sortOrder:  r.sort_order,
-        createdAt:  r.created_at ? new Date(r.created_at).getTime() : null,
-      }));
-      localStorage.setItem(HERO_VIDEOS_KEY, JSON.stringify(localHero));
-      window.dispatchEvent(new CustomEvent('herovideos:change'));
-    }
-
-    // showcase error non-fatal — table may not exist yet on first deploy
-    if (!e5 && showcase) {
-      const localShowcase = showcase.map(r => ({
-        id:         r.id,
-        title:      r.title,
-        subtitle:   r.subtitle,
-        duration:   r.duration,
-        videoUrl:   r.video_url,
-        videoPath:  r.video_path,
-        posterUrl:  r.poster_url,
-        posterPath: r.poster_path,
-        jerseyId:   r.jersey_id,
-        sortOrder:  r.sort_order,
-        createdAt:  r.created_at ? new Date(r.created_at).getTime() : null,
-      }));
-      localStorage.setItem(SHOWCASE_KEY, JSON.stringify(localShowcase));
-      window.dispatchEvent(new CustomEvent('showcase:change'));
-    }
+    // hero-band + showcase videos now live on Cloudflare R2 (free egress) and
+    // are hydrated from R2's hero-videos.json by hydrateMediaFromR2(). We do NOT
+    // overwrite them from Supabase here, so stale Supabase storage URLs can never
+    // clobber the live R2 videos. (heroVids/showcase results ignored on purpose.)
+    void heroVids; void showcase;
     // reviews error is non-fatal — table may not exist yet on first deploy
     if (!e4 && reviews) {
       const localReviews = reviews.map(r => ({
@@ -691,23 +663,12 @@ async function syncFromSupabase() {
       window.dispatchEvent(new CustomEvent('reviews:change'));
     }
 
-    // jersey_media → group by jersey_id into local cache shape
-    const mediaByJersey = {};
-    (media || []).forEach(r => {
-      if (!mediaByJersey[r.jersey_id]) mediaByJersey[r.jersey_id] = { images: [], videos: [] };
-      const asset = {
-        id:           r.id,
-        type:         r.type,
-        url:          r.url,
-        storagePath:  r.storage_path,
-        name:         r.name,
-        size:         r.size_bytes,
-        uploadedAt:   r.uploaded_at ? new Date(r.uploaded_at).getTime() : null,
-      };
-      mediaByJersey[r.jersey_id][r.type === 'video' ? 'videos' : 'images'].push(asset);
-    });
-    localStorage.setItem(MEDIA_KEY, JSON.stringify(mediaByJersey));
-    window.dispatchEvent(new CustomEvent('media:change'));
+    // jersey_media is NO LONGER the media source — product photos/videos now
+    // live on Cloudflare R2 (free egress) and are read from R2's media.json by
+    // hydrateMediaFromR2(). We deliberately do NOT overwrite MEDIA_KEY here, so
+    // stale Supabase storage URLs can never clobber the live R2 media. (The old
+    // `media` result is ignored on purpose.)
+    void media;
 
     const local = (preds || []).map(p => ({
       id:        p.id,
@@ -1207,6 +1168,48 @@ function writeMedia(obj) {
     return false;
   }
 }
+
+/* ============================================================
+   R2 MEDIA (Cloudflare) — product photos/videos live on R2 with FREE egress.
+   The tiny media.json manifest is the single source of truth for the public
+   site, so browsing works even when Supabase is down/over-quota. media.json
+   shape === MEDIA_KEY shape: { [jerseyId]: { images:[asset], videos:[asset] } }.
+   ============================================================ */
+const R2_PUBLIC = 'https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev';
+
+/* Read the media manifest, preferring the LIVE copy (`/api/media`, which the
+   serverless proxy streams from R2 so admin uploads show instantly and there's
+   no cross-origin/CORS problem), and falling back to the same-origin static
+   snapshot (`media.json`) shipped with the site. Images themselves are plain
+   <img>/<video> off R2 — no CORS needed there. */
+async function _r2FetchJson(sources) {
+  for (const src of sources) {
+    try {
+      const res = await fetch(src, { cache: 'no-store' });
+      if (!res.ok) continue;
+      return await res.json();
+    } catch (_) { /* try next source */ }
+  }
+  return null;
+}
+async function hydrateMediaFromR2() {
+  // Product photos/videos per jersey → MEDIA_KEY (shape { [id]: {images,videos} })
+  const media = await _r2FetchJson(['/api/media', 'media.json']);
+  if (media && typeof media === 'object' && !Array.isArray(media)) {
+    writeMedia(media);                 // fires media:change → re-render jerseys
+  }
+  // Hero Video Band reels → HERO_VIDEOS_KEY (array of { id, videoUrl, posterUrl })
+  const hero = await _r2FetchJson(['/api/hero-videos', 'hero-videos.json']);
+  if (Array.isArray(hero)) {
+    try {
+      localStorage.setItem('zone14_hero_videos_v1', JSON.stringify(hero));
+      window.dispatchEvent(new CustomEvent('herovideos:change'));
+    } catch (_) {}
+  }
+}
+// Kick off immediately so product photos + hero reels paint on first load,
+// before (and independent of) the Supabase sync.
+hydrateMediaFromR2();
 
 /* Asset shape: { id, jerseyId, type: 'image'|'video', url, name, size, uploadedAt }
    Storage shape: { [jerseyId]: { images: Asset[], videos: Asset[] } }      */

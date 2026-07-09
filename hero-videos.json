@@ -1,0 +1,47 @@
+[
+  {
+    "id": "reel-1",
+    "videoUrl": "https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev/showcase/reel-1.mp4",
+    "videoPath": "showcase/reel-1.mp4",
+    "posterUrl": "https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev/showcase/reel-1.webp",
+    "posterPath": "showcase/reel-1.webp",
+    "sortOrder": 4,
+    "createdAt": null
+  },
+  {
+    "id": "reel-2",
+    "videoUrl": "https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev/showcase/reel-2.mp4",
+    "videoPath": "showcase/reel-2.mp4",
+    "posterUrl": "https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev/showcase/reel-2.webp",
+    "posterPath": "showcase/reel-2.webp",
+    "sortOrder": 3,
+    "createdAt": null
+  },
+  {
+    "id": "reel-3",
+    "videoUrl": "https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev/showcase/reel-3.mp4",
+    "videoPath": "showcase/reel-3.mp4",
+    "posterUrl": "https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev/showcase/reel-3.webp",
+    "posterPath": "showcase/reel-3.webp",
+    "sortOrder": 2,
+    "createdAt": null
+  },
+  {
+    "id": "reel-4",
+    "videoUrl": "https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev/showcase/reel-4.mp4",
+    "videoPath": "showcase/reel-4.mp4",
+    "posterUrl": "https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev/showcase/reel-4.webp",
+    "posterPath": "showcase/reel-4.webp",
+    "sortOrder": 1,
+    "createdAt": null
+  },
+  {
+    "id": "reel-5",
+    "videoUrl": "https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev/showcase/reel-5.mp4",
+    "videoPath": "showcase/reel-5.mp4",
+    "posterUrl": "https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev/showcase/reel-5.webp",
+    "posterPath": "showcase/reel-5.webp",
+    "sortOrder": 0,
+    "createdAt": null
+  }
+]

@@ -1,0 +1,174 @@
+{
+  "arg-home": {
+    "images": [
+      {
+        "id": "arg-home-img1",
+        "url": "https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev/arg-home/arg-home-1.webp",
+        "name": "arg-home-1.webp",
+        "type": "image",
+        "sortOrder": 0
+      },
+      {
+        "id": "arg-home-img2",
+        "url": "https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev/arg-home/arg-home-2.webp",
+        "name": "arg-home-2.webp",
+        "type": "image",
+        "sortOrder": 1
+      },
+      {
+        "id": "arg-home-img3",
+        "url": "https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev/arg-home/arg-home-3.webp",
+        "name": "arg-home-3.webp",
+        "type": "image",
+        "sortOrder": 2
+      },
+      {
+        "id": "arg-home-img4",
+        "url": "https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev/arg-home/arg-home-4.webp",
+        "name": "arg-home-4.webp",
+        "type": "image",
+        "sortOrder": 3
+      }
+    ],
+    "videos": []
+  },
+  "bra-home": {
+    "images": [
+      {
+        "id": "bra-home-img1",
+        "url": "https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev/bra-home/bra-home-1.webp",
+        "name": "bra-home-1.webp",
+        "type": "image",
+        "sortOrder": 0
+      },
+      {
+        "id": "bra-home-img2",
+        "url": "https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev/bra-home/bra-home-2.webp",
+        "name": "bra-home-2.webp",
+        "type": "image",
+        "sortOrder": 1
+      },
+      {
+        "id": "bra-home-img3",
+        "url": "https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev/bra-home/bra-home-3.webp",
+        "name": "bra-home-3.webp",
+        "type": "image",
+        "sortOrder": 2
+      },
+      {
+        "id": "bra-home-img4",
+        "url": "https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev/bra-home/bra-home-4.webp",
+        "name": "bra-home-4.webp",
+        "type": "image",
+        "sortOrder": 3
+      }
+    ],
+    "videos": []
+  },
+  "esp-home": {
+    "images": [
+      {
+        "id": "esp-home-img1",
+        "url": "https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev/esp-home/esp-home-1.webp",
+        "name": "esp-home-1.webp",
+        "type": "image",
+        "sortOrder": 0
+      },
+      {
+        "id": "esp-home-img2",
+        "url": "https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev/esp-home/esp-home-2.webp",
+        "name": "esp-home-2.webp",
+        "type": "image",
+        "sortOrder": 1
+      },
+      {
+        "id": "esp-home-img3",
+        "url": "https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev/esp-home/esp-home-3.webp",
+        "name": "esp-home-3.webp",
+        "type": "image",
+        "sortOrder": 2
+      },
+      {
+        "id": "esp-home-img4",
+        "url": "https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev/esp-home/esp-home-4.webp",
+        "name": "esp-home-4.webp",
+        "type": "image",
+        "sortOrder": 3
+      },
+      {
+        "id": "esp-home-img5",
+        "url": "https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev/esp-home/esp-home-5.webp",
+        "name": "esp-home-5.webp",
+        "type": "image",
+        "sortOrder": 4
+      }
+    ],
+    "videos": []
+  },
+  "fra-home": {
+    "images": [
+      {
+        "id": "fra-home-img1",
+        "url": "https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev/fra-home/fra-home-1.webp",
+        "name": "fra-home-1.webp",
+        "type": "image",
+        "sortOrder": 0
+      },
+      {
+        "id": "fra-home-img2",
+        "url": "https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev/fra-home/fra-home-2.webp",
+        "name": "fra-home-2.webp",
+        "type": "image",
+        "sortOrder": 1
+      },
+      {
+        "id": "fra-home-img3",
+        "url": "https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev/fra-home/fra-home-3.webp",
+        "name": "fra-home-3.webp",
+        "type": "image",
+        "sortOrder": 2
+      },
+      {
+        "id": "fra-home-img4",
+        "url": "https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev/fra-home/fra-home-4.webp",
+        "name": "fra-home-4.webp",
+        "type": "image",
+        "sortOrder": 3
+      }
+    ],
+    "videos": []
+  },
+  "ger-home": {
+    "images": [
+      {
+        "id": "ger-home-img1",
+        "url": "https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev/ger-home/ger-home-1.webp",
+        "name": "ger-home-1.webp",
+        "type": "image",
+        "sortOrder": 0
+      },
+      {
+        "id": "ger-home-img2",
+        "url": "https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev/ger-home/ger-home-2.webp",
+        "name": "ger-home-2.webp",
+        "type": "image",
+        "sortOrder": 1
+      },
+      {
+        "id": "ger-home-img3",
+        "url": "https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev/ger-home/ger-home-3.webp",
+        "name": "ger-home-3.webp",
+        "type": "image",
+        "sortOrder": 2
+      },
+      {
+        "id": "ger-home-img4",
+        "url": "https://pub-2ab98ef22d0a4af191d0835c92c44eb9.r2.dev/ger-home/ger-home-4.webp",
+        "name": "ger-home-4.webp",
+        "type": "image",
+        "sortOrder": 3
+      }
+    ],
+    "videos": []
+  }
+}
