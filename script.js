@@ -269,7 +269,7 @@ function updateCountdown() {
       const a = (nm.away && nm.away.name) || nm.away;
       cap.innerHTML = `Next up · <strong>${h}</strong> vs <strong>${a}</strong> · ${formatMatchDate(nm.date)}, ${formatBdLocalTime(nm.date)}`;
     } else {
-      cap.textContent = 'World Cup 2026 · Group Stage underway';
+      cap.textContent = '🏆 World Cup 2026 · Full-time — results are in';
     }
   }
   const diff = target - Date.now();
@@ -1716,7 +1716,7 @@ function getDisplayMatches() {
     id: m.id, localMatchId: m.id, group: m.group || '', date: m.date, venue: m.venue, city: m.city,
     home: { name: (COUNTRY[m.home] || {}).name || m.home, code: m.home },
     away: { name: (COUNTRY[m.away] || {}).name || m.away, code: m.away },
-    status: 'SCHEDULED', score: null,
+    status: m.score ? 'FINISHED' : 'SCHEDULED', score: m.score || null,
   }));
 }
 

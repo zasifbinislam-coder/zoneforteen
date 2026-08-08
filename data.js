@@ -7,7 +7,7 @@
    site_settings rows from Supabase (loaded in syncFromSupabase). Use `let`
    so the admin Settings panel can mutate them after edits. */
 let WHATSAPP = '8801723360078';
-let KICKOFF  = new Date('2026-08-22T18:00:00-05:00'); // opening match (override in admin Settings)
+let KICKOFF  = new Date('2026-06-11T18:00:00-05:00'); // opening match (override in admin Settings)
 
 /* Delivery charges (BDT) */
 let DELIVERY = {
@@ -170,24 +170,24 @@ let OFFERS = [
    so the placeholder dates below never reach the screen while the feed is up. */
 const MATCHES = [
   /* ----- Group C · Brazil ----- */
-  { id:'c-bra-mar', group:'C', date:'2026-08-24T22:00:00Z', stage:'Group C · Matchday 1', home:'BRA', away:'MAR', venue:'SoFi Stadium',        city:'Los Angeles' },
-  { id:'c-bra-sco', group:'C', date:'2026-08-30T22:00:00Z', stage:'Group C · Matchday 2', home:'BRA', away:'SCO', venue:'Hard Rock Stadium',   city:'Miami' },
-  { id:'c-bra-hai', group:'C', date:'2026-09-04T20:00:00Z', stage:'Group C · Matchday 3', home:'BRA', away:'HAI', venue:'Mercedes-Benz Stadium',city:'Atlanta' },
+  { id:'c-bra-mar', group:'C', date:'2026-06-13T22:00:00Z', stage:'Group C · Matchday 1', home:'BRA', away:'MAR', venue:'SoFi Stadium',        city:'Los Angeles',       score:{home:1, away:1} },
+  { id:'c-bra-sco', group:'C', date:'2026-06-19T22:00:00Z', stage:'Group C · Matchday 2', home:'BRA', away:'SCO', venue:'Hard Rock Stadium',   city:'Miami',             score:{home:3, away:0} },
+  { id:'c-bra-hai', group:'C', date:'2026-06-24T20:00:00Z', stage:'Group C · Matchday 3', home:'BRA', away:'HAI', venue:'Mercedes-Benz Stadium',city:'Atlanta',          score:{home:3, away:0} },
 
   /* ----- Group H · Spain ----- */
-  { id:'h-esp-cpv', group:'H', date:'2026-08-26T16:00:00Z', stage:'Group H · Matchday 1', home:'ESP', away:'CPV', venue:'Lumen Field',         city:'Seattle' },
-  { id:'h-esp-ksa', group:'H', date:'2026-08-31T16:00:00Z', stage:'Group H · Matchday 2', home:'ESP', away:'KSA', venue:'Levi\'s Stadium',     city:'San Francisco Bay' },
-  { id:'h-esp-uru', group:'H', date:'2026-09-05T16:00:00Z', stage:'Group H · Matchday 3', home:'ESP', away:'URU', venue:'SoFi Stadium',        city:'Los Angeles' },
+  { id:'h-esp-cpv', group:'H', date:'2026-06-15T16:00:00Z', stage:'Group H · Matchday 1', home:'ESP', away:'CPV', venue:'Lumen Field',         city:'Seattle',           score:{home:0, away:0} },
+  { id:'h-esp-ksa', group:'H', date:'2026-06-20T16:00:00Z', stage:'Group H · Matchday 2', home:'ESP', away:'KSA', venue:'Levi\'s Stadium',     city:'San Francisco Bay', score:{home:4, away:0} },
+  { id:'h-esp-uru', group:'H', date:'2026-06-25T16:00:00Z', stage:'Group H · Matchday 3', home:'ESP', away:'URU', venue:'SoFi Stadium',        city:'Los Angeles',       score:{home:1, away:0} },
 
   /* ----- Group I · France ----- */
-  { id:'i-fra-sen', group:'I', date:'2026-08-27T19:00:00Z', stage:'Group I · Matchday 1', home:'FRA', away:'SEN', venue:'MetLife Stadium',     city:'New York / NJ' },
-  { id:'i-fra-irq', group:'I', date:'2026-09-01T19:00:00Z', stage:'Group I · Matchday 2', home:'FRA', away:'IRQ', venue:'Gillette Stadium',    city:'Boston' },
-  { id:'i-fra-nor', group:'I', date:'2026-09-06T19:00:00Z', stage:'Group I · Matchday 3', home:'FRA', away:'NOR', venue:'Lincoln Financial',   city:'Philadelphia' },
+  { id:'i-fra-sen', group:'I', date:'2026-06-16T19:00:00Z', stage:'Group I · Matchday 1', home:'FRA', away:'SEN', venue:'MetLife Stadium',     city:'New York / NJ',     score:{home:3, away:1} },
+  { id:'i-fra-irq', group:'I', date:'2026-06-21T19:00:00Z', stage:'Group I · Matchday 2', home:'FRA', away:'IRQ', venue:'Gillette Stadium',    city:'Boston',            score:{home:3, away:0} },
+  { id:'i-fra-nor', group:'I', date:'2026-06-26T19:00:00Z', stage:'Group I · Matchday 3', home:'FRA', away:'NOR', venue:'Lincoln Financial',   city:'Philadelphia',      score:{home:4, away:1} },
 
   /* ----- Group J · Argentina ----- */
-  { id:'j-arg-alg', group:'J', date:'2026-08-28T01:00:00Z', stage:'Group J · Matchday 1', home:'ARG', away:'ALG', venue:'AT&T Stadium',        city:'Dallas' },
-  { id:'j-arg-aut', group:'J', date:'2026-09-02T01:00:00Z', stage:'Group J · Matchday 2', home:'ARG', away:'AUT', venue:'NRG Stadium',         city:'Houston' },
-  { id:'j-arg-jor', group:'J', date:'2026-09-07T01:00:00Z', stage:'Group J · Matchday 3', home:'ARG', away:'JOR', venue:'Estadio Azteca',      city:'Mexico City' },
+  { id:'j-arg-alg', group:'J', date:'2026-06-17T01:00:00Z', stage:'Group J · Matchday 1', home:'ARG', away:'ALG', venue:'AT&T Stadium',        city:'Dallas',            score:{home:3, away:0} },
+  { id:'j-arg-aut', group:'J', date:'2026-06-22T01:00:00Z', stage:'Group J · Matchday 2', home:'ARG', away:'AUT', venue:'NRG Stadium',         city:'Houston',           score:{home:1, away:0} },
+  { id:'j-arg-jor', group:'J', date:'2026-06-27T01:00:00Z', stage:'Group J · Matchday 3', home:'ARG', away:'JOR', venue:'Estadio Azteca',      city:'Mexico City',       score:{home:3, away:3} },
 ];
 
 /* Group standings — the four groups featuring our jerseys. Stats start at 0
