@@ -295,49 +295,13 @@ function initNav() {
   const navbar = document.getElementById('navbar');
   const hamburger = document.getElementById('hamburger');
   const navLinks = document.getElementById('navLinks');
-  const hero = document.getElementById('home');
-  const heroInner = hero ? hero.querySelector('.hero-inner') : null;
-  const banner = document.querySelector('.hero-banner');   // the 2nd section
-  const backToTop = document.getElementById('backToTop');
 
-  // Drive all scroll-coupled effects from a CONTINUOUS rAF loop that reads the
-  // live scroll position every frame — NOT from throttled 'scroll' events. On
-  // mobile, scroll events fire in bursts during momentum flings, which made the
-  // recede + banner cross-fade step/stick. Reading scrollY each frame is smooth
-  // on every device, and is identical for mobile and desktop (same pinned hero).
-  let lastY = -1, lastVH = -1;
-  const apply = () => {
-    const y = window.scrollY;
-    const vh = window.innerHeight;
-    if (y === lastY && vh === lastVH) return;   // nothing moved — skip work
-    lastY = y; lastVH = vh;
-
-    const navH = navbar.offsetHeight;
-    const heroH = hero ? hero.offsetHeight : vh;
-    const p = Math.min(1, Math.max(0, y / heroH));
-
-    // Nav goes solid black only once the 2nd section reaches the bar.
-    navbar.classList.toggle('scrolled', y > heroH - navH - 4);
-    if (backToTop) backToTop.classList.toggle('show', y > 600);
-
-    // Hero recedes (fade + lift + scale) so scrolling always shows motion while
-    // the next section rises up over the pinned hero.
-    if (heroInner) {
-      const lift = (window.innerWidth >= 700 && vh <= 980) ? 34 : 0;
-      heroInner.style.opacity = (1 - Math.min(1, p * 1.25)).toFixed(3);
-      heroInner.style.transform = `translateY(${(-lift - p * 64).toFixed(1)}px) scale(${(1 - p * 0.08).toFixed(3)})`;
-    }
-
-    // 2nd section (cinematic banner) cross-fades IN as it rises over the hero:
-    // dim while scrolling up (hero shows through), sharpening to full as it docks.
-    if (banner) {
-      banner.style.opacity = (0.12 + 0.88 * Math.min(1, p / 0.8)).toFixed(3);
-    }
+  const onScroll = () => {
+    navbar.classList.toggle('scrolled', window.scrollY > 30);
+    document.getElementById('backToTop').classList.toggle('show', window.scrollY > 600);
   };
-  const loop = () => { requestAnimationFrame(loop); apply(); };
-  requestAnimationFrame(loop);
-  window.addEventListener('resize', () => { lastY = -1; });   // force a recompute
-  apply();
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
 
   hamburger.addEventListener('click', () => {
     const open = navLinks.classList.toggle('active');
@@ -357,8 +321,7 @@ function initNav() {
 /* ---------- BACK TO TOP ---------- */
 function initBackToTop() {
   document.getElementById('backToTop').addEventListener('click', () => {
-    if (window.__lenis) window.__lenis.scrollTo(0);
-    else window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 }
 
@@ -2504,14 +2467,11 @@ function initHeroVideo() {
   const poster = document.getElementById('heroPoster');
   if (!video || !poster) return;
 
-  // Skip the ~1.6MB hero video on mobile / data-saver — the poster (main.png)
-  // stays as the hero backdrop. Saves bandwidth on slow connections AND removes
-  // the video-decode work that was making touch scrolling stutter.
+  // Skip the ~1.6MB hero video on mobile / data-saver — the poster stays as the
+  // backdrop. Big mobile load-time saving; desktop still gets the video.
   const isMobile = window.matchMedia('(max-width: 699px)').matches;
   const saveData = navigator.connection && navigator.connection.saveData;
   if (isMobile || saveData) return;
-
-  // Desktop only: opt in to buffering + autoplay (HTML has preload=none).
   video.preload = 'auto';
 
   let revealed = false;
