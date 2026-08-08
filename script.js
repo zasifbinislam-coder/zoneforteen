@@ -1704,7 +1704,14 @@ async function syncAllMatches() {
    otherwise our own static fixtures mapped to the same card shape. */
 function getDisplayMatches() {
   const all = readAllMatches();
-  if (all && all.length) return all;
+  // Use the live-feed cache only while it's still RELEVANT — i.e. it has at least
+  // one upcoming match or one with a score. A cache full of past, score-less
+  // fixtures is stale (e.g. last tournament's schedule) and would render as a wall
+  // of "in progress · result pending"; in that case fall back to our curated list.
+  const now = Date.now();
+  const fresh = all && all.length &&
+    all.some(m => m.score || new Date(m.date).getTime() > now);
+  if (fresh) return all;
   return MATCHES.map(m => ({
     id: m.id, localMatchId: m.id, group: m.group || '', date: m.date, venue: m.venue, city: m.city,
     home: { name: (COUNTRY[m.home] || {}).name || m.home, code: m.home },
